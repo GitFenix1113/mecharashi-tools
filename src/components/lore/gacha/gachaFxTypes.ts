@@ -38,6 +38,29 @@ export interface FxMinMaxGradient {
 
 export interface FxBurst { time: number; count: FxMinMax; cycles: number; interval: number; probability: number }
 
+/**
+ * 序列幀（Unity UVModule＝Texture Sheet Animation，只收 Grid 模式）：貼圖切成 tilesX×tilesY 格，
+ * 第 0 格在左上、先橫後直。frameOverTime／startFrame 是 Unity 存的正規化值（0–1，×幀數＝第幾格；
+ * 預設曲線停在 0.9999 是為了不跨到下一輪的第 0 格）。
+ */
+export interface FxUV {
+  tilesX: number
+  tilesY: number
+  /** 0＝整張依序（幀數 tilesX×tilesY）、1＝只播一列（幀數 tilesX） */
+  animationType: 0 | 1
+  /** 只播一列時：0＝固定第 rowIndex 列（由上往下數）、1＝每顆粒子隨機一列 */
+  rowMode?: 0 | 1
+  rowIndex?: number
+  /** 0＝依壽命（frameOverTime × cycles）、2＝依 fps（每秒 fps 格，與壽命無關） */
+  timeMode: 0 | 2
+  /** 只有 timeMode 0 時有 */
+  frameOverTime?: FxMinMax
+  cycles?: number
+  /** 只有 timeMode 2 時有 */
+  fps?: number
+  startFrame: FxMinMax
+}
+
 /** 一個粒子系統（Unity ParticleSystem＋ParticleSystemRenderer 的子集） */
 export interface FxSystem {
   name: string
@@ -82,6 +105,8 @@ export interface FxSystem {
   colorOverLife?: FxMinMaxGradient
   /** y 只有 separateAxes 時有 */
   sizeOverLife?: { x: FxMinMax; y?: FxMinMax }
+  /** 序列幀；省略＝整張貼圖 */
+  uv?: FxUV
 }
 
 /** 流動圖層（Image＋UI_CommonFlow）：擾動貼圖捲動推移主貼圖的 UV，疊加在最上層 */

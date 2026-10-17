@@ -7,7 +7,7 @@
 //   ・MinMaxCurve 模式 2 的下限曲線乘 minScalar（沒有才用 scalar）
 //   ・重力在一個循環內取同一個值（random＝0.5）
 
-import type { CurveKey, FxBurst, FxGradient, FxMinMax, FxMinMaxGradient, FxSystem, Quat, RGBA, Vec3 } from './gachaFxTypes.ts'
+import type { CurveKey, FxBurst, FxGradient, FxMinMax, FxMinMaxGradient, FxSystem, FxUV, Quat, RGBA, Vec3 } from './gachaFxTypes.ts'
 
 export type Rand = () => number
 
@@ -79,6 +79,38 @@ export function evalMinMaxGradient(g: FxMinMaxGradient | undefined, t: number, r
     case 4: return max ? evalGradient(max, r) : WHITE
     default: return g.maxColor ?? WHITE
   }
+}
+
+// ── 序列幀（UVModule）────────────────────────────────────────────────────────
+
+/** 一輪幾格：整張＝tilesX×tilesY、只播一列＝tilesX */
+export const uvFrameCount = (uv: FxUV) => (uv.animationType === 1 ? uv.tilesX : uv.tilesX * uv.tilesY)
+
+/**
+ * 粒子現在是第幾格（0 起算，整張的編號：左上第 0 格、先橫後直）。照 Unity：
+ *   依壽命：startFrame ＋ frameOverTime(年齡÷壽命) × cycles
+ *   依 fps ：startFrame ＋ 年齡 × fps ÷ 幀數（cycles 只對依壽命有意義）
+ * 取小數部分（超過一輪就從頭）× 幀數、無條件捨去。只播一列時再加上列的偏移。
+ * r＝粒子固定的亂數：[frameOverTime, startFrame, 隨機列]
+ */
+export function uvFrame(uv: FxUV, age: number, life: number, r: readonly [number, number, number]): number {
+  const n = uvFrameCount(uv)
+  const t = uv.timeMode === 2 ? (age * (uv.fps ?? 0)) / n : evalMinMax(uv.frameOverTime, age / life, r[0]) * (uv.cycles ?? 1)
+  const x = evalMinMax(uv.startFrame, 0, r[1]) + t
+  const k = Math.min(Math.floor((x - Math.floor(x)) * n), n - 1)
+  if (uv.animationType !== 1) return k
+  const row = uv.rowMode === 1 ? Math.min(Math.floor(r[2] * uv.tilesY), uv.tilesY - 1) : Math.min(uv.rowIndex ?? 0, uv.tilesY - 1)
+  return row * uv.tilesX + k
+}
+
+/**
+ * 第 k 格的 UV 範圍 [u0, v0, u1, v1]。Unity 的 UV 原點在左下（引擎上傳貼圖時 UNPACK_FLIP_Y，對得上），
+ * 所以第 0 列（最上面）是 v 最大的那一條。
+ */
+export function uvRect(uv: FxUV, k: number): [number, number, number, number] {
+  const du = 1 / uv.tilesX, dv = 1 / uv.tilesY
+  const u0 = (k % uv.tilesX) * du, v0 = 1 - (Math.floor(k / uv.tilesX) + 1) * dv
+  return [u0, v0, u0 + du, v0 + dv]
 }
 
 // ── 3D 小工具 ────────────────────────────────────────────────────────────────
@@ -153,6 +185,8 @@ export interface Particle {
   col: RGBA
   /** 每顆粒子固定的亂數（各模組「兩者之間隨機」用） */
   r: [number, number, number, number, number]
+  /** 序列幀用的固定亂數（見 uvFrame）；系統沒有序列幀就沒有——不多抽亂數，其他系統的亂數序列維持原樣 */
+  uvr?: [number, number, number]
 }
 
 export class ParticleSim {
@@ -212,6 +246,7 @@ export class ParticleSim {
         pos: lp, vel, vel3: [...vel], age: 0, life: Math.max(life, 1e-3),
         size: size * sc[0], sizeY: sizeY * sc[1], rot: -evalMinMax(I.rotation, tn, R()),
         col: evalMinMaxGradient(I.color, tn, R()), r: [R(), R(), R(), R(), R()],
+        ...(S.uv ? { uvr: [R(), R(), R()] as [number, number, number] } : {}),
       })
     }
   }

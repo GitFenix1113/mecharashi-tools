@@ -28,10 +28,13 @@
  * 曲線只留 time／value／inSlope／outSlope；MinMaxCurve／MinMaxGradient 只留該模式用得到的那幾個；數字取 6 位有效數字。
  *
  * ── 引擎不支援的東西會印出 ⚠ ──────────────────────────────────────────────
- * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）。
- * 下一台若用到序列幀（UVModule）、拖尾、Flow1 等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
- * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 的 8 台＝2054、1011、1012、2017、2019、2022、3005、3017；
- * 卡最多台的是 UVModule 43、Flow1 20、祖先位移 18、Box 18、其他 shader 18（單補 UVModule → 14 台）。逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態匯出_都卜勒試作/。
+ * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）
+ * 與序列幀（UVModule 的 Grid 模式、依壽命／依 fps）。下一台若用到拖尾、Flow1、序列幀的其他模式等，這裡會列出來
+ * ——那是 J-1／J-2 要補的引擎功能，不要硬上。
+ * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：補序列幀後 0 ⚠ 有 11 台＝2054、1011、1012、2017、2019、2022、3005、3017
+ * （以上透明混色就解開）＋1014、2042、2302（序列幀解開）。1027、1040、1301 序列幀也解開了，但流動圖層沒有擾動貼圖（見 useTex）。
+ * 剩下卡最多台的是 Flow1 20、祖先位移 18、Box 18、其他 shader 18（多半連主貼圖都空）；只差一種的：祖先位移 3、Box 3、缺擾動貼圖 3。
+ * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態匯出_都卜勒試作/（序列幀之後的版本在 2026-10-17_卡池動態_序列幀/）。
  * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質的粒子會略過），照常可以上站。
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -120,8 +123,12 @@ function checkAncestors(n) {
 const SHADER_PARTICLE = 'ProjectFM/UI/UIFx_Alpha'
 const SHADER_FLOW = 'ProjectFM/UI/UI_CommonFlow'
 const usedTex = new Set()
-const useTex = (name) => {
-  if (!name) return name
+/**
+ * 貼圖名是空的：引擎照樣會去載（undefined.png），讀不到就整台播不出來，所以一定要報 ⚠。
+ * 10-17 盤點：1027、1040、1301、3027 的流動圖層材質沒有 _DisturbTex（_DisturbValue 多半是 0，擾動本來就沒作用），引擎待補。
+ */
+const useTex = (name, owner) => {
+  if (!name) { warn(`${owner} 是空的，引擎會載入失敗、整台播不出來`); return name }
   if (!D.textures[name]) warn(`貼圖 ${name} 不在匯出的 textures 清單裡`)
   usedTex.add(name)
   return name
@@ -143,7 +150,7 @@ function particleMaterial(name, owner) {
   if (dst !== 1 && dst !== 10) warn(`${owner}：材質 ${name} 的混色 SrcAlpha／${dst} 引擎不支援（只有 1＝疊加、10＝透明），當成疊加`)
   const tex = (m.tex._Tex ?? m.tex._MainTex)?.tex
   return {
-    tex: useTex(tex),
+    tex: useTex(tex, `${owner}：材質 ${name} 的主貼圖`),
     strength: num(isFlow ? (m.floats._MainValue ?? 1) : (m.floats._Color_Str ?? 1)),
     texRotate: num(isFlow ? ((m.floats._MainTexRotate || 0) * Math.PI) / 180 : 0),
     // 疊加是預設、不輸出（既有的 JSON 不變）
@@ -151,9 +158,31 @@ function particleMaterial(name, owner) {
   }
 }
 
+// ── 序列幀（UVModule＝Texture Sheet Animation）────────────────────────────────
+/**
+ * 只支援 Grid 模式、依壽命／依 fps；其餘情況報 ⚠、不輸出（引擎照舊畫整張貼圖）。
+ * 10-17 盤點 60 台開著的 102 個：全是 Grid、依壽命 101／依 fps 1、單列的 19 個全是隨機列、沒有翻轉。
+ * frameOverTime／startFrame 是 Unity 存的正規化值（0–1，×格數＝幀號；Inspector 顯示的是 ×格數之後），原樣輸出。
+ */
+function uvModule(U, owner) {
+  if (U.mode !== 0) { warn(`${owner}：序列幀是 Sprites 模式（mode ${U.mode}），引擎只支援 Grid`); return null }
+  if (U.timeMode !== 0 && U.timeMode !== 2) { warn(`${owner}：序列幀的時間模式 ${U.timeMode}（依速度）引擎不支援`); return null }
+  if (U.animationType === 1 && U.rowMode !== 0 && U.rowMode !== 1) warn(`${owner}：序列幀單列的列模式 ${U.rowMode}（依網格索引）引擎不支援，當成第 ${U.rowIndex ?? 0} 列`)
+  if (U.flipU || U.flipV) warn(`${owner}：序列幀有翻轉（flipU ${U.flipU}／flipV ${U.flipV}），引擎忽略`)
+  if (U.startFrame?.minMaxState === 1 || U.startFrame?.minMaxState === 2) warn(`${owner}：序列幀的 startFrame 是曲線，引擎取曲線起點`)
+  const single = U.animationType === 1
+  return {
+    tilesX: Math.max(1, U.tilesX), tilesY: Math.max(1, U.tilesY), animationType: single ? 1 : 0,
+    ...(single ? { rowMode: U.rowMode === 1 ? 1 : 0, rowIndex: U.rowIndex ?? 0 } : {}),
+    timeMode: U.timeMode,
+    ...(U.timeMode === 0 ? { frameOverTime: minMax(U.frameOverTime), cycles: num(U.cycles ?? 1) } : { fps: num(U.fps) }),
+    startFrame: minMax(U.startFrame),
+  }
+}
+
 // ── 粒子系統 ──────────────────────────────────────────────────────────────
-/** 引擎實作了的模組；其他模組開著就提醒 */
-const SUPPORTED_MODULES = new Set(['InitialModule', 'ShapeModule', 'EmissionModule', 'SizeModule', 'RotationModule', 'ColorModule', 'VelocityModule', 'ForceModule', 'ClampVelocityModule', 'NoiseModule'])
+/** 引擎實作了的模組；其他模組開著就提醒（UVModule 支援一部分，細項在 uvModule() 裡檢查） */
+const SUPPORTED_MODULES = new Set(['InitialModule', 'ShapeModule', 'EmissionModule', 'SizeModule', 'RotationModule', 'ColorModule', 'VelocityModule', 'ForceModule', 'ClampVelocityModule', 'NoiseModule', 'UVModule'])
 /** 0 球、4 圓錐、8 圓錐體積 */
 const SUPPORTED_SHAPES = new Set([0, 4, 8])
 
@@ -205,7 +234,7 @@ function particleSystem(n) {
       randomDir: num(S.randomDirectionAmount), scale: vec3(S.m_Scale ?? { x: 1, y: 1, z: 1 }), rotation: vec3(S.m_Rotation), position: vec3(S.m_Position),
     }
   }
-  const V = p.VelocityModule, F = p.ForceModule, L = p.ClampVelocityModule, N = p.NoiseModule, RM = p.RotationModule, C = p.ColorModule, Z = p.SizeModule
+  const V = p.VelocityModule, F = p.ForceModule, L = p.ClampVelocityModule, N = p.NoiseModule, RM = p.RotationModule, C = p.ColorModule, Z = p.SizeModule, UV = p.UVModule
   if (V?.enabled) sys.velocity = { x: minMax(V.x), y: minMax(V.y), z: minMax(V.z), world: !!V.inWorldSpace }
   if (F?.enabled) sys.force = { x: minMax(F.x), y: minMax(F.y), z: minMax(F.z), world: !!F.inWorldSpace }
   if (L?.enabled) sys.clamp = { magnitude: minMax(L.magnitude), dampen: num(L.dampen) }
@@ -213,6 +242,7 @@ function particleSystem(n) {
   if (RM?.enabled) sys.rotationOverLife = minMax(RM.curve)
   if (C?.enabled) sys.colorOverLife = minMaxGradient(C.gradient)
   if (Z?.enabled) sys.sizeOverLife = Z.separateAxes ? { x: minMax(Z.curve), y: minMax(Z.y) } : { x: minMax(Z.curve) }
+  if (UV?.enabled) { const uv = uvModule(UV, n.name); if (uv) sys.uv = uv }
   return sys
 }
 
@@ -233,8 +263,8 @@ function flowLayer(n, img) {
     pos: [num(r.m_AnchoredPosition.x), num(r.m_AnchoredPosition.y)],
     size: [num(r.m_SizeDelta.x * r.m_LocalScale.x), num(r.m_SizeDelta.y * r.m_LocalScale.y)],
     color: [num(c.r * mc[0]), num(c.g * mc[1]), num(c.b * mc[2]), num(c.a * mc[3])],
-    mainTex: useTex(m.tex._MainTex?.tex),
-    disturbTex: useTex(m.tex._DisturbTex?.tex),
+    mainTex: useTex(m.tex._MainTex?.tex, `${n.name}：材質 ${img.material} 的 _MainTex`),
+    disturbTex: useTex(m.tex._DisturbTex?.tex, `${n.name}：材質 ${img.material} 的 _DisturbTex`),
     mainValue: num(m.floats._MainValue ?? 1),
     disturbValue: num(m.floats._DisturbValue ?? 0),
     vRepeat: (m.floats._VRepeatSwitch ?? 0) > 0.5,

@@ -12,7 +12,7 @@
 // 所以這裡：不做溶解、擾動 ×0.1、沿 U（橫）推移且以 0.5 為中心、時間×1（_Time.y）、亮度 ×0.85（→ 1.6，平均色 117/55/85 對遊戲 113/53/77）。
 // 試作頁的「調校」面板可以切回字面公式比較；要改這些數字，先回試作頁對遊戲畫面。
 
-import { evalMinMax, evalMinMaxGradient, makePerlin, ParticleSim } from './gachaFxSim'
+import { evalMinMax, evalMinMaxGradient, makePerlin, ParticleSim, uvFrame, uvRect } from './gachaFxSim'
 import type { FxFlow, GachaFxData } from './gachaFxTypes'
 
 const FLOW_DISTURB_K = 0.1
@@ -63,6 +63,7 @@ void main(){
 
 /** 動態頂點緩衝：每個頂點 pos2 uv2 col4＝8 個 float */
 const FLOATS = 8
+const FULL_UV = [0, 0, 1, 1] as const
 
 export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData, opts: GachaFxOptions): Promise<GachaFxHandle> {
   const ctx = canvas.getContext('webgl2', { premultipliedAlpha: false, alpha: false, antialias: true })
@@ -104,10 +105,11 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     }
   }
   let verts = new Float32Array(FLOATS * 6 * 1024), vn = 0
-  /** 四角（逆時針：左下、右下、右上、左上），整張貼圖 */
-  function quad(x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, c: readonly number[]) {
+  /** 四角（逆時針：左下、右下、右上、左上）；uv＝貼圖範圍 [u0, v0, u1, v1]，預設整張（序列幀時是那一格，見 uvRect） */
+  function quad(x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, c: readonly number[], uv: readonly number[] = FULL_UV) {
     if (vn + FLOATS * 6 > verts.length) { const nv = new Float32Array(verts.length * 2); nv.set(verts); verts = nv }
-    const P = [[x0, y0, 0, 0], [x1, y1, 1, 0], [x2, y2, 1, 1], [x0, y0, 0, 0], [x2, y2, 1, 1], [x3, y3, 0, 1]]
+    const [u0, v0, u1, v1] = uv
+    const P = [[x0, y0, u0, v0], [x1, y1, u1, v0], [x2, y2, u1, v1], [x0, y0, u0, v0], [x2, y2, u1, v1], [x3, y3, u0, v1]]
     for (const q of P) { verts[vn++] = q[0]; verts[vn++] = q[1]; verts[vn++] = q[2]; verts[vn++] = q[3]; verts[vn++] = c[0]; verts[vn++] = c[1]; verts[vn++] = c[2]; verts[vn++] = c[3] }
   }
   function flush() {
@@ -157,7 +159,7 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
   ])
 
   function drawParticles(sim: ParticleSim, tex: WebGLTexture) {
-    const S = sim.sys, C = S.colorOverLife, Z = S.sizeOverLife
+    const S = sim.sys, C = S.colorOverLife, Z = S.sizeOverLife, UV = S.uv
     gl.uniform1i(uPt.uTex, 0)
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, tex)
@@ -174,17 +176,19 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
       if (Z) { const k = evalMinMax(Z.x, a, q.r[1]); sx *= k; sy *= Z.y ? evalMinMax(Z.y, a, q.r[1]) : k }
       sx = Math.min(sx * UNIT, maxPx); sy = Math.min(sy * UNIT, maxPx)
       const cx = S.pos[0] + q.pos[0] * UNIT, cy = S.pos[1] + q.pos[1] * UNIT
+      // 序列幀：換成這一格的 UV（材質的主貼圖旋轉 uRot 一樣繞整張的中心，和 Unity 的 shader 拿到的 UV 相同）
+      const uv = UV && q.uvr ? uvRect(UV, uvFrame(UV, q.age, q.life, q.uvr)) : FULL_UV
       if (S.render.mode === 1) {
         // 拉伸 billboard：沿速度方向，長度＝size×lengthScale＋速度×velocityScale
         const vx = q.vel3[0], vy = q.vel3[1], sp = Math.hypot(vx, vy)
         const dx = sp ? vx / sp : 1, dy = sp ? vy / sp : 0
         const len = Math.min(sx * S.render.lengthScale + sp * UNIT * S.render.velocityScale, maxPx * 2), w = sx / 2
         const tx = cx - dx * len, ty = cy - dy * len, nx = -dy * w, ny = dx * w
-        quad(tx + nx, ty + ny, cx + nx, cy + ny, cx - nx, cy - ny, tx - nx, ty - ny, c)
+        quad(tx + nx, ty + ny, cx + nx, cy + ny, cx - nx, cy - ny, tx - nx, ty - ny, c, uv)
       } else {
         const co = Math.cos(q.rot), si = Math.sin(q.rot), hx = sx / 2, hy = sy / 2
         const P = [[-hx, -hy], [hx, -hy], [hx, hy], [-hx, hy]].map(([x, y]) => [cx + x * co - y * si, cy + x * si + y * co])
-        quad(P[0][0], P[0][1], P[1][0], P[1][1], P[2][0], P[2][1], P[3][0], P[3][1], c)
+        quad(P[0][0], P[0][1], P[1][0], P[1][1], P[2][0], P[2][1], P[3][0], P[3][1], c, uv)
       }
     }
     flush()

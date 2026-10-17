@@ -912,7 +912,14 @@
           引擎每個粒子系統依它切 <code>blendFunc</code>、畫流動圖層前切回疊加；官方沒指定材質的粒子改成略過（「·」提示，不算 ⚠）。
           0 ⚠ 從 2 台變 <b>8 台</b>（2054、1011、1012 Rex、2017 Malthus、2019 Aurora、2022 Bluebird、3005、3017），都還沒上站；Rex 的黑煙改前疊加看不見、改後出現（對照圖在同一個 <code>_local-notes</code> 夾）。
           ⚠ 透明混色會讓繪製順序有影響（目前系統照 sortingOrder＋階層、流動圖層最後畫，芬里厄時期定的），混用的機甲上站前要對遊戲畫面看一次。
-          <br><b>還沒做</b>：其餘引擎新功能。下一個建議 UVModule（43 台用到，單補就 8 → 14 台；再加其他 shader 19、Flow1 26）。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>序列幀（UVModule）</b>：支援 Grid 模式的整張／單列（固定列、隨機列）、依壽命（frameOverTime×cycles）／依 fps，加上 startFrame；
+          builder 輸出 <code>uv</code>（關掉的不輸出，<code>2054.json</code> 不變），Sprites 模式、依速度、翻轉、依網格索引選列仍報 ⚠（60 台開著的 102 個都沒用到）。
+          引擎依粒子年齡算格號（<code>gachaFxSim.ts</code> 的 <code>uvFrame</code>／<code>uvRect</code>，有測試）、組四邊形時換成那一格的 UV。
+          夜兔（2302）2×8 閃電序列實測播放方向正確（由短變長再淡出）、碎石每顆一格（改前每顆都是整張 2×2）；截圖與預覽頁在 <code>_local-notes/2026-10/2026-10-17_卡池動態_序列幀/</code>。
+          0 ⚠ 從 8 台變 <b>11 台</b>（＋1014 Glasya、2042 Ignite、2302 Shadowrabbit），都還沒上站。原本估 14 台：1027、1040、1301 的序列幀也解開了，
+          但它們的流動圖層材質沒有擾動貼圖 <code>_DisturbTex</code>，引擎會載入失敗、整台播不出來——builder 以前沒報（空貼圖名直接放行），這次補了 ⚠。
+          <br><b>還沒做</b>：流動圖層缺 <code>_DisturbTex</code>（1027、1040、1301、3027；擾動值多半是 0，引擎可略過擾動，補了就 11 → 14）、
+          Flow1 20 台、祖先位移 18、Box 18、其他 shader 18（多半連主貼圖都空）。</div>
         <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
       <div class="task-assignee">開發者</div>
