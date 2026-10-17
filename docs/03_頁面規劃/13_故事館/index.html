@@ -38,7 +38,8 @@
       · <code>pilotLore</code>：扉頁簡介 <code>intro</code>＋署名 <code>frontSource</code>、英文名 <code>nameEn</code>、人物檔案 <code>dossier</code>、陣營徽章、外觀設定 <code>skins</code>、章節與旁白<br>
       一律走 <code>useFirestore</code> 的 <code>usePilots</code> / <code>usePilotLore</code>。<strong>整頁只等 <code>pilots</code></strong>（舞台、名冊、換人只要身分欄位）；<code>pilotLore</code> 的 loading／error 交給卷宗：載入中顯示「檔案<em>調閱中</em>」，讀不到顯示「故事資料載入失敗……不是這份檔案沒有內容」＋「重新整理」鈕——簡介與人物檔案也住 pilotLore 之後，不能再降級成看起來像空白資料的扉頁。<br>
       外觀分兩層（PLAN-042-E 決策六）：<strong>靜態層</strong>＝圖檔（<code>public/images/game/pilots/&lt;gameId&gt;/skins/</code>）與 build 產生的 <code>GAME_PILOT_SKINS</code>；<strong>動態層</strong>＝ <code>pilotLore.skins</code> 的名稱／隱藏／順序，執行期由 <code>pilotSkins(pilot, loreDoc)</code> 合併（沒設定的照原索引接在後面、顯示「外觀 N」）。<code>scripts/lib/pilotSkinMeta.json</code> 只剩匯入用的歸屬 <code>owner</code></td></tr>
-    <tr><th>導覽入口</th><td><strong>✅ 2026-10-13 對外開放、常駐</strong>：桌機導覽列與手機 More 面板的「故事館」對所有人顯示；機師詳情頁名字旁有「故事館 ▸」連結（PLAN-042-E，<strong>不帶任何故事內容、不載入 pilotLore</strong>——圖鑑不跨進故事館）。入口旗標 <code>useLoreEntry.ts</code>（<code>LORE_INTERNAL_ONLY</code>）已於 PLAN-042-E 刪除：圖鑑已沒有簡介可退回顯示，旗標的退路也就不存在了。<br><span style="color:var(--text-dim)">（歷史：2026-10-03 ～ 10-13 入口收起期間，導覽列、手機 More 面板與機師詳情頁的「讀完整故事 ▸」只對 ADMIN／OWNER 顯示；<code>/lore/*</code> 路由不動，知道網址的人照樣進得去；一般訪客的機師詳情頁退回簡介<strong>全文</strong>顯示。）</span><br>入口設計：桌機與手機 More 面板的「故事館」（刻意獨立於版本／圖鑑／攻略三群之外，避免 <code>SubNavTabs</code> 在館內命中）</td></tr>
+    <tr><th>導覽入口</th><td><strong>✅ 2026-10-13 對外開放、常駐</strong>：桌機導覽列與手機 More 面板的「故事館」對所有人顯示；機師詳情頁名字旁有「故事館 ▸」連結（PLAN-042-E，<strong>不帶任何故事內容、不載入 pilotLore</strong>——圖鑑不跨進故事館）。入口旗標 <code>useLoreEntry.ts</code>（<code>LORE_INTERNAL_ONLY</code>）已於 PLAN-042-E 刪除：圖鑑已沒有簡介可退回顯示，旗標的退路也就不存在了。<br><span style="color:var(--text-dim)">（歷史：2026-10-03 ～ 10-13 入口收起期間，導覽列、手機 More 面板與機師詳情頁的「讀完整故事 ▸」只對 ADMIN／OWNER 顯示；<code>/lore/*</code> 路由不動，知道網址的人照樣進得去；一般訪客的機師詳情頁退回簡介<strong>全文</strong>顯示。）</span><br>入口設計：<strong>2026-10-17 起比照資料圖鑑分成兩館</strong>——桌機導覽列「故事館 ▾」展開條列出「機師故事館」（<code>/lore</code>）與「機甲故事館」（<code>/lore/mechs</code>），手機 More 面板也是兩個入口。
+      故事館自成一群 <code>loreGroup</code>，只進 <code>NAV_GROUPS</code>、<strong>不進 <code>SUB_NAV_GROUPS</code></strong>（避免 <code>SubNavTabs</code> 在館內命中、沉浸破功）。館內換館改在紙色細帶館名旁的「機師｜機甲」（見下方 header）。</td></tr>
     <tr><th>外殼形態</th><td><code>chromeMode = 'immersive'</code>：header 換成紙色細帶（館名／離館／字級三顆），footer、分頁列、手機 Tab Bar 全收；<code>html.lore-mode</code> 只設 <code>color-scheme</code> 與 body 背景，色票覆寫只在 <code>.lore-shell</code> / <code>.lore-chrome</code>（portal 浮層保持深色可讀）</td></tr>
     <tr><th>出口與出館過場</th><td><strong>PLAN-042-G</strong>：回圖鑑有三個出口——header「離館 ↗」跟著網址走（<code>/lore/pilots/:id</code> 含章節頁 → <code>/pilots/:id</code>，館首頁 → <code>/pilots</code>）、卷宗名字旁的「機師圖鑑」朱印、切換列尾端紅色「圖鑑 ↗」（閱讀模式也在）。
       三者共用 <code>LoreExitLink</code>（普通 <code>&lt;Link&gt;</code>，只有一般左鍵改走過場），離館以 View Transitions 播「關門」：深色站內沿進館遮罩同一道斜邊從右側蓋回來（<code>html.lore-exiting</code> 底下的 <code>::view-transition-*</code>）。
@@ -65,7 +66,8 @@
       讀不到 pilotLore 時牆照樣完整（只少了角標）。PLAN-042-E 搬遷時每位機師都建了一份 pilotLore，點進去不會是空頁。
       依職業（<code>CLASS_CONFIG</code> 順序）或登場版本分組；卡片＝縮圖（與 <code>/pilots</code> 同一組 URL、瀏覽器快取直接命中）＋底部漸層＋職業色條；
       有（非草稿的）章節才出現「N 章」徽章，章數經 <code>publishedChapters()</code> 計算、草稿章不計入。賽拉沒有圖片資料夾，牆上照樣留位、顯示「尚無立繪」。<br>
-      <strong>PLAN-042-B E-1 起分館是兩條路由</strong>：「機師｜機甲」是連結不是頁內分頁，<code>/lore</code> 與 <code>/lore/mechs</code> 掛同一個 <code>LoreHomePage</code>、<code>hall</code> 決定畫哪一館，兩館的資料 hook 分開（進機師廳不抓 mechs）。</p>
+      <strong>PLAN-042-B E-1 起分館是兩條路由</strong>：<code>/lore</code> 與 <code>/lore/mechs</code> 掛同一個 <code>LoreHomePage</code>、<code>hall</code> 決定畫哪一館，兩館的資料 hook 分開（進機師廳不抓 mechs）。
+      <strong>2026-10-17 起館首頁內容區只留排序</strong>（依職業／依登場版本／依駕照；機甲館是依廠商／依登場版本／依類型），換館的「機師｜機甲」從內容區移到紙色細帶的館名旁，在館內任何一頁都能換館。</p>
     </div>
     <div class="card yellow">
       <div class="card-icon">📄</div>
@@ -127,7 +129,7 @@
   <div class="section-title">版面結構</div>
   <div class="wireframe">
     <div class="wf-icon">🏛️</div>
-    <p>紙色細帶 header（館名／離館／字級）<br>↓<br><code>.lore-shell</code>（進場遮罩 <code>.lore-veil</code>）<br>↓<br><code>.lore-scroll</code>＝全館<strong>唯一</strong> scrollport<br>↓<br>館首頁牆 ／ <code>.lore-page</code>：<code>.lore-stage-wrap</code>（sticky 全高舞台＋負 margin）＋ <code>.lore-dossier</code>（檔案卡片或閱讀稿紙）＋ fixed 的切換列／名冊／鑑賞模式</p>
+    <p>紙色細帶 header（館名＋換館「機師｜機甲」／離館／BGM／字級；手機收掉館名文字，由換館鈕亮起的那格表示身在哪一館）<br>↓<br><code>.lore-shell</code>（進場遮罩 <code>.lore-veil</code>）<br>↓<br><code>.lore-scroll</code>＝全館<strong>唯一</strong> scrollport<br>↓<br>館首頁牆 ／ <code>.lore-page</code>：<code>.lore-stage-wrap</code>（sticky 全高舞台＋負 margin）＋ <code>.lore-dossier</code>（檔案卡片或閱讀稿紙）＋ fixed 的切換列／名冊／鑑賞模式</p>
   </div>
 </section>
 
