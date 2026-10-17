@@ -266,7 +266,12 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     gl.uniform1f(uFl.uMaskRev, K?.revert ? 1 : 0)
     gl.uniform1f(uFl.uMaskDst, K?.disturbed ? 1 : 0)
     const [x, y] = f.pos, hw = f.size[0] / 2, hh = f.size[1] / 2
-    quad(x - hw, y - hh, x + hw, y - hh, x + hw, y + hh, x - hw, y + hh, f.color)
+    if (f.rot) {
+      // 平面上轉過的矩形（UV 跟著四角走，貼圖一起轉）：四角對中心轉 rot
+      const c = Math.cos(f.rot), s = Math.sin(f.rot)
+      const P = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(([dx, dy]) => [x + dx * c - dy * s, y + dx * s + dy * c])
+      quad(P[0][0], P[0][1], P[1][0], P[1][1], P[2][0], P[2][1], P[3][0], P[3][1], f.color)
+    } else quad(x - hw, y - hh, x + hw, y - hh, x + hw, y + hh, x - hw, y + hh, f.color)
     flush()
     gl.activeTexture(gl.TEXTURE0)
   }

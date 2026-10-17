@@ -938,7 +938,11 @@
           輸出選填的 <code>clip</code>、引擎用 scissor（目前只有 2052 裁決者的 <code>Particle_Wind</code> 裁在左半邊）；站上插畫左右多露的 50 px 照沒遮罩的台處理，免得切出直線。
           已上站 17 台的 JSON 重產內容逐位元相同。0 ⚠ 從 17 台變 <b>23 台</b>（＋1017、1034、2003、2047、2050、2052）；落點疊在插畫上檢查合理
           （銀閃的 <code>Particle_Glow1</code> 從胸口移到頭部發光處、XR 的光移到槍口電光、光暉的煙移到槍口），疊圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/</code>。
-          <br><b>還沒做</b>（剩 37 台）：Flow1 20 台、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7、Image 掛 <code>UIFx_Alpha</code> 3、拖尾 2、Circle 1、流動圖層的祖先旋轉 1（3027）、RotationBySpeed 1；
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>流動圖層的平面旋轉</b>（另一個 commit，可單獨拿掉）：做上一項時發現已上站的 1027 銜尾蛇、1301 破曉者-02 的流動圖層節點<b>自己</b>就轉了
+          （刀光 −46°／+153°、煙流 −121°～−128°／+45°），舊 builder 不看自己的旋轉、引擎一直畫成水平矩形。builder 改輸出選填的 <code>rot</code>（變換後 x 軸在畫布上的角度，含祖先；不轉的不輸出），
+          引擎把四角對中心轉過去、UV 跟著走；繞 x／y 軸轉、鏡像、非均勻縮放疊旋轉的歪斜報 ⚠（只有 3027 巨像）。
+          這兩台的 JSON 只多了 <code>rot</code>（去掉後逐位元相同），其餘 21 台不變；疊圖與前後對照在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/流動圖層旋轉/</code>。
+          <br><b>還沒做</b>（剩 37 台）：Flow1 20 台、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7、Image 掛 <code>UIFx_Alpha</code> 3、拖尾 2、Circle 1、流動圖層傾斜 1（3027）、RotationBySpeed 1；
           只差一種的 14 台：Box 4（1052、2040、2043、2053）、Flow1 4（1028、1035、2027、2055）、startDelay 2（2056、3032）、
           拖尾 1（1018）、流動材質當粒子 1（1038）、其他 shader 1（3010 的 <code>UI_General</code>）、Image 掛 <code>UIFx_Alpha</code> 1（2013）。<b>下一步最划算的是 Box 形狀</b>（解開 4 台、另外共卡 18 台）。</div>
         <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>

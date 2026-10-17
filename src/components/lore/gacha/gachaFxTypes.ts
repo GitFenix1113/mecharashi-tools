@@ -152,6 +152,8 @@ export interface FxFlow {
   pos: [number, number]
   /** 畫布像素（矩形大小 × localScale × 祖先的縮放） */
   size: [number, number]
+  /** 畫布平面上的旋轉（弧度，逆時針，含祖先）；省略＝不轉 */
+  rot?: number
   clip?: FxClip
   /** Image 顏色 × 材質 _Color */
   color: RGBA

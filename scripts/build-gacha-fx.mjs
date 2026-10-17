@@ -30,7 +30,7 @@
  * ── 引擎不支援的東西會印出 ⚠ ──────────────────────────────────────────────
  * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）、
  * 序列幀（UVModule 的 Grid 模式、依壽命／依 fps）、流動圖層照 shader 規格的選填貼圖、主貼圖 tiling／旋轉／捲動與遮罩（見 UI_CommonFlow 的規格），
- * 以及祖先的位移／旋轉／縮放、錨點與 RectMask2D 裁切（見「版面」）。
+ * 以及祖先的位移／旋轉／縮放、錨點與 RectMask2D 裁切（見「版面」）、流動圖層的平面旋轉。
  * 下一台若用到拖尾、Flow1、序列幀的其他模式等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
  * 10-17 對 60 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run）：0 ⚠ 有 23 台＝2054、1011、1012、2017、2019、2022、3005、3017
  * （以上透明混色就解開）＋1014、2042、2302（序列幀解開）＋1027、1040、1301（流動圖層缺擾動貼圖、遮罩、捲動解開）
@@ -137,8 +137,6 @@ const qMat = ([x, y, z, w]) => [
 const mMul = (A, B) => A.map((row) => [0, 1, 2].map((j) => row[0] * B[0][j] + row[1] * B[1][j] + row[2] * B[2][j]))
 const mApply = (A, v) => A.map((row) => row[0] * v[0] + row[1] * v[1] + row[2] * v[2])
 const near1 = (s) => (Math.abs(s - 1) < 1e-3 ? 1 : s)
-/** 有沒有旋轉（x／y／z 任一分量；試作的門檻） */
-const isRotated = (q) => Math.abs(q[0]) > 1e-4 || Math.abs(q[1]) > 1e-4 || Math.abs(q[2]) > 1e-4
 
 /**
  * RectMask2D：遊戲裡 UIParticle 與 Image 都是 MaskableGraphic，會被祖先的 RectMask2D 裁成矩形（同一個節點上的不算，照 Unity 的
@@ -391,12 +389,16 @@ function particleSystem(n, at) {
 function flowLayer(n, img, at) {
   const m = D.materials[img.material], f = m.floats, owner = `${n.name}：材質 ${img.material}`
   const r = n.rect, c = img.fields.m_Color, mc = m.colors._Color ?? [1, 1, 1, 1]
-  // 矩形：中心＝pivot 換到正中央再過變換；大小＝矩形×自己的縮放×祖先累積的縮放。引擎畫不轉的矩形，祖先有旋轉或鏡像就報 ⚠
-  const s = r.m_LocalScale, Mp = at.parent.M
+  // 矩形：中心＝pivot 換到正中央再過變換；大小＝矩形×自己的縮放×祖先累積的縮放；旋轉＝變換後 x 軸在畫布上的角度（自己＋祖先）。
+  // 1027 銜尾蛇、1301 破曉者-02 的圖層自己就轉了 −128°～+153°，10-17 前沒輸出、被畫成水平的。
+  // 引擎畫的是平面上轉過的矩形：繞 x／y 軸轉（傾斜、翻面）、鏡像、非均勻縮放疊旋轉造成的歪斜報 ⚠
+  const s = r.m_LocalScale, Mp = at.parent.M, M = at.M
   const k = [Math.hypot(Mp[0][0], Mp[1][0], Mp[2][0]), Math.hypot(Mp[0][1], Mp[1][1], Mp[2][1])]
-  const center = mApply(at.M, [(0.5 - at.pivot[0]) * at.size[0], (0.5 - at.pivot[1]) * at.size[1], 0]).map((v, i) => v + at.t[i])
-  if (isRotated(at.parent.q)) warn(`${owner}：祖先有旋轉，引擎畫成不轉的矩形`)
-  if (Mp[0][0] * Mp[1][1] - Mp[0][1] * Mp[1][0] < 0) warn(`${owner}：祖先有負縮放（鏡像），引擎不翻轉貼圖`)
+  const center = mApply(M, [(0.5 - at.pivot[0]) * at.size[0], (0.5 - at.pivot[1]) * at.size[1], 0]).map((v, i) => v + at.t[i])
+  const rot = Math.atan2(M[1][0], M[0][0])
+  if (Math.abs(at.q[0]) > 1e-4 || Math.abs(at.q[1]) > 1e-4) warn(`${owner}：圖層（含祖先）繞 x／y 軸轉，引擎只畫平面上的旋轉`)
+  if (M[0][0] * M[1][1] - M[0][1] * M[1][0] < 0) warn(`${owner}：圖層（含祖先）有負縮放（鏡像），引擎不翻轉貼圖`)
+  else if (Math.abs(M[0][0] * M[0][1] + M[1][0] * M[1][1]) > 1e-3 * Math.hypot(M[0][0], M[1][0]) * Math.hypot(M[0][1], M[1][1])) warn(`${owner}：祖先的非均勻縮放疊上旋轉、圖層會歪斜，引擎畫成矩形`)
   const clip = clipOf(at, n.name)
   for (const k of ['_MainTex1TO', '_dIsturbTexTO', '_DisturbFlow']) if (!m.colors[k]) warn(`${owner} 缺 ${k}`)
   // 流動圖層引擎只畫疊加（10-17 盤點 60 台的 UI_CommonFlow 圖層 _Dst 全是 1；沒存時 shader 預設是 10＝透明）
@@ -422,6 +424,8 @@ function flowLayer(n, img, at) {
     name: n.name,
     pos: [num(center[0]), num(center[1])],
     size: [num(at.size[0] * s.x * k[0]), num(at.size[1] * s.y * k[1])],
+    // 不轉的不輸出（已上站其他台的 JSON 不變）
+    ...(Math.abs(rot) > 1e-6 ? { rot: num(rot) } : {}),
     ...(clip ? { clip } : {}),
     color: [num(c.r * mc[0]), num(c.g * mc[1]), num(c.b * mc[2]), num(c.a * mc[3])],
     mainTex,
