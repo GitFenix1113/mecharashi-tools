@@ -5,11 +5,11 @@
   "shareIdMax": 2097151,
   "kinds": {
     "pilot": {
-      "maxAssigned": 91,
+      "maxAssigned": 92,
       "aliases": {}
     },
     "mech": {
-      "maxAssigned": 92,
+      "maxAssigned": 93,
       "aliases": {}
     },
     "weapon": {
@@ -954,7 +954,18 @@
         "skill_斷末": 1500878,
         "skill_楔罪之刑": 1500879,
         "skill_無瑕陣地": 1500880,
-        "skill_陷刃": 1500881
+        "skill_陷刃": 1500881,
+        "skill_侵徹極意": 1500882,
+        "skill_戮影鴉行": 1500883,
+        "skill_掠食祭禮": 1500884,
+        "skill_歿境命逐": 1500885,
+        "skill_殉厄之約": 1500886,
+        "skill_瀝血為契": 1500887,
+        "skill_無妄無恕": 1500888,
+        "skill_雙槍協力": 1500889,
+        "skill_雙槍反擊": 1500890,
+        "skill_雙槍普攻": 1500891,
+        "skill_雙槍追擊": 1500892
       }
     }
   }

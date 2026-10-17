@@ -1,7 +1,7 @@
 {
   "fmt": 1,
   "note": "線上號碼的已核可快照，供 scripts/check-share-ids.mjs 對帳。前端不 import 這個檔；人工指派的別名在 src/utils/loadoutCode/shareIdRegistry.json。",
-  "updatedAt": "2026-10-11",
+  "updatedAt": "2026-10-17",
   "kinds": {
     "pilot": {
       "collection": "pilots",
@@ -96,7 +96,8 @@
         "88": "pilot_088_曜",
         "89": "pilot_089_賽拉",
         "90": "pilot_090_珂賽特",
-        "91": "pilot_091_索妮婭"
+        "91": "pilot_091_索妮婭",
+        "92": "pilot_092_摩根娜"
       },
       "unshareable": []
     },
@@ -194,7 +195,8 @@
         "89": "mech_089_星夜女神",
         "90": "mech_090_美杜莎MK2",
         "91": "mech_091_藍色魔鳥",
-        "92": "mech_092_凜騎士"
+        "92": "mech_092_凜騎士",
+        "93": "mech_093_日蝕"
       },
       "unshareable": []
     },
@@ -991,6 +993,8 @@
         "mod_游襲模組",
         "mod_猛禽單元",
         "mod_異械模組",
+        "mod_疊勢模組",
+        "mod_瞑刻模塊",
         "mod_破曉者-01_fixed_1",
         "mod_破曉者-01_fixed_2",
         "mod_破曉者-02_fixed_1",
@@ -1019,18 +1023,17 @@
       "collection": "pilotSkills",
       "derived": {},
       "unshareable": [
-        "skill_倚陣有道",
-        "skill_全局析構",
-        "skill_同步火力",
-        "skill_增設彈鏈",
-        "skill_彈械狂潮",
-        "skill_征途無疆",
-        "skill_戰韻",
-        "skill_故障鎖定",
-        "skill_斷末",
-        "skill_楔罪之刑",
-        "skill_無瑕陣地",
-        "skill_陷刃"
+        "skill_侵徹極意",
+        "skill_戮影鴉行",
+        "skill_掠食祭禮",
+        "skill_歿境命逐",
+        "skill_殉厄之約",
+        "skill_瀝血為契",
+        "skill_無妄無恕",
+        "skill_雙槍協力",
+        "skill_雙槍反擊",
+        "skill_雙槍普攻",
+        "skill_雙槍追擊"
       ]
     }
   }
