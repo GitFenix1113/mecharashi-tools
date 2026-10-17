@@ -209,8 +209,8 @@
 
   <div class="summary-row">
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">29</div><div class="summary-lbl">已完成</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">9</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">1</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">8</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">38</div><div class="summary-lbl">任務（不含長期資料）</div></div>
   </div>
 
@@ -891,13 +891,15 @@
     <div class="task-group-header">
       <div class="task-group-title">J-1 &nbsp; 第一批：38 台不需 Flow1 的單機卡池</div>
       <div class="task-group-meta">約 3–4 人日</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">補照規格的粒子功能＋批次匯出</div>
-        <div class="task-desc">序列幀動畫（UVModule，48 台用到）、Box／Circle 發射形狀、Unlit／Additive shader、別的封包裡的材質；73 個 prefab 批次匯出並瘦身（芬里厄原始 typetree 912 KB → 幾十 KB）。匯出腳本在 <code>_local-notes/…/scripts/</code>。</div>
-        <div class="task-file">scripts/（匯出）· src/components/lore/gacha/</div>
+        <div class="task-desc">序列幀動畫（UVModule，48 台用到）、Box／Circle 發射形狀、Unlit／Additive shader、別的封包裡的材質；73 個 prefab 批次匯出並瘦身（芬里厄原始 typetree 912 KB → 幾十 KB）。匯出腳本在 <code>_local-notes/…/scripts/</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 瘦身那一半先做了：<code>scripts/build-gacha-fx.mjs</code> 吃「data.json＋tex/」格式的匯出，輸出 <code>src/data/gachaFx/&lt;wap&gt;.json</code>（芬里厄 912 KB → 22.5 KB）與扁平貼圖庫 <code>public/images/game/fx/</code>，
+          遇到引擎不支援的模組／shader／形狀會列 ⚠（新功能先補引擎，不要硬上）。<b>還沒做</b>：UnityPy 端的批次匯出（芬里厄那份 <code>data.json</code> 的匯出腳本沒留在 <code>_local-notes</code>）與上面列的引擎新功能。</div>
+        <div class="task-file">scripts/（匯出）· scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status pending">待開始</span>
@@ -905,11 +907,16 @@
     <div class="task-row">
       <div>
         <div class="task-name">上站整合</div>
-        <div class="task-desc">全景鑑賞內播放；開啟才載入 WebGL、手機降級、<code>prefers-reduced-motion</code> 不播；每台貼圖約 300 KB，依 F 段同一套上站流程。動工時順便查 <code>ui_prefabs_wapgachaskin_abs.b</code> 是否為桌布專用版。</div>
-        <div class="task-file">src/components/lore/LoreViewer.tsx</div>
+        <div class="task-desc">全景鑑賞內播放；開啟才載入 WebGL、手機降級、<code>prefers-reduced-motion</code> 不播；每台貼圖約 300 KB，依 F 段同一套上站流程。動工時順便查 <code>ui_prefabs_wapgachaskin_abs.b</code> 是否為桌布專用版。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 整合框架完成、<b>芬里厄（2054）先上</b>（站長：「只能一個一個做」）。<code>src/components/lore/gacha/</code>：<code>gachaFxSim</code>（試作逐行移植的純模擬＋測試）、
+          <code>gachaFxEngine</code>（WebGL2，校準值寫死：不溶解、擾動 ×0.1、亮度 ×0.85）、<code>gachaFxRegistry</code>（<code>import.meta.glob</code>：有 JSON 就有動態，新增一台不必改程式）、<code>GachaFxLive</code>。
+          <code>LoreViewer</code> 新增 <code>live</code> 疊層：開場飛行落地才掛、關閉即卸載；canvas 套主圖同一套尺寸規則，放大一起放大。背景直接用 F 段的招募插畫（與試作拼圖逐像素平均差 3／255），不另外上傳。
+          鑑賞工具列加「卡池 動態／靜態」，卷宗卡池卡提示改「點一下看動態全景」；減少動態或省流量預設靜態。驗收：headless 與試作頁分區比對平均色差 ≤3、每格變化量相當；引擎與資料各自延遲載入（gzip 5.6＋4.4 KB）。
+          手機降級目前只有解析度上限（DPR ≤2），沒有另做簡化版。<code>wapgachaskin</code> 還沒查。<b>剩</b>：其他台逐台加資料（卡在上一列的匯出）。</div>
+        <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
