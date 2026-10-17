@@ -30,9 +30,9 @@
   <div class="section-label">基本資訊</div>
   <div class="section-title">頁面規格</div>
   <table class="spec-table">
-    <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
+    <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/mechs</code>（機甲廳館首頁，PLAN-042-B）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute</code>）</td></tr>
     <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a>；2026-10-13 改版成「舞台＋卷宗」、加機師名冊與外觀切換：<a href="../../05_階段性開發計畫/執行中/PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">PLAN-042-D</a>；同日機師資料分家、編輯台改版：<a href="../../05_階段性開發計畫/執行中/PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">PLAN-042-E</a>；2026-10-14 回圖鑑的出口與出館過場：<a href="../../05_階段性開發計畫/執行中/PLAN-042-G_故事館回圖鑑路線與出館過場/計畫書.html">PLAN-042-G</a></td></tr>
-    <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN 即可（只寫 <code>pilotLore</code>；EDITOR 角色先不做，PLAN-042-E 決策八）</td></tr>
+    <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN 即可（寫 <code>pilotLore</code>／<code>mechLore</code>／<code>mechMakers</code>；EDITOR 角色先不做，PLAN-042-E 決策八）</td></tr>
     <tr><th>資料來源</th><td><strong>PLAN-042-E 起依 id 合併兩個集合</strong>（判準：與數值、機制有關的留 <code>pilots</code>，其餘歸 <code>pilotLore</code>）：<br>
       · <code>pilots</code>：身分欄位——名字、全名、職業、陣營、駕駛許可、天賦（徽記）、登場版本、立繪（<code>gameId</code>／<code>artKey</code>）<br>
       · <code>pilotLore</code>：扉頁簡介 <code>intro</code>＋署名 <code>frontSource</code>、英文名 <code>nameEn</code>、人物檔案 <code>dossier</code>、陣營徽章、外觀設定 <code>skins</code>、章節與旁白<br>
@@ -64,7 +64,8 @@
       <p>列 <code>pilots</code> 全員而不是列 <code>pilotLore</code>——牆是「名冊」：名字、職業、版本、立繪都是 pilots 的身分欄位，pilotLore 只拿來疊章節數與陣營徽章角標；
       讀不到 pilotLore 時牆照樣完整（只少了角標）。PLAN-042-E 搬遷時每位機師都建了一份 pilotLore，點進去不會是空頁。
       依職業（<code>CLASS_CONFIG</code> 順序）或登場版本分組；卡片＝縮圖（與 <code>/pilots</code> 同一組 URL、瀏覽器快取直接命中）＋底部漸層＋職業色條；
-      有（非草稿的）章節才出現「N 章」徽章，章數經 <code>publishedChapters()</code> 計算、草稿章不計入。賽拉沒有圖片資料夾，牆上照樣留位、顯示「尚無立繪」。機甲分頁預留給 042-B。</p>
+      有（非草稿的）章節才出現「N 章」徽章，章數經 <code>publishedChapters()</code> 計算、草稿章不計入。賽拉沒有圖片資料夾，牆上照樣留位、顯示「尚無立繪」。<br>
+      <strong>PLAN-042-B E-1 起分館是兩條路由</strong>：「機師｜機甲」是連結不是頁內分頁，<code>/lore</code> 與 <code>/lore/mechs</code> 掛同一個 <code>LoreHomePage</code>、<code>hall</code> 決定畫哪一館，兩館的資料 hook 分開（進機師廳不抓 mechs）。</p>
     </div>
     <div class="card yellow">
       <div class="card-icon">📄</div>
@@ -113,7 +114,9 @@
       <p><strong>PLAN-042-E 起是「故事館編輯台」</strong>：一位機師的故事資料全部在這裡編（機師管理的「個人資料」分頁已移除）。
       列表列出 <code>pilots</code> 全員＋從資料推導的進度標籤；網址 <code>?pilot=&lt;id&gt;</code> 直接開該位的編輯面板（開關同步網址）。
       面板四個分頁：扉頁／人物檔案／逸聞章節／外觀，右欄是渲染真前台元件的即時預覽（細節見下方設計備註）。
-      頁首另有「機師｜陣營徽章」兩個檢視（PLAN-042-F）：<code>?view=emblems</code> 替官方徽章標名稱與圖上字樣。
+      頁首的檢視：機師｜機甲｜陣營徽章｜機甲廠商。<code>?view=emblems</code> 替官方徽章標名稱與圖上字樣（PLAN-042-F）；
+      <code>?view=mechs&amp;mech=&lt;id&gt;</code> 是機甲的編輯面板（PLAN-042-B G-1：扉頁／技術檔案／系譜／塗裝／逸聞章節＋即時預覽，結構同機師版、塗裝與章節分頁是同一個元件）；
+      <code>?view=makers</code> 管 <code>mechMakers</code>（G-2：一家一列各自存檔、可新增、不能刪）。
       寫入走 <code>saveWithHistory</code>（整份覆寫、自動 bump 版本），章節錨點用 <code>{ by: 'key' }</code>（<code>LoreChapter</code> 沒有 <code>name</code>，錨錯欄位每筆都會 <code>anchorMismatch</code>）。沒有刪除路徑。</p>
     </div>
   </div>
@@ -156,6 +159,46 @@
     · <strong>選圖器改版</strong>（扉頁分頁）：卡片的圖放大到 76px、標名稱與字樣，可用名稱／字樣／編號搜尋；排序「建議 → 已命名 → 未命名」，
       建議＝徽章的對應陣營文字等於這位機師的陣營、或同陣營機師已選。<strong>只排序、不代選</strong>。未命名的卡片有「補名稱 ↗」，在新分頁開「陣營徽章」檢視（不會關掉正在編的面板）。<br>
     · <strong>前台</strong>：卷宗徽章的滑鼠提示改用徽章名稱（沒有才退回機師陣營文字）；修正彩色版徽章被圓環裡給天賦圖示用的圓形裁切切掉邊角。
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 機甲廳的官方素材（PLAN-042-B Phase F，2026-10-17）</strong><br>
+    · <strong>塗裝</strong>（38 套／35 台，<code>game/mechs/&lt;wap&gt;/skins/</code>）：舞台左下多一列「塗裝」（縮圖由塗裝圖裁出），網址 <code>?skin=&lt;代碼&gt;</code>。名稱／隱藏／順序住 <code>mechLore.skins</code>（<code>mechSkins()</code> 合併，未設定顯示「塗裝 N」）。塗裝圖取景比主視覺緊、常切在畫布邊 ⇒ 舞台構圖 <code>mskin</code>：依高度、四邊羽化；尺寸照主視覺的留白比例校正，換塗裝時機體大小與卷宗位置都不跳（<code>.lore-page</code> 固定 <code>data-variant="sn"</code>）<br>
+    · <strong>招募插畫</strong>（61 台，<code>card/</code>，2600×1080）：不上舞台（決策 B-5），只當卷宗最後的「卡池」卡，點開飛出全景；以及機甲館首頁 hero（每次進館抽一張）<br>
+    · <strong>鑑賞背景</strong>（D-4）：主視覺／塗裝／四分件可切「廠商舞台」（<code>game/makers/</code>，預設、同分頁記住）或紙色；招募插畫本身不透明，不給切。手機上切換鈕與塗裝列移到左上<br>
+    · <strong>匯入</strong>：<code>import-game-assets.mjs --mech-lore</code>（規則 <code>scripts/lib/mechLoreAssets.mjs</code>，照抄流程見 <code>public/images/game/README.md</code>）。招募插畫的卡池鍵→wap 是人工對照（<code>scripts/lib/mechGachaCards.json</code>），新卡池鍵會出現在差異報告的「下一步」
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 機甲廳館首頁（PLAN-042-B E-1，2026-10-17）</strong><br>
+    · <strong>路由</strong>：<code>/lore/mechs</code>（取代原本裸路徑被兜底轉回 <code>/lore</code>），header 館名「機甲故事館」、館名連回 <code>/lore/mechs</code>、離館回 <code>/mechs</code>；進 sitemap，頁鍵 <code>lore_mechs</code><br>
+    · <strong>機甲牆</strong>：列 <code>mechs</code> 全員（理由同機師牆），依廠商（<code>mechMakers.order</code>，未載殿後）或登場版本分組，與展廳名冊共用 <code>mechRoster.ts</code> 與同一個排序偏好；組頭放廠商徽章＋英文名（與中文同名時不重複）。
+      依廠商分組要等 mechLore（廠商 ID）與 mechMakers（名稱、徽章）<strong>落定</strong>才畫牆，否則先整面「廠商未載」再重排；讀失敗也算落定，照樣畫、全歸未載<br>
+    · <strong>卡片</strong>：官方 <code>Icon_mecha_wap####</code>（560×340 去背、左緣淡出）→ 卡片比例 28:17 不裁切；同機師卡的框語彙＋輕／中／重類型色條＋章節數；廠商徽章只在依版本排序時上卡（依廠商時組頭就是）<br>
+    · <strong>hero（過渡版）</strong>：同一套紅帶與標題（手寫「Mecha」），人物換成兩台官方主視覺 <code>_SN_Raw</code>。93 台量過機體外框（上緣 0–0.19、下緣 0.91–1.00、寬 0.37–0.95）才定站位：後排小、前排大、站在 hero 底邊；手機只留前排、推到半出畫（長槍機體置中會蓋住標題）。
+      陣容池＝站上有、又有主視覺的機甲（圖片索引裡有已匯入但未建檔的），種子進館抽一次，資料到了用同一顆種子抽，之後不換台。計畫書的招募插畫 hero 等 F-2 素材上站再換<br>
+    · <strong>LoreLayout 修正</strong>：捲動位置記錄的 <code>pathRef</code> 改在 layout effect 換。原本在 useEffect（paint 之後），新頁面比牆短時瀏覽器夾小 scrollTop 的那一下會被記到上一頁——經分館連結進機甲廳 → 展廳 → 上一頁，1500 回到 957
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 機甲廳（PLAN-042-B Phase D，2026-10-17）</strong><br>
+    · <strong>路由</strong>：<code>/lore/mechs/:id</code>（檔案）、<code>/lore/mechs/:id/:part</code>（章節），同一個元件 <code>MechLorePage</code>；與機師廳共用 LoreLayout、<code>useLoreHall</code>、LoreStage／LoreSwitcher／LoreViewer／LoreChapterPager。
+      header 館名依路徑換成「機甲故事館」，離館回 <code>/mechs/:id</code><br>
+    · <strong>舞台</strong>：官方主視覺 <code>Icon_mecha_wap####_SN_Raw</code>（<code>data-variant="sn"</code>：依寬度定尺寸、站在舞台下緣），英文簽名換成<strong>型號鋼印</strong>（<code>.lore-stamp</code>，閱讀時收起）。
+      線稿走機甲專用的 <code>#lore-sketch-sn</code>（slope 1.0）：同一個濾鏡在金屬裝甲上墨色是機師的 1.57 倍，93 台量過、調到與機師分布重合，沒有一台要關線稿<br>
+    · <strong>卷宗</strong>（<code>MechDossier</code>）：標題區（類型、型號、英文名、廠商徽章、品質、「機甲圖鑑」朱印）→ 技術檔案（介紹＋譯本署名）→ 逸聞目錄 → 構造（諸元＋四分件，點了放大）→ 系譜（mechLore.relations ＋反查別台連到這台，一律人工連）→ 搭乘者（官配機師，跨廳）。
+      卡池附件（招募插畫）等 F 段素材上站<br>
+    · <strong>名冊</strong>：依廠商（<code>mechMakers.order</code>，未載殿後）或登場版本分組，組頭放廠商徽章；與機師廳共用同一個排序偏好（'class' 在機甲廳＝廠商）<br>
+    · <strong>機師廳的連帶改動</strong>：卷宗最後多「座機」卡（官配機甲、型號），兩館朱印下的小字改「查看圖鑑 ↗」（手機照舊收起）<br>
+    · <strong>統計</strong>：<code>routeKeys.ts</code> 登記兩條路由與 <code>loreMechs</code>；章節沿用 <code>loreParts</code>（文件 ID 的 pilot_／mech_ 前綴分得出兩館）
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
+    <strong>✅ 兩館共用的元件層（PLAN-042-B Phase C，2026-10-17）</strong><br>
+    · <strong>轉接層</strong>：<code>components/lore/loreSubject.ts</code> 的 <code>LoreSubject</code>（種類、id、名稱、全名、英文名、序號、檔案標籤、登場版本、型號鋼印、頭像候選、名冊提示／title／色調、搜尋欄位、圖鑑連結）。
+      <code>LoreStage</code>／<code>LoreSkinPicker</code>／<code>LoreSwitcher</code> 只吃它；機師由 <code>pilotSubject()</code>、機甲由 <code>mechSubject()</code> 轉接。
+      頭像候選是函式（<code>heads()</code>）：<code>imageCandidates()</code> 讀 <code>import.meta.env</code>，延遲到元件呼叫才算，轉接層才能 <code>node --test</code><br>
+    · <strong>名冊</strong>：成員是 <code>LoreSubject</code>；組的色調與組頭圖示由頁面帶（機師依職業、機甲日後依廠商），介面文字的「機師」走 <code>noun</code><br>
+    · <strong>狀態機</strong>：<code>pages/lore/useLoreHall.ts</code>（開場、換人過場、快轉、外觀記憶與 <code>?skin=</code>、章節與草稿章導回、鑑賞模式、名冊開關、鍵盤、捲動視差與進度條、手機滑動、閒置預載）。
+      不認得 Pilot：立繪由頁面的 <code>stageOf(實體, 外觀鍵)</code>、章節由 <code>chaptersOf(id)</code> 給，網址前綴 <code>basePath</code>。<code>PilotLorePage</code> 只剩資料與畫面<br>
+    · <strong>零回歸的驗證</strong>：泛化前後各拍 19 個情境（開場、換人、名冊、外觀、鑑賞、章節、館首頁、減少動態、手機），比對正規化 DOM、截圖、<code>.lore-page</code> class 時間軸；
+      Worker API 錄成 HAR 回放（資料凍結）。結果 19／19 DOM 全同。工具在 <code>_local-notes/2026-10/2026-10-16_故事館泛化回歸/</code>（不進版控），之後改共用元件都該重跑
   </div>
   <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 舞台＋卷宗（PLAN-042-D，2026-10-13）</strong><br>

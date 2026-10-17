@@ -111,7 +111,7 @@
   <table class="spec-table">
     <tr><th>分頁（tab）</th><th>集合 / 路由</th><th>說明</th></tr>
     <tr><td><code>modules</code> 模組</td><td>modules（+mechs）</td><td>含各等級 levels 編輯、條件效果、enum 防呆</td></tr>
-    <tr><td><code>mechs</code> 機甲</td><td>mechs（+modules）</td><td>部件數值、模組 ID 下拉（未對應警示）</td></tr>
+    <tr><td><code>mechs</code> 機甲</td><td>mechs（+modules）</td><td>部件數值、模組 ID 下拉（未對應警示）；面板標題下有到故事館編輯台的捷徑（PLAN-042-B G-1）。「介紹文本 lore」是舊欄位，只剩機甲圖鑑與分享卡在讀，H-7 刪除</td></tr>
     <tr><td><code>pilots</code> 機師</td><td>pilots</td><td>🆕 新增機師（PLAN-025，<code>pilot_&lt;名&gt;</code> ID + manual 防覆寫）/ 六維 / AP / 天賦算力改寫（ndVariants）/ 神經驅動分區編輯器（分區選單 α·β·γ1·γ2、插槽晶片、各級門檻連結能力庫）。只編與數值、機制有關的欄位——人物檔案、簡介、英文名 PLAN-042-E 起移到故事館編輯台（面板標題下有捷徑連到 <code>/admin/lore?pilot=&lt;id&gt;</code>）</td></tr>
     <tr><td><code>weapons</code> 武器</td><td>weapons（+pilots、pilotSkills）</td><td>武器屬性、技能、改裝；官方圖示編號 <code>gameId</code>（PLAN-056）、固定武裝勾選與宿主區塊（2026-10-10）、<strong>製作・進階關係</strong>（前置武器；背後武器另可設特種背包製作＋融合背包，2026-10-11）。武器技能分頁可直接<strong>新增武器技能</strong>（寫進技能庫並掛上）、✎ 編輯已掛技能（寫入技能庫，共用時標出其他武器）、把殘留內嵌技能<strong>轉入技能庫</strong>；2026-10-11 起不再能建立內嵌（舊格式）技能</td></tr>
     <tr><td><code>weaponSkills</code> 武器技能</td><td>pilotSkills（+weapons）</td><td>🆕 2026-10-11：技能庫鎖定 <code>domain:'weapon'</code> 的視圖（與「技能管理」同一個集合、同一個編輯面板），新建自動標武器領域；每列顯示掛在哪幾把武器，沒有武器掛載標「⚠ 無武器掛載」</td></tr>
@@ -127,7 +127,7 @@
     <tr><td><code>grayops</code> 灰燼行動</td><td>grayOpsRoster（+mechs）</td><td>灰燼行動名簿（公司 → 機甲列表）；🆕 每筆可存 <code>icon</code> / <code>mechId</code> 快照，「同步 Icon / 連結」由 mechs 依名稱補齊，首頁名單即以縮圖顯示並可點開引用浮窗</td></tr>
     <tr><td>版本管理</td><td>/admin/versions · /admin/versions/:versionId</td><td>🆕 PatchVersion 時間線編輯（AdminRoute gate，lazy 載入）</td></tr>
     <tr><td>變更歷史</td><td>/admin/history</td><td>資料異動稽核 log（PLAN-030）；append-only、含刪除快照可還原。2026-09 補齊類型篩選：背包、背包技能、機師形態、機師逸聞</td></tr>
-    <tr><td>故事館編輯台</td><td>/admin/lore（<code>?pilot=&lt;id&gt;</code> 直接開該位）</td><td>🆕 <code>pilotLore</code> 編輯（PLAN-042-A E-1；PLAN-042-E 改版）：一位機師的故事資料全部在這裡編。列表列出全部機師＋從資料推導的進度標籤與頁首統計，可依「缺簡介／缺檔案／有草稿章／外觀未命名／缺陣營徽章」篩選；
+    <tr><td>故事館編輯台</td><td>/admin/lore（<code>?pilot=&lt;id&gt;</code> 直接開該位；<code>?view=mechs&amp;mech=&lt;id&gt;</code> 開機甲、<code>?view=makers</code> 機甲廠商，PLAN-042-B G）</td><td>🆕 <code>pilotLore</code> 編輯（PLAN-042-A E-1；PLAN-042-E 改版）：一位機師的故事資料全部在這裡編。列表列出全部機師＋從資料推導的進度標籤與頁首統計，可依「缺簡介／缺檔案／有草稿章／外觀未命名／缺陣營徽章」篩選；
       編輯面板四個分頁——扉頁（英文名、簡介、署名、陣營徽章）／人物檔案（固定三欄＋有序自訂欄位）／逸聞章節（OCR 貼上區、草稿勾選、單章預覽）／外觀（名稱、隱藏、排序），右欄是渲染前台元件的即時預覽（窄螢幕改為分頁）。
       <strong>ADMIN 即可用</strong>——它只寫 <code>pilotLore</code>；寫入走 <code>saveWithHistory</code>（整份覆寫），章節錨點 <code>by: 'key'</code>；沒有刪除路徑</td></tr>
     <tr><td>系統日誌</td><td>/admin/system-log</td><td>登出／寫入被拒的診斷記錄（PLAN-045）；<strong>僅 OWNER</strong>（含裝置指紋）</td></tr>
