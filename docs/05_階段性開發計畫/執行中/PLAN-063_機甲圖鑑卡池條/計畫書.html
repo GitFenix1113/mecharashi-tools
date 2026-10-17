@@ -178,7 +178,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value orange">規劃中</div>
+      <div class="meta-value orange">已上線（10-18），剩站長資料作業</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
@@ -285,6 +285,8 @@
     <strong>決策 7：卡池共用元件搬到 <code>components/gacha/</code></strong><br>
     <code>components/lore/gacha/</code>（引擎、模擬、型別、登錄表、GachaFxLive）改由圖鑑與故事館共用，搬出 lore 目錄，
     圖鑑才不必 import 故事館的資料夾。橫條（GachaBanner）與 KeyArtViewer 也放這裡。純搬移＋改 import，測試跟著走。
+    <br><span style="color:var(--text-dim);">2026-10-18 動工時改為<b>延後</b>：引擎資料夾一天內有 10 筆 commit（機甲 J-1、機師 Phase J 正在密集改），現在搬會一直衝突，
+    而且本計畫先在分支試做、可能整個退回。新元件照樣放 <code>components/gacha/</code>，直接 import 現有引擎；等引擎穩定、確定保留再搬。</span>
   </div>
 
   <div class="decision-block">
@@ -304,8 +306,31 @@
     陸版池資料累積起來後，「陸版已復刻 → 台版約晚 N 週」可以另案評估。
   </div>
 
+  <div class="decision-block">
+    <strong>決策 12：卡池資料以站內活動時間線為準（站長 2026-10-18）</strong><br>
+    「卡池資料參考站內的活動時間線即可，有必要的話也可以優化那個功能。」據此：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>狀態只讀 <code>patchVersions</code> 的台服活動，兩種卡池：機甲池（<code>mechs</code>）＞ 跨域海運（自選名單 <code>selection</code>，退回 <code>half.mechSelection</code>，與時間線一致）。同時開放時依此順序取一個。
+        <br><span style="color:var(--text-dim);">原本也算戰令（<code>battlePass</code> 的獎勵機體）；站長 10-18 更正「他是當前的戰令（環島密令），這不算卡池」，已移除——戰令是取得途徑、不是卡池，橫條只講卡池。同日站長確認<b>自選池（跨域海運／角雕特遣）繼續算卡池</b>。</span></li>
+      <li>大標題<b>只用機甲池的池名</b>：插畫屬於那期機甲池；海運、戰令寫在狀態列（「可自選」「戰令中」＋副行）。沒有機甲池紀錄就叫「招募插畫」。</li>
+      <li>「時間線 ↗」深連結到那一期的版本（<code>/versions/timeline/:version</code>）。</li>
+      <li>盤點後發現時間線的機甲池漏得多（台版公告同期 16 筆沒進來），主因之一是活動編輯器的 UP 機甲欄「有值才顯示」——補成按型別開格＋名稱檢查（進度表 D-2）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策 13：機師圖鑑比照辦理，同一個分支（站長 2026-10-18）</strong><br>
+    「機師也比照辦理，做在同一個 PLAN-063 分支上（之後要退回就一起退）。」機師 62 位有招募插畫（同為 2600×1080）、12 位有卡池動態。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>狀態模組兩種實體共用（<code>gachaBannerStatus(kind, …)</code>）：機師看角色池（<code>pilots</code>）＞角雕特遣（<code>selection</code>，退回 <code>half.pilotSelection</code>），新機師看 <code>half.pilots</code>；戰令不算（決策 12）。</li>
+      <li>焦點 <code>Pilot.cardFocus</code>（與機甲同一套），後台機師「基本」分頁調。圖鑑不讀 pilotLore（PLAN-042-E 決策二）。</li>
+      <li>位置：機師頁的「頁首」是 hero（立繪＋資料＋雷達圖），橫條放在 hero 正下方；手機版 hero 直排，排在 AP 後、雷達圖前，不然要捲到首屏外。</li>
+    </ul>
+  </div>
+
   <div class="warning-block">
-    <strong>決策 11：歷史回填走審核，不直接寫 patchVersions</strong><br>
+    <strong>決策 11：歷史回填走審核，不直接寫 patchVersions</strong>
+    <span style="color:var(--text-dim);">（2026-10-18 由決策 12 取代：不另做公告封存回填，改成補登時間線；原文保留）</span><br>
     封存公告解析成待審活動送後台 <code>/admin/announcements</code>，由站長逐筆放行；不替站長清佇列。
     ⚠ 2024–2025 年的活動要掛在 v2.x 的半版本上，而那些半版本目前是<b>空白佔位</b>（沒有台版日期）。
     回填前要先調查怎麼補半版本日期（Phase D 第一步），調查結果由站長拍板後才動資料。
@@ -324,7 +349,9 @@
       <li>狀態推導純函式＋node 測試</li>
       <li>GachaBanner（收合橫條）、KeyArtViewer（展開鑑賞）、機甲圖鑑詳情頁接線</li>
       <li><code>Mech.cardFocus</code> 型別、後台滑桿與預覽、資料模型文件同步</li>
-      <li>台版歷史卡池回填：調查 → 補半版本日期 → 解析送審（Phase D）</li>
+      <li>時間線的卡池資料：盤點、活動編輯器按型別開格＋名稱檢查、補登缺漏（Phase D，2026-10-18 依決策 12 改寫）</li>
+      <li>跨域海運自選名單、戰令獎勵機甲也算狀態來源（決策 12）</li>
+      <li>機師圖鑑的卡池橫條（決策 13）</li>
     </ul>
   </div>
 
@@ -332,8 +359,8 @@
     <strong>不在範圍內：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
       <li>復刻預測、陸版卡池檔期（決策 10）</li>
-      <li>機師圖鑑的角色池橫條（做完這台可比照，另案）</li>
-      <li>跨域海運自選名單（<code>crossShipping.selection</code>）當作狀態來源——也是「怎麼拿到這台」，但語意不同，另案</li>
+      <li>公告封存（2024-03～2026-04）的歷史回填：會落在 v2.x 空白版本，要先補半版本日期（決策 12 後不做）</li>
+      <li>解析器辨識機甲池（PLAN-048 範圍，進度表 D-4 建議另案）</li>
       <li>故事館卷宗的卡池卡（不動）</li>
       <li>窄版縮圖衍生檔：先在 B-4 量 LCP，確定變慢才另做</li>
     </ul>

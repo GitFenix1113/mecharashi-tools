@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-num" style="color:var(--accent-green)">15</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,11 +175,11 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">15</div>
+      <div class="summary-num" style="color:var(--text-dim)">4</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">13</div>
+      <div class="summary-num" style="color:var(--text-primary)">17</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,16 +187,16 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">0 / 15</span>
+      <span style="color:var(--accent-orange);">15 / 19</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 0%"></div>
+      <div class="progress-bar-fill" style="width: 79%"></div>
     </div>
   </div>
 
   <div class="impact-note">
     <strong>目標效果：</strong>
-    查機甲的人在圖鑑第一眼就知道「現在抽不抽得到、抽到哪天、上次什麼時候」，並能點開看招募插畫與卡池動態。15 項任務中 2 項是站長的資料作業（C-2 調焦點、D-4 審核）。
+    查機甲的人在圖鑑第一眼就知道「現在抽不抽得到、抽到哪天、上次什麼時候」，並能點開看招募插畫與卡池動態。（待開始 4 項含延後的 A-1）<br>2026-10-18 在分支 <code>claude/plan-063-gacha-banner</code> 完成後<b>合併回 main 並推送</b>（15／19）；剩站長的 C-2（調焦點）、D-3（放行待審的 15 筆＋補 1 筆）、E-2（正式站抽查），以及延後的 A-1；D-4 由另一個 session 在自己的分支完成（未合併）。
   </div>
 </section>
 
@@ -204,24 +204,24 @@
 <section class="section">
   <div class="section-label orange">Phase A</div>
   <div class="section-title">共用基礎</div>
-  <div class="section-desc">先把會被圖鑑與故事館共用的東西整理好：元件搬家、狀態推導、焦點欄位。</div>
+  <div class="section-desc">狀態推導與焦點欄位已完成；元件搬家延後。</div>
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">A-1 &nbsp; 卡池共用元件搬家</div>
-      <div class="task-group-meta">src/components/gacha/</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-title">A-1 &nbsp; 卡池共用元件搬家（延後）</div>
+      <div class="task-group-meta">src/components/lore/gacha/ → src/components/gacha/</div>
+      <span class="status blocked">延後</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">components/lore/gacha/ → components/gacha/</div>
+        <div class="task-name">先不搬</div>
         <div class="task-desc">
-          引擎、模擬、型別、登錄表、GachaFxLive 與兩支測試一起搬（git mv）；MechLorePage、MechDossier 等 import 改路徑。<code>import.meta.glob</code> 的相對路徑要跟著改（登錄表指向 <code>src/data/gachaFx/</code>）。npm test、npm run build 全綠，故事館行為不變。
+          2026-10-18 動工時，<code>components/lore/gacha/</code> 一天內有 10 筆 commit（機甲 J-1、機師 Phase J 正在密集改引擎），現在搬會跟它們一直衝突，而且本分支是試做、可能整個退回。新元件改放 <code>components/gacha/</code>，直接 import 現有的 GachaFxLive／gachaFxRegistry／gachaFxPref。等引擎穩定、本計畫確定保留後再搬（純搬移＋改 import）。
         </div>
-        <div class="task-file">src/components/gacha/*、src/pages/lore/MechLorePage.tsx</div>
+        <div class="task-file">src/components/gacha/*</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status blocked">延後</span>
     </div>
   </div>
 
@@ -229,29 +229,29 @@
     <div class="task-group-header">
       <div class="task-group-title">A-2 &nbsp; 卡池狀態推導（純函式）</div>
       <div class="task-group-meta">src/components/gacha/mechBannerStatus.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">mechBannerStatus(mechName, versions, now)</div>
+        <div class="task-name">mechBannerStatus／mechBannerText</div>
         <div class="task-desc">
-          回傳決策 4 的五種狀態之一，附池名、剩幾天／結束日、是否推估、是否復刻（bannerIsRerun）、歷次開放次數與最近一次日期。只看台服、只取通過顯示閘門的活動。與 <code>gachaTitleSuggestions()</code> 共用「機甲 → 卡池活動」的比對（抽成一支，兩邊都改用它）。
+          資料取自時間線（決策 12）：台服的機甲池（mechs）、跨域海運（selection，退回 half.mechSelection），加上半版本新增名單的台版預計登場；戰令不算卡池（站長 10-18 更正，已移除）。優先序：開放中（機甲池＞海運）＞即將開放＞新機甲＞已結束＞無紀錄；標題只用機甲池的池名；附時間線深連結的版本。比對與 <code>lore/mechGachaTitle.ts</code> 相近但沒共用：那支檔案同時有機師卡池在改，先各自一份。
         </div>
-        <div class="task-file">src/components/gacha/mechBannerStatus.ts、src/components/lore/mechGachaTitle.ts</div>
+        <div class="task-file">src/components/gacha/mechBannerStatus.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">node 測試</div>
+        <div class="task-name">node 測試 13 項</div>
         <div class="task-desc">
-          五種狀態各一、優先序（同時有開放中與新機甲推估）、推估結束日、hidden／無 weeks 的活動不算、同名多次開放的次數、名稱前後空白；<code>now</code> 注入。
+          五種狀態、推估結束日、復刻、優先序、顯示閘門（hidden／無 weeks／別台／機師池／陸服）、海運自選名單與舊欄位退回、戰令不算卡池、已結束依種類計數、標題維持池名、名稱空白。
         </div>
         <div class="task-file">src/components/gacha/mechBannerStatus.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -259,18 +259,18 @@
     <div class="task-group-header">
       <div class="task-group-title">A-3 &nbsp; Mech.cardFocus 型別與文件</div>
       <div class="task-group-meta">src/types/mech.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">新增選填欄位 cardFocus?: number（0–100）</div>
+        <div class="task-name">新增選填欄位 cardFocus?: number（0–100，未填＝30）</div>
         <div class="task-desc">
-          收合橫條的垂直 object-position；未填＝30。註解寫明為何放在 mechs 而不是 mechLore（決策 3、5）。依 CLAUDE.md 規則 2 同步資料模型文件。
+          型別註解寫明為何放 mechs 不放 mechLore；資料模型文件 mechs.html 同步。
         </div>
-        <div class="task-file">src/types/mech.ts、docs/02_技術文件/02_資料模型/mechs.html</div>
+        <div class="task-file">src/types/mech.ts、docs/02_技術文件/02_資料模型/mechs.html、src/components/gacha/cardFocus.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -279,35 +279,35 @@
 <section class="section">
   <div class="section-label orange">Phase B</div>
   <div class="section-title">圖鑑卡池橫條（前台）</div>
-  <div class="section-desc">橫條、展開鑑賞、接上機甲圖鑑詳情頁，並在桌機與手機驗收。</div>
+  <div class="section-desc">橫條、展開鑑賞、接上機甲圖鑑詳情頁；桌機與手機驗收完成。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-1 &nbsp; GachaBanner 收合橫條</div>
       <div class="task-group-meta">src/components/gacha/GachaBanner.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">橫條本體</div>
         <div class="task-desc">
-          插畫 <code>object-fit: cover</code>＋cardFocus、左側暗化漸層、「機甲池 · KEY ART」眉標、池名、狀態標籤（推估用虛線框）、有動態時右上脈動點、右下「點一下看（動態）全景」。桌機高 120px、手機依寬度自適應；hover 微放大；整條是一個 button（aria-label 帶機甲名）。
+          插畫 cover＋cardFocus、暗化漸層、「卡池 · KEY ART」、池名、狀態標籤（推估虛線、復刻標記）、右上「時間線 ↗」（與 button 同層，連結不能放進 button）、右下「動態全景／看全景」。桌機 120px、手機 clamp(100px, 28vw, 120px)。
         </div>
         <div class="task-file">src/components/gacha/GachaBanner.tsx、src/index.css</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">沒插畫／沒紀錄的退化</div>
+        <div class="task-name">退化</div>
         <div class="task-desc">
-          沒插畫但有紀錄：只一行文字狀態；兩者皆無：不渲染（決策 8）。
+          沒插畫但有紀錄：一行文字＋時間線連結；兩者皆無：不渲染（實測強電場）。
         </div>
         <div class="task-file">src/components/gacha/GachaBanner.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -315,29 +315,29 @@
     <div class="task-group-header">
       <div class="task-group-title">B-2 &nbsp; KeyArtViewer 展開鑑賞</div>
       <div class="task-group-meta">src/components/gacha/KeyArtViewer.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">裁切位置展開／收回</div>
         <div class="task-desc">
-          transform＋clip-path 從橫條的裁切範圍長成整張、收回反向；飛行途中關閉要先取消開場動畫再量。reduced-motion 直接開關。
+          transform＋clip-path 從橫條的 cover 裁切長成全景、收回反向；飛行途中關閉先取消開場動畫；reduced-motion 直接開關。portal 到 body（圖鑑外框有 backdrop-blur，會讓 fixed 失效）。
         </div>
         <div class="task-file">src/components/gacha/KeyArtViewer.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">動態層與操作</div>
         <div class="task-desc">
-          落地後掛 GachaFxLive、關閉一開始就卸載；「動態／靜態」切換；點擊放大平移；Esc、焦點移交與歸還、捲動鎖；手機直向填滿高度＋左右拖曳。
+          落地後掛 GachaFxLive、關閉即卸載；「動態／靜態」與故事館共用偏好；桌機點擊放大 2.1 倍＋滑鼠平移；手機直向填滿高度＋左右拖曳、點一下切看整張；Esc 掛 window（點過圖後焦點會落到 body）、焦點歸還橫條、捲動鎖、Tab 不跑出對話框。
         </div>
         <div class="task-file">src/components/gacha/KeyArtViewer.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -345,48 +345,48 @@
     <div class="task-group-header">
       <div class="task-group-title">B-3 &nbsp; 機甲圖鑑詳情頁接線</div>
       <div class="task-group-meta">src/pages/mechs/MechDetailPage.tsx</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">頁首下方插入橫條</div>
         <div class="task-desc">
-          在頁首卡片與主體分欄之間插入；用 <code>usePatchVersions()</code> 取活動。資料未到時先畫插畫、狀態列後補，避免版面跳動。不讀 mechLore（決策 3）；更新 MechDetailPage 開頭的版面註解（「一屏看完」的取捨）。
+          <code>usePatchVersions()</code>（每 session 一次 Worker 請求，與首頁共用快取）；資料未到先畫插畫、狀態列顯示「讀取檔期…」。不讀 mechLore。
         </div>
         <div class="task-file">src/pages/mechs/MechDetailPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">B-4 &nbsp; 驗收</div>
-      <div class="task-group-meta">本機 vite＋正式 Worker 資料</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">worktree 的 vite（port 4173，正式 Worker 的 CORS 白名單）</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">桌機／手機實拍與逐台檢查</div>
+        <div class="task-name">桌機／手機實拍</div>
         <div class="task-desc">
-          23 台有動態的逐台開過（展開、動態、收回）；無插畫有紀錄、無插畫無紀錄各一；reduced-motion；手機直向。用 Playwright GPU 模式錄（<code>channel: 'chromium'</code>＋<code>--use-angle=d3d11</code>，SwiftShader 只有 5fps）。
+          Playwright GPU 模式：開放中（莫比烏斯X）、開放中＋推估＋復刻（君權）、新機甲 4 天後（奈芙蒂斯）、新機甲遠期（藍色魔鳥）、芬里厄（只有戰令紀錄→「尚無卡池紀錄」）、機甲池＋海運（赫克托爾）、無插畫（強電場）；展開→動態就緒→放大／拖曳→Esc 收回→焦點歸還、捲動鎖解除；console 0 錯誤。
         </div>
-        <div class="task-file">_local-notes/</div>
+        <div class="task-file">_local-notes/2026-10/2026-10-18_PLAN-063_驗收/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">LCP 比對</div>
+        <div class="task-name">LCP 比對（production build）</div>
         <div class="task-desc">
-          加橫條前後量機甲詳情頁 LCP；明顯變慢才另做窄版衍生檔（不在範圍內那一項）。
+          桌機 508→584 ms；<b>手機 4G 976→1876 ms</b>（2600 寬插畫成了 LCP，213 KB），仍在 2.5 s 內。窄版衍生檔列為後續另案（會動到圖片匯入流程）。
         </div>
-        <div class="task-file">—</div>
+        <div class="task-file">_local-notes/2026-10/2026-10-18_PLAN-063_時間線卡池資料盤點.md</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -400,19 +400,19 @@
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 機甲後台：cardFocus 滑桿＋即時預覽</div>
-      <div class="task-group-meta">src/pages/user/admin/MechAdmin.tsx</div>
-      <span class="status pending">待開始</span>
+      <div class="task-group-meta">src/components/admin/CardFocusField.tsx</div>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">滑桿與預覽</div>
         <div class="task-desc">
-          只有有招募插畫的機甲才出現；預覽直接用 GachaBanner（與前台同一個元件、同高度）；存檔走既有流程並 bump mechs 版本。
+          「外觀」分頁底部；只有有招募插畫的機甲才出現滑桿。預覽直接用 GachaBanner，鎖在前台的實際比例（桌機 1408×120、手機 358×110）才會裁得一樣；「回預設」把欄位清空。存檔走既有流程（bump mechs 版本）。
         </div>
-        <div class="task-file">src/pages/user/admin/MechAdmin.tsx</div>
+        <div class="task-file">src/components/admin/CardFocusField.tsx、src/pages/user/admin/MechAdmin.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
@@ -424,9 +424,9 @@
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">61 台有插畫的機甲</div>
+        <div class="task-name">機甲 61 台＋機師 62 位</div>
         <div class="task-desc">
-          預設 30% 先上線；只調看起來切到腳或天空的。
+          預設 30% 先上線；只調看起來切到腳或天空的（機甲在「外觀」分頁、機師在「基本」分頁）。
         </div>
         <div class="task-file">—</div>
       </div>
@@ -439,82 +439,176 @@
 <!-- Phase D -->
 <section class="section">
   <div class="section-label orange">Phase D</div>
-  <div class="section-title">台版歷史卡池回填</div>
-  <div class="section-desc">讓「已結束・共 N 次」有內容。每一步都先產報告、站長拍板才寫資料。</div>
+  <div class="section-title">時間線的卡池資料</div>
+  <div class="section-desc">站長 10-18：卡池資料以站內活動時間線為準、必要時優化時間線。原「公告封存歷史回填」作廢，改成盤點時間線＋補登。</div>
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">D-1 &nbsp; 回填調查</div>
+      <div class="task-group-title">D-1 &nbsp; 時間線盤點</div>
       <div class="task-group-meta">_local-notes/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">封存公告 → 卡池活動的抽取率與落點</div>
+        <div class="task-name">時間線 vs 台版公告</div>
         <div class="task-desc">
-          從 2024-03～2026-08 封存與公告草稿抽出機甲池（池名、機甲、開始日、結束日或週數）；列出抽不到結束日的比例、要掛到哪些半版本、那些半版本缺不缺台版日期、名稱用字差異清單。產出 _local-notes 報告與建議做法。
+          時間線台服從 2026/04/30 起：機甲池 3 筆、海運 1 筆（自選 11 台）、戰令 3 筆有標機甲。同期公告裡有 <b>16 筆機甲池沒進時間線</b>（清單＋開始時間＋公告連結在報告裡）；更早的 74 筆落在 v2.x 空白版本，不建議現在補。
         </div>
-        <div class="task-file">_local-notes/2026-08/tw-announcements-archive</div>
+        <div class="task-file">_local-notes/2026-10/2026-10-18_PLAN-063_時間線卡池資料盤點.md</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
   <div class="task-group">
     <div class="task-group-header">
-      <div class="task-group-title">D-2 &nbsp; 補歷史半版本的台版日期</div>
+      <div class="task-group-title">D-2 &nbsp; 時間線活動編輯器：按型別開格＋名稱檢查</div>
+      <div class="task-group-meta">src/components/admin/AdminTimedActivityEditor.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">卡池與戰令空著也開格</div>
+        <div class="task-desc">
+          原本「有值才顯示」：卡池漏填 mechs 就沒有格子可補（註解早寫了「日後按型別開格」）。現在角色池／機甲池／戰令一律開格，特遣／海運仍用 selection；UP 名單與自選名單裡資料庫找不到的名字黃字提醒（不擋存檔）。
+        </div>
+        <div class="task-file">src/components/admin/AdminTimedActivityEditor.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 補登缺漏的 16 筆</div>
       <div class="task-group-meta">patchVersions</div>
       <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">依 D-1 結論補 v2.x 半版本 twDate</div>
+        <div class="task-name">到 /admin/announcements 放行 15 筆待確認</div>
         <div class="task-desc">
-          先備份（backup-firestore.mjs）、dry-run、站長確認後寫入並 bump；不刪任何空白佔位（博物館原則）。若 D-1 判定不需要就略過。
-        </div>
-        <div class="task-file">scripts/temp_scripts/</div>
-      </div>
-      <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
-    </div>
-  </div>
-
-  <div class="task-group">
-    <div class="task-group-header">
-      <div class="task-group-title">D-3 &nbsp; 解析封存送審</div>
-      <div class="task-group-meta">announcementDrafts／pendingActivities</div>
-      <span class="status pending">待開始</span>
-    </div>
-    <div class="task-row">
-      <div>
-        <div class="task-name">歷史卡池進待審佇列</div>
-        <div class="task-desc">
-          寫入端做名稱正規化（決策 9）；沒寫結束日的照 PLAN-048 慣例推估並標 predicted；不自動合併。先 dry-run 給站長看筆數與樣本。
-        </div>
-        <div class="task-file">scripts/</div>
-      </div>
-      <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
-    </div>
-  </div>
-
-  <div class="task-group">
-    <div class="task-group-header">
-      <div class="task-group-title">D-4 &nbsp; 後台審核</div>
-      <div class="task-group-meta">/admin/announcements</div>
-      <span class="status pending">待開始</span>
-    </div>
-    <div class="task-row">
-      <div>
-        <div class="task-name">逐筆放行</div>
-        <div class="task-desc">
-          站長在後台審核合併進 patchVersions。
+          更正：缺的 16 筆裡 15 筆<b>早就在待審佇列</b>（狀態待確認、UP 機甲全對、只缺週數），是我先前查錯欄位（頂層 type，應查 extracted.type）。放行時補上週數即可；剩下 1737（彌造者 07/01，原文抓不到活動時間）用後台活動編輯器補。另：機師正名是「梅莉莎」（站長 10-18 以遊戲截圖確認），錯的是資料庫——10-18 已依 data-patch 流程修正正式庫 7 份文件 15 欄並 bump（文件 ID pilot_013_梅利莎 刻意不動），角雕特遣名單因此對得上她。
         </div>
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">站長</div>
       <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 解析器（另案，已做）</div>
+      <div class="task-group-meta">scripts/scrape-tw-announcements.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">PARSER_VERSION 10</div>
+        <div class="task-desc">
+          前提更正：解析器本來就認得機甲池。另開的 session 在分支 claude/festive-shtern-7a26d5（commit 37ba8170，未推送）補了機甲名用字對照與自選池防呆，A/B 只動 11 篇、npm test 全過。合併與否由站長決定。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label orange">Phase F</div>
+  <div class="section-title">機師圖鑑比照辦理</div>
+  <div class="section-desc">站長 10-18：「機師也比照辦理，做在同一個 PLAN-063 分支上（之後要退回就一起退）」。機師 62 位有招募插畫（同為 2600×1080）、12 位有卡池動態。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 狀態模組改成兩種實體共用</div>
+      <div class="task-group-meta">src/components/gacha/gachaBannerStatus.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">mechBannerStatus → gachaBannerStatus（kind）</div>
+        <div class="task-desc">
+          機師看角色池 specificPilotBanner（pilots）＞角雕特遣 pilotMission（selection，退回 half.pilotSelection），新機師看 half.pilots；稱呼換成角色池／角雕特遣／新機師；戰令不算卡池。測試 17 項（新增 4 項機師）。
+        </div>
+        <div class="task-file">src/components/gacha/gachaBannerStatus.ts、.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 橫條與後台欄位改吃 kind</div>
+      <div class="task-group-meta">src/components/gacha/GachaBanner.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">GachaBanner／CardFocusField</div>
+        <div class="task-desc">
+          插畫 pilotCardArt、動態鍵 pilots/&lt;gameId&gt;；後台焦點滑桿放在機師編輯的「基本」分頁（官方原圖欄位下方）。
+        </div>
+        <div class="task-file">src/components/gacha/GachaBanner.tsx、src/components/admin/CardFocusField.tsx、src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; Pilot.cardFocus 型別與文件</div>
+      <div class="task-group-meta">src/types/pilot.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增選填欄位 cardFocus</div>
+        <div class="task-desc">
+          與 Mech.cardFocus 同一套；資料模型文件 pilots.html 同步。
+        </div>
+        <div class="task-file">src/types/pilot.ts、docs/02_技術文件/02_資料模型/pilots.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-4 &nbsp; 機師圖鑑接線與驗收</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">放在 hero 裡</div>
+        <div class="task-desc">
+          桌機是跨三欄的第二列（hero 正下方、分頁上方）；手機 hero 是直排，用 order 讓橫條排在 AP 後、雷達圖前——放在 hero 外面的話手機要捲到約 1160px 才看得到（實測改後 808px）。不讀 pilotLore。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實拍</div>
+        <div class="task-desc">
+          奧德莉（開放中＋推估＋復刻）、淬鋒·凱登（6 週池）、佐伊（角色池＋角雕特遣）、維娜（角雕特遣、有動態）、安（新機師 4 天後、有動態）、真嗣（無插畫→不出現）；桌機／手機、展開→動態→Esc→焦點歸還，console 0 錯誤。
+        </div>
+        <div class="task-file">_local-notes/2026-10/2026-10-18_PLAN-063_驗收/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -523,24 +617,35 @@
 <section class="section">
   <div class="section-label orange">Phase E</div>
   <div class="section-title">上線</div>
-  <div class="section-desc">履歷、推送與正式站複驗。沒有新路由，不必動 Cloudflare 白名單與 sitemap。</div>
+  <div class="section-desc">10-18 已合併回 main 並推送。沒有新路由，不必動 Cloudflare 白名單與 sitemap。</div>
 
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 履歷與推送</div>
       <div class="task-group-meta">src/data/siteChangelog/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">網站更新履歷＋npm run build＋push</div>
+        <div class="task-name">網站更新履歷</div>
         <div class="task-desc">
-          「機甲圖鑑新增卡池橫條：招募插畫、開放狀態，點開看動態全景」。
+          兩筆（卡池橫條、時間線編輯器）已寫在分支上。
         </div>
         <div class="task-file">src/data/siteChangelog/2026-10.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">合併與推送</div>
+        <div class="task-desc">
+          10-18 站長看過 dev 環境後決定合併：main 快轉到分支（8a98e617）、pre-push 跑 npm run build 把關後推送。
+        </div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
     </div>
   </div>
 
