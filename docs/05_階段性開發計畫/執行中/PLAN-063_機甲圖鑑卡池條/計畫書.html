@@ -317,6 +317,16 @@
     </ul>
   </div>
 
+  <div class="decision-block">
+    <strong>決策 13：機師圖鑑比照辦理，同一個分支（站長 2026-10-18）</strong><br>
+    「機師也比照辦理，做在同一個 PLAN-063 分支上（之後要退回就一起退）。」機師 62 位有招募插畫（同為 2600×1080）、12 位有卡池動態。
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>狀態模組兩種實體共用（<code>gachaBannerStatus(kind, …)</code>）：機師看角色池（<code>pilots</code>）＞角雕特遣（<code>selection</code>，退回 <code>half.pilotSelection</code>）＞戰令（<code>pilots</code>），新機師看 <code>half.pilots</code>。</li>
+      <li>焦點 <code>Pilot.cardFocus</code>（與機甲同一套），後台機師「基本」分頁調。圖鑑不讀 pilotLore（PLAN-042-E 決策二）。</li>
+      <li>位置：機師頁的「頁首」是 hero（立繪＋資料＋雷達圖），橫條放在 hero 正下方；手機版 hero 直排，排在 AP 後、雷達圖前，不然要捲到首屏外。</li>
+    </ul>
+  </div>
+
   <div class="warning-block">
     <strong>決策 11：歷史回填走審核，不直接寫 patchVersions</strong>
     <span style="color:var(--text-dim);">（2026-10-18 由決策 12 取代：不另做公告封存回填，改成補登時間線；原文保留）</span><br>
@@ -340,6 +350,7 @@
       <li><code>Mech.cardFocus</code> 型別、後台滑桿與預覽、資料模型文件同步</li>
       <li>時間線的卡池資料：盤點、活動編輯器按型別開格＋名稱檢查、補登缺漏（Phase D，2026-10-18 依決策 12 改寫）</li>
       <li>跨域海運自選名單、戰令獎勵機甲也算狀態來源（決策 12）</li>
+      <li>機師圖鑑的卡池橫條（決策 13）</li>
     </ul>
   </div>
 
@@ -347,7 +358,6 @@
     <strong>不在範圍內：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
       <li>復刻預測、陸版卡池檔期（決策 10）</li>
-      <li>機師圖鑑的角色池橫條（做完這台可比照，另案）</li>
       <li>公告封存（2024-03～2026-04）的歷史回填：會落在 v2.x 空白版本，要先補半版本日期（決策 12 後不做）</li>
       <li>解析器辨識機甲池（PLAN-048 範圍，進度表 D-4 建議另案）</li>
       <li>故事館卷宗的卡池卡（不動）</li>

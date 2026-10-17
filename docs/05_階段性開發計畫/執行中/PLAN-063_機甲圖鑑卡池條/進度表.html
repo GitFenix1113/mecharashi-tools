@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">10</div>
+      <div class="summary-num" style="color:var(--accent-green)">14</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">13</div>
+      <div class="summary-num" style="color:var(--text-primary)">17</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,16 +187,16 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-orange);">10 / 15</span>
+      <span style="color:var(--accent-orange);">14 / 19</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 67%"></div>
+      <div class="progress-bar-fill" style="width: 74%"></div>
     </div>
   </div>
 
   <div class="impact-note">
     <strong>目標效果：</strong>
-    查機甲的人在圖鑑第一眼就知道「現在抽不抽得到、抽到哪天、上次什麼時候」，並能點開看招募插畫與卡池動態。（待開始 4 項含延後的 A-1）<br>2026-10-18 在分支 <code>claude/plan-063-gacha-banner</code> 完成 10／15（commit f583ea52、32576cbf，未合併、未推送）；剩站長的 C-2（調焦點）、D-3（放行待審的 15 筆＋補 1 筆）、E-1（試用後合併或退回），以及延後的 A-1；D-4 由另一個 session 在自己的分支完成。
+    查機甲的人在圖鑑第一眼就知道「現在抽不抽得到、抽到哪天、上次什麼時候」，並能點開看招募插畫與卡池動態。（待開始 4 項含延後的 A-1）<br>2026-10-18 在分支 <code>claude/plan-063-gacha-banner</code> 完成 14／19（機甲 f583ea52、時間線編輯器 32576cbf、機師 2ce442a3；未合併、未推送）；剩站長的 C-2（調焦點）、D-3（放行待審的 15 筆＋補 1 筆）、E-1（試用後合併或退回），以及延後的 A-1；D-4 由另一個 session 在自己的分支完成。
   </div>
 </section>
 
@@ -424,9 +424,9 @@
     </div>
     <div class="task-row">
       <div>
-        <div class="task-name">61 台有插畫的機甲</div>
+        <div class="task-name">機甲 61 台＋機師 62 位</div>
         <div class="task-desc">
-          預設 30% 先上線；只調看起來切到腳或天空的。
+          預設 30% 先上線；只調看起來切到腳或天空的（機甲在「外觀」分頁、機師在「基本」分頁）。
         </div>
         <div class="task-file">—</div>
       </div>
@@ -490,7 +490,7 @@
       <div>
         <div class="task-name">到 /admin/announcements 放行 15 筆待確認</div>
         <div class="task-desc">
-          更正：缺的 16 筆裡 15 筆<b>早就在待審佇列</b>（狀態待確認、UP 機甲全對、只缺週數），是我先前查錯欄位（頂層 type，應查 extracted.type）。放行時補上週數即可；剩下 1737（彌造者 07/01，原文抓不到活動時間）用後台活動編輯器補。
+          更正：缺的 16 筆裡 15 筆<b>早就在待審佇列</b>（狀態待確認、UP 機甲全對、只缺週數），是我先前查錯欄位（頂層 type，應查 extracted.type）。放行時補上週數即可；剩下 1737（彌造者 07/01，原文抓不到活動時間）用後台活動編輯器補。另：v3.3 上半角雕特遣的自選名單寫成「梅莉莎」，資料庫是「梅利莎」——編輯器現在會黃字提醒，順手改掉。
         </div>
         <div class="task-file">—</div>
       </div>
@@ -512,6 +512,100 @@
           前提更正：解析器本來就認得機甲池。另開的 session 在分支 claude/festive-shtern-7a26d5（commit 37ba8170，未推送）補了機甲名用字對照與自選池防呆，A/B 只動 11 篇、npm test 全過。合併與否由站長決定。
         </div>
         <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label orange">Phase F</div>
+  <div class="section-title">機師圖鑑比照辦理</div>
+  <div class="section-desc">站長 10-18：「機師也比照辦理，做在同一個 PLAN-063 分支上（之後要退回就一起退）」。機師 62 位有招募插畫（同為 2600×1080）、12 位有卡池動態。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 狀態模組改成兩種實體共用</div>
+      <div class="task-group-meta">src/components/gacha/gachaBannerStatus.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">mechBannerStatus → gachaBannerStatus（kind）</div>
+        <div class="task-desc">
+          機師看角色池 specificPilotBanner（pilots）＞角雕特遣 pilotMission（selection，退回 half.pilotSelection）＞戰令（pilots），新機師看 half.pilots；稱呼換成角色池／角雕特遣／新機師。測試 17 項（新增 4 項機師）。
+        </div>
+        <div class="task-file">src/components/gacha/gachaBannerStatus.ts、.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 橫條與後台欄位改吃 kind</div>
+      <div class="task-group-meta">src/components/gacha/GachaBanner.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">GachaBanner／CardFocusField</div>
+        <div class="task-desc">
+          插畫 pilotCardArt、動態鍵 pilots/&lt;gameId&gt;；後台焦點滑桿放在機師編輯的「基本」分頁（官方原圖欄位下方）。
+        </div>
+        <div class="task-file">src/components/gacha/GachaBanner.tsx、src/components/admin/CardFocusField.tsx、src/pages/user/admin/PilotAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; Pilot.cardFocus 型別與文件</div>
+      <div class="task-group-meta">src/types/pilot.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增選填欄位 cardFocus</div>
+        <div class="task-desc">
+          與 Mech.cardFocus 同一套；資料模型文件 pilots.html 同步。
+        </div>
+        <div class="task-file">src/types/pilot.ts、docs/02_技術文件/02_資料模型/pilots.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-4 &nbsp; 機師圖鑑接線與驗收</div>
+      <div class="task-group-meta">src/pages/pilots/PilotDetailPage.tsx</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">放在 hero 裡</div>
+        <div class="task-desc">
+          桌機是跨三欄的第二列（hero 正下方、分頁上方）；手機 hero 是直排，用 order 讓橫條排在 AP 後、雷達圖前——放在 hero 外面的話手機要捲到約 1160px 才看得到（實測改後 808px）。不讀 pilotLore。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">實拍</div>
+        <div class="task-desc">
+          奧德莉（開放中＋推估＋復刻）、淬鋒·凱登（6 週池）、佐伊（角色池＋角雕特遣）、維娜（特遣＋戰令、有動態）、安（新機師 4 天後、有動態）、真嗣（無插畫→不出現）；桌機／手機、展開→動態→Esc→焦點歸還，console 0 錯誤。
+        </div>
+        <div class="task-file">_local-notes/2026-10/2026-10-18_PLAN-063_驗收/</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">已完成</span>
