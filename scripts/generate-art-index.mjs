@@ -38,6 +38,7 @@ import sharp from 'sharp'
 import { GAME_DIR, PART_NO, SCENE_VIEW_SUFFIX, classifyMechFile, classifyNpcFile, classifyPilotFile } from './lib/gameAssetKinds.mjs'
 import { SCENE_MAX_TRANSPARENT, transparentRatio } from './lib/sceneArt.mjs'
 import { MAKER_STAGE_DIR, MAKER_STAGE_RE, MECH_CARD_DIR, MECH_SKIN_DIR, SKIN_THUMB_SUFFIX, mechSkinFile, parseMechSkin } from './lib/mechLoreAssets.mjs'
+import { PILOT_CARD_DIR, PILOT_CARD_PREFIX } from './lib/pilotLoreAssets.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const GAME_ROOT = path.join(ROOT, 'public', GAME_DIR)
@@ -257,6 +258,25 @@ function scanMechLore() {
   return { skins, cards, stages }
 }
 
+/**
+ * 機師招募插畫（PLAN-042-A Phase J）：`import-game-assets.mjs --pilot-lore` 放進 `pilots/<gameId>/card/`，規則在 scripts/lib/pilotLoreAssets.mjs。
+ * 一位只該有一張（對照表一位只指一組卡池鍵），兩張以上讓 build 失敗——同機甲。
+ */
+function scanPilotCards() {
+  const cards = []   // [gameId, 卡池鍵]
+  for (const id of listDirs(path.join(GAME_ROOT, 'pilots'))) {
+    const cdir = path.join(GAME_ROOT, 'pilots', id, PILOT_CARD_DIR)
+    if (!fs.existsSync(cdir)) continue
+    const keys = webps(cdir).filter((n) => n.startsWith(PILOT_CARD_PREFIX)).map((n) => n.slice(PILOT_CARD_PREFIX.length))
+    if (keys.length > 1) {
+      console.error(`❌ pilots/${id}/card 有 ${keys.length} 張招募插畫（${keys.join('／')}）——一位只放一組，刪掉不用的那張`)
+      process.exit(1)
+    }
+    if (keys.length) cards.push([id, keys[0]])
+  }
+  return cards
+}
+
 function writeGameIndex({ pilots, mechs, npcs }, skins, mechLore) {
   const flags = (kinds, list) => list.filter((k) => kinds.has(k)).map((k) => `${k}: true`).join(', ')
   const pilotBody = pilots
@@ -370,6 +390,14 @@ ${mechLore.cards.map(([w, k]) => `  ['${w}', ${q(k)}],`).join('\n')}
  * key 就是 mechMakers 的文件 ID（或它的 stage 欄位）。查詢走 \`makerStageArt()\`。
  */
 export const GAME_MAKER_STAGES: ReadonlySet<string> = new Set<string>([${mechLore.stages.map(q).join(', ')}])
+
+/**
+ * 機師招募插畫（PLAN-042-A Phase J）：gameId → 卡池鍵；圖在 \`pilots/<gameId>/card/pilot_gacha_<卡池鍵>.webp\`（2600×1080）。
+ * 哪位用哪組卡池是 scripts/lib/pilotGachaCards.json 的人工對照。查詢走 \`pilotCardArt()\`。
+ */
+export const GAME_PILOT_CARDS: ReadonlyMap<string, string> = new Map<string, string>([
+${mechLore.pilotCards.map(([g, k]) => `  ['${g}', ${q(k)}],`).join('\n')}
+])
 `
   fs.writeFileSync(GAME_OUT_FILE, out, 'utf-8')
   const has = (list, k) => list.filter((e) => e.kinds.has(k)).length
@@ -378,7 +406,8 @@ export const GAME_MAKER_STAGES: ReadonlySet<string> = new Set<string>([${mechLor
     `（機師 ${pilots.length} 位：half ${has(pilots, 'half')}／head ${has(pilots, 'head')}／raw ${has(pilots, 'raw')}／card ${has(pilots, 'card')}；` +
     `機甲 ${mechs.length} 台：icon ${has(mechs, 'icon')}／sn ${has(mechs, 'sn')}；NPC 立繪 ${npcs.length} 套；` +
     `造型 ${skins.byGameId.reduce((n, e) => n + e.skins.length, 0)} 套／${skins.byGameId.length} 位＋NPC 圖庫 ${skins.byPilot.reduce((n, [, l]) => n + l.length, 0)} 套；` +
-    `機甲塗裝 ${mechLore.skins.reduce((n, [, l]) => n + l.length, 0)} 套／${mechLore.skins.length} 台、招募插畫 ${mechLore.cards.length} 台、廠商舞台 ${mechLore.stages.length} 家）`,
+    `機甲塗裝 ${mechLore.skins.reduce((n, [, l]) => n + l.length, 0)} 套／${mechLore.skins.length} 台、招募插畫 ${mechLore.cards.length} 台、廠商舞台 ${mechLore.stages.length} 家；` +
+    `機師招募插畫 ${mechLore.pilotCards.length} 位）`,
   )
 }
 
@@ -455,7 +484,7 @@ ${officialBody}
   )
 
   const game = scanGame()
-  writeGameIndex(game, await scanSkins(game.npcs), scanMechLore())
+  writeGameIndex(game, await scanSkins(game.npcs), { ...scanMechLore(), pilotCards: scanPilotCards() })
 }
 
 await main()

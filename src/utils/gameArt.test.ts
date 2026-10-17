@@ -5,7 +5,7 @@
 // 這幾位是刻意挑的：例外 5 位要證明「資料夾用 gameId、檔名用 artKey、兩者不互推」。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkinCatalog, pilotSkins } from './gameArt.ts'
+import { mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotCardArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkinCatalog, pilotSkins } from './gameArt.ts'
 
 const 維娜 = { gameId: '10103144', artKey: 'Pilot_13019A' }
 const 葉夫根尼 = { gameId: '10103123', artKey: 'Pilot_10103123A' }
@@ -164,4 +164,13 @@ test('外觀設定：沒有圖的殘留 key 忽略、重複 key 只認第一筆�
 test('pilotSkinCatalog：含 DB 隱藏的外觀（後台外觀分頁要列全部）', () => {
   assert.equal(pilotSkinCatalog(ROSA_J).length, 3)
   assert.ok(pilotSkinCatalog(ROSA_J).every((s) => s.label === s.defaultLabel))
+})
+
+test('招募插畫（PLAN-042-A Phase J）：以 gameId 查，檔名是卡池鍵（插畫鍵不同名的例外照對照表）', () => {
+  assert.equal(pilotCardArt({ gameId: '10103174' }), '/images/game/pilots/10103174/card/pilot_gacha_HailisMill.webp')
+  assert.equal(pilotCardArt({ gameId: '10103121' }), '/images/game/pilots/10103121/card/pilot_gacha_Diracca1.webp')
+  // 沒有 gameId（NPC 轉正、還沒連機師卡）、或沒開過專屬卡池（凱登）→ undefined
+  assert.equal(pilotCardArt({}), undefined)
+  assert.equal(pilotCardArt({ gameId: '10103101' }), undefined)
+  assert.equal(pilotCardArt(null), undefined)
 })

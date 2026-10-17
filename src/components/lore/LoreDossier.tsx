@@ -16,7 +16,7 @@ import { dossierRows } from '../../utils/loreDossier'
 import type { LoreChapter, LoreDoc, Mech, Pilot } from '../../types'
 
 /**
- * 卷宗（PLAN-042-D B-3）：檔案模式的四張卡——標題區、扉頁、個人資料、逸聞目錄。
+ * 卷宗（PLAN-042-D B-3）：檔案模式的四張卡——標題區、扉頁、個人資料、逸聞目錄；之後加上座機（042-B D-7）與卡池（042-A Phase J）。
  * 每張是一個 `.lore-panel`，`--i` 決定開場／換人時的進場順序（CSS 錯開 120ms／70ms）。
  *
  * 資料來源（PLAN-042-E）：標題區的身分欄位（名字、全名、職業、陣營、執照、天賦）讀 pilots；
@@ -53,9 +53,17 @@ export interface LoreDossierProps {
    * 型號來自 mechLore（讀不到就不顯示型號，卡片照樣出現）
    */
   pairedMech?: { mech: Mech; modelNo?: string; href: string } | null
+  /**
+   * 招募插畫（PLAN-042-A Phase J，比照機甲卷宗）：卷宗最後一張「卡池」卡，標題是 pilotLore.gachaTitle（空＝「卡池」）。
+   * 沒給（沒開過專屬卡池）就不出現。`cardLive`＝這位有卡池動態，說明文字改成「點一下看動態全景」
+   */
+  cardSrc?: string
+  cardLive?: boolean
+  /** 點卡池卡放大（鑑賞模式）；沒給（後台預覽）就只顯示、不能點 */
+  onOpenCard?: (el: HTMLElement) => void
 }
 
-export default function LoreDossier({ pilot, lore, status = 'ready', chapters, chapterHref, logoLabel, codexHref, pairedMech }: LoreDossierProps) {
+export default function LoreDossier({ pilot, lore, status = 'ready', chapters, chapterHref, logoLabel, codexHref, pairedMech, cardSrc, cardLive, onOpenCard }: LoreDossierProps) {
   const meta = pilotClassMeta(pilot.class)
   const tone = meta?.paper ?? 'var(--lore-ink-2)'
   const serial = pilot.id.match(/^pilot_(\d+)/)?.[1] ?? '—'
@@ -208,6 +216,24 @@ export default function LoreDossier({ pilot, lore, status = 'ready', chapters, c
             </span>
             <span className="lore-mechcard__go">進入機甲故事館 →</span>
           </Link>
+        </section>
+      )}
+
+      {cardSrc && (
+        <section className="lore-panel lore-card" style={{ '--i': 5 } as React.CSSProperties}>
+          {/* 標題是這位的卡池名稱（pilotLore.gachaTitle），沒填退回「卡池」；英文一律 KEY ART（同機甲卷宗） */}
+          <p className="lore-eyebrow"><span className="lore-eyebrow__sq" /><b>{lore?.gachaTitle?.trim() || '卡池'}</b>KEY ART</p>
+          <button
+            type="button"
+            className="lore-gacha"
+            disabled={!onOpenCard}
+            aria-label="放大招募插畫"
+            onClick={(e) => onOpenCard?.(e.currentTarget.querySelector('img') ?? e.currentTarget)}
+          >
+            {/* 卷宗最後一張、首屏看不到：lazy。一張約 200 KB */}
+            <img src={cardSrc} alt="" loading="lazy" decoding="async" />
+            <span className="lore-gacha__cap">招募插畫<small>{cardLive ? '點一下看動態全景' : '點一下看全景'}</small></span>
+          </button>
         </section>
       )}
     </>

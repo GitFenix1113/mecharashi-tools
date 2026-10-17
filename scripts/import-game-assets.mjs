@@ -16,6 +16,7 @@
  *   node scripts/import-game-assets.mjs --skins                                 可抽機師的其他造型（外觀）→ game/pilots/<gameId>/skins/（上站，PLAN-042-D）
  *   node scripts/import-game-assets.mjs --promote=activity/uiactivity/ob6       封存夾裡挑好的介面美術 → public/images/game/ui/（上架、會公開）
  *   node scripts/import-game-assets.mjs --mech-lore                             機甲故事館素材：塗裝、廠商舞台、招募插畫 → game/mechs/<wap>/{skins,card}/、game/makers/（上站，PLAN-042-B）
+ *   node scripts/import-game-assets.mjs --pilot-lore                            機師故事館素材：招募插畫 → game/pilots/<gameId>/card/（上站，PLAN-042-A Phase J）
  *
  * 新擷取先跑 `node scripts/diff-game-dump.mjs` 看這一版多了什麼，報告會列出該跑哪幾個模式。
  *
@@ -73,6 +74,14 @@
  *   色票 Img_custom_wap* 不用（張數與編號都對不齊塗裝，見 mechLoreAssets.mjs）；大廳預覽 Img_main_Skin_* 與切片原檔不上站。
  *   站長 2026-10-16 決定上站（PLAN-042-B Q5）。只補新的（--force 例外）；建議順序同 --skins：先 --src=Data 再 --src=latest。
  *
+ * ── --pilot-lore（2026-10-17，PLAN-042-A Phase J）──────────────────────────────
+ *   命名規則與落點在 scripts/lib/pilotLoreAssets.mjs。只收**站上有的機師**（game/pilots/<gameId>/ 存在）。
+ *     招募插畫  兩片 1024² 切片拉回 1300×1080、左右拼成 2600×1080（卡池 prefab 的真實比例，與機甲相同，q80）
+ *               → pilots/<gameId>/card/pilot_gacha_<卡池鍵>.webp。
+ *               哪位用哪組照 scripts/lib/pilotGachaCards.json（人工對照；切片比對不分大小寫，命名不照規則的寫在它的 tiles）；
+ *               報告列出「對不到機師的卡池切片」，新機師就在那張表補一行。雙人池、常駐／自選池不是單人的插畫，不必補。
+ *   切片原檔與橫幅 banner_／標題字 title_ 不上站。站長 2026-10-17 決定上站（比照機甲）。只補新的（--force 例外）。
+ *
  * ── --promote（2026-10-11）──────────────────────────────────────────────────
  *   決定用途後，把封存夾裡挑好的圖「上架」：<archive>/game/ui/<路徑> → public/images/game/ui/<同一路徑>。
  *   路徑相對封存夾的 ui/，可以是單一檔（.webp 可省略）或整個資料夾；多個用逗號隔開。
@@ -106,7 +115,8 @@
  * 共用旗標：--apply（真的寫檔；預設只報告）、--force（已存在也重轉）、--only=<gameId|wap>（v3 模式只做一個）、
  *           --src=<擷取>（預設 E:/Mecharashi_Data/Data；可給 latest、previous、擷取根目錄下的資料夾名或完整路徑。
  *                        v3 模式一定要用 Data——v3 定版記的是那次擷取的檔案路徑）、
- *           --archive=<封存夾>（預設 E:/Mecharashi_Data/site-archive）
+ *           --archive=<封存夾>（預設 E:/Mecharashi_Data/site-archive）、
+ *           --jobs=<N>（同時轉檔幾張，預設 6；遊戲客戶端開著、記憶體不夠時 sharp 會配置失敗當掉，改 --jobs=1）
  *
  * ── 落點 ──────────────────────────────────────────────────────────────────
  *   core      public/images/game/{pilots/<gameId>,mechs/<wap>}/<官方檔名>.webp   進版控、部署上線
@@ -132,6 +142,7 @@ import sharp from 'sharp'
 import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, SCENE_VIEW_SUFFIX, TIER_GROUPS, classifyNpcFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './lib/gameAssetKinds.mjs'
 import { sceneViewWebp } from './lib/sceneArt.mjs'
 import { CARD_H, CARD_W, MAKER_STAGE_DIR, MAKER_STAGE_RE, MECH_CARD_DIR, MECH_SKIN_DIR, SKIN_THUMB_SIZE, SKIN_THUMB_SUFFIX, makerStageFile, mechCardFile, mechSkinFile, parseCardTile, parseMechSkin } from './lib/mechLoreAssets.mjs'
+import { PILOT_CARD_DIR, parsePilotCardTile, pilotCardFile, pilotCardTiles } from './lib/pilotLoreAssets.mjs'
 import { EMBLEM_EXCLUDE, EQUIP_POOLS, ICON_POOLS, OTHER_ICON_FOLDERS, emblemFamilyOf, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { ARCHIVE_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, resolveDump } from './lib/gameDump.mjs'
 import { UI_GROUPS, uiArchivePath, uiModuleInfo } from './lib/gameUiModules.mjs'
@@ -143,7 +154,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   return [m[1], m[2] ?? true]
 }))
 const MODE = args.promote ? 'promote' : args.icons ? 'icons' : args['equip-icons'] ? 'equip' : args.emblems ? 'emblems' : args.ui ? 'ui'
-  : args['other-icons'] ? 'other' : args['mech-lore'] ? 'mechlore' : args.skins ? 'skins' : args.npc ? 'npc' : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
+  : args['other-icons'] ? 'other' : args['mech-lore'] ? 'mechlore' : args['pilot-lore'] ? 'pilotlore' : args.skins ? 'skins' : args.npc ? 'npc' : args.id ? 'pilot' : args.wap ? 'mech' : 'v3'
 const TIER = MODE === 'v3' ? String(args.tier ?? 'core') : 'core'
 let SRC = ''   // --promote 讀的是封存夾、不讀擷取
 if (MODE !== 'promote') {
@@ -156,6 +167,7 @@ const V3 = path.join(ROOT, '_local-notes/2026-10/2026-10-03_機師機甲圖片�
 const PUBLIC_GAME = path.join(ROOT, 'public', GAME_DIR)
 const APPLY = !!args.apply
 const FORCE = !!args.force
+const JOBS = Math.max(1, Number(args.jobs ?? 6) || 6)
 /** 寫到 repo 外的封存夾（extended／reserve／--ui／--other-icons／--skins），其餘寫進 public/ */
 const TO_ARCHIVE = TIER !== 'core' || ['ui', 'other'].includes(MODE)
 
@@ -266,6 +278,8 @@ const npcReport = { en: new Map(), skinCard: new Set() }
 const NPC_META_FILE = path.join(ROOT, 'scripts/lib/npcArtMeta.json')
 const CARD_MAP_FILE = path.join(ROOT, 'scripts/lib/mechGachaCards.json')
 const mechLoreReport = { freshSkins: [], freshCards: [], freshStages: [], rawDup: [], offsite: new Set(), cardOffsite: [], cardMissing: [], unmapped: [], noCard: 0 }
+const PILOT_CARD_MAP_FILE = path.join(ROOT, 'scripts/lib/pilotGachaCards.json')
+const pilotLoreReport = { fresh: [], offsite: [], missing: [], unmapped: [], noCard: 0 }
 
 if (MODE === 'v3') {
   const v3 = JSON.parse(fs.readFileSync(V3, 'utf-8'))
@@ -576,6 +590,47 @@ if (MODE === 'v3') {
   const mapped = new Set(Object.values(cardMap))
   mechLoreReport.unmapped = [...tiles].filter(([k, t]) => t[1] && t[2] && !mapped.has(k)).map(([k]) => k).sort()
   mechLoreReport.noCard = [...siteWaps].filter((w) => !cardMap[w]).length
+} else if (MODE === 'pilotlore') {
+  // 機師故事館素材（PLAN-042-A Phase J；規則見 scripts/lib/pilotLoreAssets.mjs）：只收站上有的機師
+  const sitePilots = new Set(fs.readdirSync(path.join(PUBLIC_GAME, 'pilots')).filter((d) => /^\d+$/.test(d)))
+  const map = fs.existsSync(PILOT_CARD_MAP_FILE) ? JSON.parse(fs.readFileSync(PILOT_CARD_MAP_FILE, 'utf-8')) : {}
+  const cardMap = map.cards ?? {}
+  // 切片只認 1024² 的 Texture2D；名稱比對不分大小寫（官方有 natalia1／Natalia 這種）
+  const byLower = new Map()
+  for (const r of loadCsv()) {
+    if (r.type !== 'Texture2D' || Number(r.w) !== 1024 || Number(r.h) !== 1024 || !/^Img_1_pilot_/.test(r.name)) continue
+    const k = r.name.toLowerCase()
+    const prev = byLower.get(k)
+    if (prev && prev.sha !== r.sha) problems.push(`招募插畫切片 ${r.name} 有兩張內容不同的圖：${prev.path} ／ ${r.path}`)
+    else byLower.set(k, r)
+  }
+  const used = new Set()
+  for (const [gameId, key] of Object.entries(cardMap).sort(([a], [b]) => a.localeCompare(b))) {
+    const tileNames = pilotCardTiles(key, map.tiles)
+    tileNames.forEach((n) => used.add(n.toLowerCase()))
+    if (!sitePilots.has(gameId)) { pilotLoreReport.offsite.push(`${gameId}（${key}）`); continue }
+    const name = pilotCardFile(key)
+    const dest = path.join(destRoot, 'pilots', gameId, PILOT_CARD_DIR, `${name}.webp`)
+    const rows = tileNames.map((n) => byLower.get(n.toLowerCase()))
+    if (rows.some((r) => !r)) {   // 這次擷取沒有這組（只在新版擷取才有，或改名了）；已匯入的照樣留著
+      if (!fs.existsSync(dest)) pilotLoreReport.missing.push(`${gameId}（${key}：${tileNames.join('／')}）`)
+      continue
+    }
+    const [a, b] = rows.map((r) => path.join(SRC, r.path))
+    tasks.push({ src: a, srcs: [a, b], dest, label: `機師 ${gameId} 招募插畫`, group: 'pilot-card', name, make: () => composeCard(a, b) })
+    if (!fs.existsSync(dest)) pilotLoreReport.fresh.push(`${gameId}（${key}）`)
+  }
+  // 對不到機師的一般命名切片：第 1、2 片都在、又沒被對照表用到的卡池鍵
+  const loose = new Map()
+  for (const r of byLower.values()) {
+    const t = parsePilotCardTile(r.name)
+    if (!t || t.n > 2 || used.has(r.name.toLowerCase())) continue
+    const k = t.key.toLowerCase()
+    const e = loose.get(k) ?? loose.set(k, { key: t.key, n: new Set() }).get(k)
+    e.n.add(t.n)
+  }
+  pilotLoreReport.unmapped = [...loose.values()].filter((e) => e.n.size === 2).map((e) => e.key).sort()
+  pilotLoreReport.noCard = [...sitePilots].filter((g) => !cardMap[g]).length
 } else if (MODE === 'skins') {
   // 可抽機師的其他造型：號碼在 game/pilots/ 裡、但這個檔名不在（預設造型已在 core）→ pilots/<歸屬 gameId>/skins/
   const playable = playableArtDirs(path.join(PUBLIC_GAME, 'pilots'))
@@ -693,7 +748,7 @@ async function run(t) {
   if (++done % 100 === 0) process.stdout.write(`  …${done}/${tasks.length}\n`)
 }
 const queue = [...tasks]
-await Promise.all(Array.from({ length: 6 }, async () => { while (queue.length) await run(queue.shift()) }))
+await Promise.all(Array.from({ length: JOBS }, async () => { while (queue.length) await run(queue.shift()) }))
 
 // ── 報告 ───────────────────────────────────────────────────────────────────────
 const MB = (b) => (b / 1048576).toFixed(1)
@@ -701,7 +756,8 @@ const rowsOut = [...stat].sort().map(([g, s]) => `| ${g} | ${s.n} | ${s.skipped}
 const tot = [...stat.values()].reduce((a, s) => ({ n: a.n + s.n, skipped: a.skipped + s.skipped, srcBytes: a.srcBytes + s.srcBytes, outBytes: a.outBytes + s.outBytes }), { n: 0, skipped: 0, srcBytes: 0, outBytes: 0 })
 const title = MODE === 'v3' ? `v3 整批・${TIER}` : MODE === 'pilot' ? `新機師 ${args.id}` : MODE === 'npc' ? 'NPC 圖庫' : MODE === 'icons' ? '圖示圖庫'
   : MODE === 'equip' ? '武器／背包圖示' : MODE === 'emblems' ? '職業／駕照圖示、陣營徽章' : MODE === 'ui' ? '介面美術封存' : MODE === 'promote' ? '介面美術上架'
-    : MODE === 'other' ? '其他圖示封存' : MODE === 'skins' ? '機師造型（外觀）匯入' : MODE === 'mechlore' ? '機甲故事館素材（塗裝、廠商舞台、招募插畫）' : `新機甲 wap${args.wap}`
+    : MODE === 'other' ? '其他圖示封存' : MODE === 'skins' ? '機師造型（外觀）匯入' : MODE === 'mechlore' ? '機甲故事館素材（塗裝、廠商舞台、招募插畫）'
+      : MODE === 'pilotlore' ? '機師故事館素材（招募插畫）' : `新機甲 wap${args.wap}`
 const iconSection = MODE !== 'icons' ? [] : [
   '## 圖示圖庫（PLAN-055）', '',
   `- 擷取：${iconReport.fromDump}` + (iconReport.siteCopies
@@ -833,8 +889,22 @@ const mechLoreSection = MODE !== 'mechlore' ? [] : [
   '- ⬜ 部署完成（gh run list --workflow pages-build-deployment 顯示 completed）**之前**別打開新圖的網址——Cloudflare 會把 404 快取住；萬一中了要 Purge',
   '- ⬜ 部署後到後台 › 故事館編輯台 › 該機甲 › 塗裝，幫新塗裝命名、排順序，台版還沒推出的勾「隱藏」（選填；不填顯示「塗裝 N」。⚠ 這個分頁是 PLAN-042-B G-1，做好之前名稱只能等）', '',
 ]
+const pilotLoreSection = MODE !== 'pilotlore' ? [] : [
+  '## 機師故事館素材（PLAN-042-A Phase J）', '',
+  `- 落點：${destRoot}／pilots／<gameId>／${PILOT_CARD_DIR}／（上站；規則見 scripts/lib/pilotLoreAssets.mjs）`,
+  `- 這次新增的招募插畫：${listOr(pilotLoreReport.fresh)}`,
+  `- ⚠ **對不到機師的卡池切片**（新機師就在 scripts/lib/pilotGachaCards.json 補一行 "<gameId>": "<卡池鍵>"；雙人池 EilLor／HonSyl、常駐 Permanent、預告 Predictive、自選 Select* 不必補）：${listOr(pilotLoreReport.unmapped)}`,
+  `- 對照表有、這次擷取沒有切片的（換 --src=latest 再跑一次；仍沒有＝官方改名了，查擷取改對照表的 tiles）：${listOr(pilotLoreReport.missing)}`,
+  `- 對照表指到站上沒有的機師（gameId 資料夾還沒建：先用 --id 匯入機師卡與立繪）：${listOr(pilotLoreReport.offsite)}`,
+  `- 站上沒有招募插畫的機師：${pilotLoreReport.noCard} 位（沒開過專屬卡池的機師本來就沒有，正常）`, '',
+  '### 下一步（照抄）', '',
+  `- ${pilotLoreReport.fresh.length ? '⬜' : '✅'} 有新增時：\`npm run dev\`（重產 src/data/gameArtIndex.ts 的 GAME_PILOT_CARDS），到機師故事館該位的頁面確認卷宗最後有「卡池」卡、點開是全景`,
+  '- ⬜ 照規則 commit（public/images/game/pilots/*/card/、src/data/gameArtIndex.ts、scripts/lib/pilotGachaCards.json 一起）、push',
+  '- ⬜ 部署完成（gh run list --workflow pages-build-deployment 顯示 completed）**之前**別打開新圖的網址——Cloudflare 會把 404 快取住；萬一中了要 Purge',
+  '- ⬜ 部署後到後台 › 故事館編輯台 › 該機師 › 扉頁，填卡池名稱（有公告建議就按一下；選填，空＝顯示「卡池」）', '',
+]
 const report = [
-  `# ${{ icons: 'PLAN-055 ', equip: 'PLAN-056 ', emblems: 'PLAN-059 ', ui: '', promote: '', other: '', skins: '', mechlore: 'PLAN-042-B ' }[MODE] ?? 'PLAN-054 '}官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
+  `# ${{ icons: 'PLAN-055 ', equip: 'PLAN-056 ', emblems: 'PLAN-059 ', ui: '', promote: '', other: '', skins: '', mechlore: 'PLAN-042-B ', pilotlore: 'PLAN-042-A ' }[MODE] ?? 'PLAN-054 '}官方原檔匯入${APPLY ? '' : '（dry-run）'}：${title}`, '',
   `- 時間：${new Date().toISOString()}`,
   `- 來源：${MODE === 'promote' ? path.join(ARCHIVE, 'game', 'ui') : SRC}`,
   `- 落點：${destRoot}${TO_ARCHIVE ? '（repo 外封存，不進 git、不部署）' : '（進版控、部署）'}`,
@@ -847,6 +917,7 @@ const report = [
   ...otherSection,
   ...skinSection,
   ...mechLoreSection,
+  ...pilotLoreSection,
   ...promoteSection,
   ...(notes.length ? ['## 備註', '', ...notes.map((n) => `- ${n}`), ''] : []),
 ].join('\n')
@@ -854,7 +925,7 @@ console.log(MODE === 'icons' ? report.split('<details>')[0] : report)
 /** 報告檔：_local-notes/<YYYY-MM>/<YYYY-MM-DD>_<名稱>[_dry-run].md（同一天重跑會覆寫當天那份，不會蓋到別天的） */
 const REPORT_NAME = {
   icons: '圖示圖庫匯入報告', equip: '武器背包圖示匯入報告', emblems: '職業駕照陣營圖示匯入報告', ui: '介面美術封存報告', npc: 'NPC圖庫匯入報告',
-  other: '其他圖示封存報告', skins: '機師造型匯入報告', mechlore: '機甲故事館素材匯入報告', v3: `PLAN-054_匯入報告_${TIER}`,
+  other: '其他圖示封存報告', skins: '機師造型匯入報告', mechlore: '機甲故事館素材匯入報告', pilotlore: '機師故事館素材匯入報告', v3: `PLAN-054_匯入報告_${TIER}`,
 }[MODE]
 if (REPORT_NAME) {
   const day = localDate()

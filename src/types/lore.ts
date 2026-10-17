@@ -185,6 +185,13 @@ export interface LoreDocBase {
   nameEn?: string
   /** 外觀（機師）／塗裝（機甲）的名稱、隱藏、順序（PLAN-042-E E 段）。**陣列順序＝顯示順序** */
   skins?: LoreSkinSetting[]
+  /**
+   * 卡池名稱：這位機師／這台機甲專屬卡池的活動標題，例「可能性的彼端」（莫比烏斯X）——卷宗最後那張招募插畫卡的標題，
+   * 也是鑑賞時的圖名。台版公告「【特選】<卡池名> – S級…機甲「<機甲>」」的那一段，照錄不改字。
+   * 空＝前台標題退回「卡池」。新卡池的建議由後台從版本活動（機甲 `specificMechBanner`、機師 `specificPilotBanner`）帶出，站長按一下採用。
+   * 機甲 PLAN-042-B 起；機師 PLAN-042-A Phase J（2026-10-17）起，欄位從 MechLoreDoc 移到底座、兩館同義。
+   */
+  gachaTitle?: string
   /** 逸聞章節（PART 1..N）。**不含扉頁**——扉頁是上面的 intro／frontSource。草稿章見 `LoreChapter.draft` */
   chapters: LoreChapter[]
 }
@@ -265,10 +272,4 @@ export interface MechLoreDoc extends LoreDocBase {
   specs?: LoreDossierField[]
   /** 系譜。**陣列順序＝顯示順序** */
   relations?: MechRelation[]
-  /**
-   * 卡池名稱：這台機甲專屬卡池的活動標題，例「可能性的彼端」（莫比烏斯X）——卷宗最後那張招募插畫卡的標題，
-   * 也是鑑賞時的圖名。台版公告「【特選】<卡池名> – S級…機甲「<機甲>」」的那一段，照錄不改字。
-   * 空＝前台標題退回「卡池」。新卡池的建議由後台從版本活動（`specificMechBanner`）帶出，站長按一下採用。
-   */
-  gachaTitle?: string
 }

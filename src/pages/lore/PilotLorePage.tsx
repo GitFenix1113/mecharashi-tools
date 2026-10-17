@@ -6,6 +6,9 @@ import LoreChapterPager from '../../components/lore/LoreChapterPager'
 import LoreChapterBody from '../../components/lore/LoreChapterBody'
 import LoreSkinPicker from '../../components/lore/LoreSkinPicker'
 import LoreViewer from '../../components/lore/LoreViewer'
+import GachaFxLive from '../../components/lore/gacha/GachaFxLive'
+import { hasGachaFx, pilotGachaFxKey } from '../../components/lore/gacha/gachaFxRegistry'
+import { useGachaFxPref } from '../../components/lore/gacha/gachaFxPref'
 import LoreSwitcher, { type LoreRosterGroup } from '../../components/lore/LoreSwitcher'
 import { ClassIcon } from '../../components/icons/ClassIcon'
 import { MechTypeIcon } from '../../components/icons/MechTypeIcon'
@@ -14,7 +17,8 @@ import { pilotSubject } from '../../components/lore/loreSubject'
 import { buildLoreGroups, readLoreSort, withLoreNames, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 import { publishedChapters } from '../../components/lore/loreText'
 import { defaultStageArt, loreSideOf, preloadImages, preloadStageArt, skinStageArt, type StageArt } from '../../components/lore/loreStageArt'
-import { pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
+import { pilotCardArt, pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
+import { assetUrl } from '../../utils/assets'
 import { useFactionEmblems, useMechLore, useMechs, usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { emblemTitle, emblemsById } from '../../utils/factionEmblems'
 import type { LoreDoc, Pilot } from '../../types'
@@ -37,6 +41,9 @@ import { useLoreHall } from './useLoreHall'
  *
  * 草稿章（LoreChapter.draft）一律經 `publishedChapters()` 濾掉：目錄、‹ ›、章節網址都看不到，
  * 草稿章（或打錯）的章節網址導回扉頁。
+ *
+ * 鑑賞（LoreViewer）看兩種圖：舞台的全身立繪，或卷宗最後的招募插畫（PLAN-042-A Phase J，比照機甲廳）。
+ * 招募插畫有卡池動態（src/data/gachaFx/pilots/<gameId>.json）才疊 GachaFxLive，且只在看招募插畫時播。
  *
  * ⚠ 館內唯一的 scrollport 是 LoreLayout 的 `.lore-scroll`（M-08），本頁不開任何 overflow-y；
  *   舞台是 sticky 全高層＋負 margin，卷宗在同一個 scrollport 裡疊上去。
@@ -111,6 +118,13 @@ export default function PilotLorePage() {
     rememberedSkins,
   })
   const lore = phase.shownId ? loreById.get(phase.shownId) : undefined
+  // 鑑賞看的是招募插畫時記著點下去的那張卡（飛行動畫的起點）；null＝看全身立繪
+  const [cardEl, setCardEl] = useState<HTMLElement | null>(null)
+  const openCard = useCallback((el: HTMLElement) => { setCardEl(el); openViewer() }, [openViewer])
+  const openMain = useCallback(() => { setCardEl(null); openViewer() }, [openViewer])
+  const cardRect = useCallback(() => (cardEl?.isConnected ? cardEl.getBoundingClientRect() : null), [cardEl])
+  // 卡池動態的開關（兩館共用、同分頁記住；預設看 prefers-reduced-motion／省流量，見 gachaFxPref.ts）
+  const [fxOn, setFxOn] = useGachaFxPref()
   const art = stage?.art ?? null
   const skins = stage?.skins ?? []
   const skin = stage?.skin ?? null
@@ -154,6 +168,13 @@ export default function PilotLorePage() {
   // 回圖鑑（PLAN-042-G）：指向「顯示中的那位」而不是網址的 id——換人時網址先變、舞台與卷宗落後一拍，
   // 點下去應該去畫面上看到的那位
   const codexHref = `/pilots/${encodeURIComponent(shown.id)}`
+  const cardUrl = pilotCardArt(shown)
+  const cardSrc = cardUrl ? assetUrl(cardUrl) : undefined
+  const viewingCard = !!cardEl && !!cardSrc
+  // 卡池動態：這位有資料才有，且只在看招募插畫時播
+  const fxKeyRaw = pilotGachaFxKey(shown.gameId)
+  const fxKey = hasGachaFx(fxKeyRaw) ? fxKeyRaw : undefined
+  const viewerSrc = viewingCard ? cardSrc : art?.full
 
   const tools = (
     <>
@@ -165,7 +186,7 @@ export default function PilotLorePage() {
           className="lore-pill"
           onPointerEnter={() => { void preloadImages([art.full]) }}
           onFocus={() => { void preloadImages([art.full]) }}
-          onClick={openViewer}
+          onClick={openMain}
         >
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4" /></svg>
           全身立繪
@@ -214,6 +235,9 @@ export default function PilotLorePage() {
             logoLabel={logoLabel}
             codexHref={codexHref}
             pairedMech={pairedMech}
+            cardSrc={cardSrc}
+            cardLive={!!fxKey}
+            onOpenCard={openCard}
           />
         )}
       </main>
@@ -241,16 +265,33 @@ export default function PilotLorePage() {
         />
       )}
 
-      {viewer !== 'closed' && art && (
+      {viewer !== 'closed' && viewerSrc && (
         <LoreViewer
-          src={art.full}
-          name={shown.name}
+          src={viewerSrc}
+          // 招募插畫的圖名用卡池名稱（pilotLore.gachaTitle），沒填才叫「招募插畫」
+          name={viewingCard ? `${shown.name}・${lore?.gachaTitle?.trim() || '招募插畫'}` : shown.name}
+          label={viewingCard ? '鑑賞' : undefined}
           onClose={closeViewer}
-          originRect={stageArtRect}
+          originRect={viewingCard ? cardRect : stageArtRect}
           closing={viewer === 'closing'}
-          onClosed={onViewerClosed}
+          onClosed={() => { onViewerClosed(); setCardEl(null) }}
+          live={viewingCard && fxKey && fxOn && cardSrc ? (zoom) => <GachaFxLive fxKey={fxKey} background={cardSrc} zoom={zoom} /> : undefined}
         >
-          <LoreSkinPicker subject={shownSubject} skins={skins} current={skin?.key ?? ''} onPick={pickSkin} className="lore-skins" />
+          {viewingCard ? (
+            fxKey && (
+              <div className="lore-viewer__tools">
+                <div className="lore-skins lore-bgtoggle" role="radiogroup" aria-label="卡池動態">
+                  <span className="lore-skins__lbl">卡池</span>
+                  {([[true, '動態'], [false, '靜態']] as const).map(([v, t]) => (
+                    <button key={t} type="button" role="radio" aria-checked={fxOn === v} className="lore-bgopt" onClick={() => setFxOn(v)}>{t}</button>
+                  ))}
+                </div>
+              </div>
+            )
+          ) : (
+            // 外觀只在看全身立繪時能換（看招募插畫時換了也看不到）
+            <LoreSkinPicker subject={shownSubject} skins={skins} current={skin?.key ?? ''} onPick={pickSkin} className="lore-skins" />
+          )}
         </LoreViewer>
       )}
     </div>

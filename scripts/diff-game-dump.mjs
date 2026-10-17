@@ -32,6 +32,7 @@ import { ARCHIVE_ROOT, DUMP_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pix
 import { EQUIP_POOLS, emblemFamilyOf, iconFamily, iconPoolIndex, isLibraryKey, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { UI_GROUPS, isUiArt, uiArchivePath, uiLocation, uiModuleInfo } from './lib/gameUiModules.mjs'
 import { MAKER_STAGE_RE, mechCardFile, parseCardTile, parseMechSkin } from './lib/mechLoreAssets.mjs'
+import { parsePilotCardTile, pilotCardFile, pilotCardTiles } from './lib/pilotLoreAssets.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
@@ -276,6 +277,35 @@ if (mechCore.length) {
       targets: [...targets.values()],
       lines: [`node scripts/import-game-assets.mjs ${SRC} --mech-lore`,
         ...(unmapped.size ? [`對不到機甲的卡池鍵：${[...unmapped].sort().join('、')}——新機甲的專屬卡池就在 scripts/lib/mechGachaCards.json 補一行 "<wap>": "<卡池鍵>" 再跑上面那行；雙機池、常駐池、自選池不必補`] : [])],
+    })
+  }
+}
+// 機師故事館素材：招募插畫（PLAN-042-A Phase J；命名規則在 scripts/lib/pilotLoreAssets.mjs）
+{
+  const mapFile = path.join(ROOT, 'scripts/lib/pilotGachaCards.json')
+  const map = fs.existsSync(mapFile) ? JSON.parse(fs.readFileSync(mapFile, 'utf8')) : {}
+  // 切片檔名（小寫）→ [gameId, 卡池鍵]：命名不照規則的照對照表的 tiles
+  const ownerOfTile = new Map()
+  for (const [gameId, key] of Object.entries(map.cards ?? {})) for (const n of pilotCardTiles(key, map.tiles)) ownerOfTile.set(n.toLowerCase(), [gameId, key])
+  const targets = new Map()
+  const unmapped = new Set()
+  for (const i of addedItems) {
+    if (Number(i.w) !== 1024) continue
+    const owner = ownerOfTile.get(i.name.toLowerCase())
+    if (owner) {
+      const out = pilotCardFile(owner[1])
+      targets.set(out, { name: out, ok: site.stems.has(out), url: `images/game/pilots/${owner[0]}/card/${out}.webp` })
+      continue
+    }
+    const t = parsePilotCardTile(i.name)
+    if (t && t.n <= 2) unmapped.add(t.key)
+  }
+  if (targets.size || unmapped.size) {
+    step({
+      kind: 'public', title: '機師招募插畫 → 上站（機師故事館卷宗的卡池卡）',
+      targets: [...targets.values()],
+      lines: [`node scripts/import-game-assets.mjs ${SRC} --pilot-lore`,
+        ...(unmapped.size ? [`對不到機師的卡池切片：${[...unmapped].sort().join('、')}——新機師的專屬卡池就在 scripts/lib/pilotGachaCards.json 補一行 "<gameId>": "<卡池鍵>"（卡池鍵＝卡池 prefab PilotGacha<鍵>ItemPrefab 的鍵）再跑上面那行；雙人池、常駐／預告／自選池不必補`] : [])],
     })
   }
 }

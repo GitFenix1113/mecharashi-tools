@@ -1,5 +1,5 @@
 r"""
-機甲卡池動態（PLAN-042-B Phase J）：從陸版封包匯出卡池 prefab → scripts/build-gacha-fx.mjs 的輸入（data.json＋tex/）。
+卡池動態（機甲 PLAN-042-B Phase J、機師 PLAN-042-A Phase J）：從陸版封包匯出卡池 prefab → scripts/build-gacha-fx.mjs 的輸入（data.json＋tex/）。
 
 ── 環境（建一次就好；在 repo 根目錄開 PowerShell）──────────────────────────────
   py -3 -m venv E:\Mecharashi_Data\unitypy-venv
@@ -19,6 +19,14 @@ r"""
   沒有 ⚠ 才拿掉 --dry-run 寫進站上；有 ⚠＝那台要等引擎補功能。整套四步（含 commit／push）見 build-gacha-fx.mjs 檔頭。
   遊戲改版後：先讓擷取工具跑完新擷取（貼圖會沿用最新一次擷取的 PNG），再重跑本腳本；新機甲先在 mechGachaCards.json 補卡池鍵。
 
+  機師（--kind pilot；卡池 prefab 是 ui_prefabs_pilotgacha_abs.b 的 PilotGacha<鍵>ItemPrefab，鍵→gameId 用 scripts/lib/pilotGachaCards.json）：
+  & $PY scripts\export-gacha-prefab.py --kind pilot --list                                       72 個卡池 prefab、對到哪位機師、站上有沒有動態（✓）
+  & $PY scripts\export-gacha-prefab.py --kind pilot --id 10103174 --out E:\Mecharashi_Data\gacha-export-pilot   → gacha-export-pilot\10103174\
+  & $PY scripts\export-gacha-prefab.py --kind pilot --all --out E:\Mecharashi_Data\gacha-export-pilot           對照表有的 63 位全部匯出
+  接著：node scripts/build-gacha-fx.mjs E:\Mecharashi_Data\gacha-export-pilot\10103174 --pilot 10103174 --dry-run
+  機師的相依只載 shader／特效／動畫／招募插畫封包（約 30 個，見 PILOT_SKIP）：全載 108 個在遊戲客戶端開著時會 MemoryError，
+  而被跳過的文字圖、介面圖集裡沒有特效會用到的貼圖（2026-10-17 對 72 個匯出實測：0 張解不到）。
+
 ── 讀什麼 ──────────────────────────────────────────────────────────────
   封包根目錄與解密金鑰都從擷取工具的 settings.json 讀（source＝陸版客戶端、key＝金鑰）；金鑰不印出、不落地。
   載入 ui_prefabs_wapgacha_abs.b ＋ 它在 AssetBundleManifest 裡的相依封包（遞移閉包，10-17 是 143 個；UnityPy 延遲解壓，約 3 秒），
@@ -29,7 +37,8 @@ r"""
   { prefab, nodes[], materials{}, textures{} }，JSON indent=1、浮點取小數 5 位、PPtr 換成 { pid（字串）, fid }。
   nodes  依深度優先排列：name／active／parent（索引）／depth／rect（RectTransform 原樣，去掉 m_Children／m_Father）
          ／ps（ParticleSystem typetree 原樣）／psr（Renderer typetree＋materials 材質名）／mb（MonoBehaviour：script、fields、
-         Image／RawImage 另有 material／texture 名）／canvasGroup。其他元件（Animator、TrailRenderer…）不輸出，會在畫面上列出。
+         Image／RawImage 另有 material／texture 名）／canvasGroup／animator（{ enabled, controller }，2026-10-17 起：
+         機師卡池 14 位掛循環動畫，builder 要看得到才能報 ⚠）。其他元件（TrailRenderer…）不輸出，會在畫面上列出。
   materials  材質名 → shader（完整名）／tex（屬性 → 貼圖名＋scale＋offset）／floats／colors（[r,g,b,a]）。
   textures   貼圖名 → file（tex/<官方貼圖名>.png）／w／h／wrap（[U, V]，Unity TextureWrapMode：0 Repeat、1 Clamp、2 Mirror…）。
              wrap 是 10-17 J-1 加的（流動圖層的主貼圖捲動要知道會不會重複）；除此之外與 10-16 試作逐位元組相同。
@@ -44,25 +53,36 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 SETTINGS = Path('E:/Mecharashi_Data/MecharashiExtractor/settings.json')
 BUNDLE_SUBDIR = 'Mecharashi/client/Mecharashi_Data/StreamingAssets/ExportAssetBundle'
-PREFAB_BUNDLE = 'ui_prefabs_wapgacha_abs.b'
+PREFAB_BUNDLES = {'mech': 'ui_prefabs_wapgacha_abs.b', 'pilot': 'ui_prefabs_pilotgacha_abs.b'}
+CARD_FILES = {'mech': 'scripts/lib/mechGachaCards.json', 'pilot': 'scripts/lib/pilotGachaCards.json'}
+FX_DIRS = {'mech': 'src/data/gachaFx', 'pilot': 'src/data/gachaFx/pilots'}
+# 機師的相依只載這些以外的（見檔頭）：文字圖、介面圖集、字型、其他 prefab 與特效貼圖無關，招募插畫封包例外
+PILOT_SKIP = ('ui_textimages_', 'ui_uiimages_', 'ui_fonts', 'ui_prefabs_')
+PILOT_KEEP = {'ui_textimages_pilotgachaimg_abs.cn'}
 MANIFEST = 'StandaloneWindows64'
 INDEX_FILE = '圖片索引.csv'
 # 一起匯出的元件；其他的列在「略過的元件」（CanvasRenderer 每個 UI 節點都有、沒有內容，不列）
-EXPORTED = {'RectTransform', 'Transform', 'ParticleSystem', 'ParticleSystemRenderer', 'MonoBehaviour', 'CanvasGroup', 'CanvasRenderer'}
+EXPORTED = {'RectTransform', 'Transform', 'ParticleSystem', 'ParticleSystemRenderer', 'MonoBehaviour', 'CanvasGroup', 'CanvasRenderer', 'Animator'}
 
 sys.stdout.reconfigure(encoding='utf-8')
-ap = argparse.ArgumentParser(description='匯出機甲卡池 prefab（PLAN-042-B Phase J）')
-ap.add_argument('--wap', nargs='+', help='機甲遊戲 ID（例 2054），可多個')
-ap.add_argument('--prefab', nargs='+', help='卡池鍵（WapGacha<鍵>PoolItemPrefab 的 <鍵>，例 Fenrisulfr、Light）')
-ap.add_argument('--all', action='store_true', help='有對到 wap 的卡池全部匯出')
+ap = argparse.ArgumentParser(description='匯出卡池 prefab（機甲 PLAN-042-B Phase J、機師 PLAN-042-A Phase J）')
+ap.add_argument('--kind', choices=['mech', 'pilot'], default='mech', help='機甲（預設）或機師的卡池')
+ap.add_argument('--wap', nargs='+', help='機甲遊戲 ID（例 2054），可多個（--kind mech）')
+ap.add_argument('--id', nargs='+', help='機師遊戲 ID（例 10103174），可多個（--kind pilot）')
+ap.add_argument('--prefab', nargs='+', help='卡池鍵（WapGacha<鍵>PoolItemPrefab／PilotGacha<鍵>ItemPrefab 的 <鍵>，例 Fenrisulfr、HailisMill）')
+ap.add_argument('--all', action='store_true', help='對照表有的卡池全部匯出')
 ap.add_argument('--list', action='store_true', help='只列出卡池 prefab 與對照')
 ap.add_argument('--out', help='匯出根目錄（每台一個子資料夾：wap，沒有 wap 的用卡池鍵）')
 ap.add_argument('--settings', default=str(SETTINGS), help=f'擷取工具設定檔（預設 {SETTINGS}）')
 ap.add_argument('--bundles', help='封包資料夾（預設 settings.json 的 source 底下的 ExportAssetBundle）')
 ap.add_argument('--dump', default='latest', help='沿用 PNG 的擷取資料夾（預設 latest＝最新一次；none＝一律從封包解碼）')
 args = ap.parse_args()
-if not (args.list or args.wap or args.prefab or args.all):
-    ap.error('要給 --list、--wap、--prefab 或 --all 其中一個')
+KIND = args.kind
+if (args.wap and KIND != 'mech') or (args.id and KIND != 'pilot'):
+    ap.error('--wap 是機甲用的、--id 是機師用的（機師要加 --kind pilot）')
+if not (args.list or args.wap or args.id or args.prefab or args.all):
+    ap.error('要給 --list、--wap／--id、--prefab 或 --all 其中一個')
+PREFAB_BUNDLE = PREFAB_BUNDLES[KIND]
 if not args.list and not args.out:
     ap.error('匯出要給 --out <匯出根目錄>')
 
@@ -75,15 +95,16 @@ ROOT = Path(args.bundles) if args.bundles else Path(cfg['source']) / BUNDLE_SUBD
 if not (ROOT / PREFAB_BUNDLE).exists():
     sys.exit(f'找不到 {ROOT / PREFAB_BUNDLE}（用 --bundles 指定封包資料夾）')
 
-# ── 卡池鍵 ↔ wap ──────────────────────────────────────────────────────────
-CARDS = json.load(open(REPO / 'scripts/lib/mechGachaCards.json', encoding='utf-8'))['cards']
+# ── 卡池鍵 ↔ wap（機師：gameId）──────────────────────────────────────────────
+# 變數名沿用機甲的 wap：機師時裡面放的是 gameId
+CARDS = json.load(open(REPO / CARD_FILES[KIND], encoding='utf-8'))['cards']
 norm = lambda s: s.lower().replace('-', '')
 WAP_OF = {norm(key): wap for wap, key in CARDS.items()}
 
 
 # 官方檔名有一個拼錯：彌造者是 WapGachaDemiurgePoollItemPrefab（Pool 多一個 l）。
 # 10-17 對過 74 個 WapGacha*TitleItemPrefab，只有它對不到 PoolItemPrefab；只認字面的話它會整台消失在 --list 裡。
-POOL_RE = re.compile(r'^WapGacha(.+?)Pool+ItemPrefab$')
+POOL_RE = re.compile(r'^WapGacha(.+?)Pool+ItemPrefab$') if KIND == 'mech' else re.compile(r'^PilotGacha(.+?)ItemPrefab$')
 
 
 def prefab_key(name):
@@ -92,7 +113,7 @@ def prefab_key(name):
 
 
 def has_fx(wap):
-    return wap is not None and (REPO / 'src/data/gachaFx' / f'{wap}.json').exists()
+    return wap is not None and (REPO / FX_DIRS[KIND] / f'{wap}.json').exists()
 
 
 # ── 載入封包：prefab 封包＋manifest 列的全部相依 ───────────────────────────────
@@ -106,27 +127,30 @@ for o in pre.objects:
 
 if args.list:
     rows = sorted(POOLS, key=lambda key: (WAP_OF.get(norm(key)) is None, int(WAP_OF.get(norm(key)) or 0), key))
-    print(f'{len(POOLS)} 個卡池 prefab（✓＝站上已有動態 src/data/gachaFx/<wap>.json）')
+    print(f'{len(POOLS)} 個卡池 prefab（✓＝站上已有動態 {FX_DIRS[KIND]}/<{"wap" if KIND == "mech" else "gameId"}>.json）')
     for key in rows:
         wap = WAP_OF.get(norm(key))
-        print(f"  {'✓' if has_fx(wap) else ' '} {wap or '—':>5}  {key}")
+        print(f"  {'✓' if has_fx(wap) else ' '} {wap or '—':>8}  {key}")
     unmapped = [key for key in POOLS if norm(key) not in WAP_OF]
-    print(f'對不到 wap 的 {len(unmapped)} 個：常駐／自選／雙機池不是單台機甲；新機甲要先在 scripts/lib/mechGachaCards.json 補一行')
+    if KIND == 'mech':
+        print(f'對不到 wap 的 {len(unmapped)} 個：常駐／自選／雙機池不是單台機甲；新機甲要先在 scripts/lib/mechGachaCards.json 補一行')
+    else:
+        print(f'對不到機師的 {len(unmapped)} 個：常駐／預告／自選／兌換／雙人池不是單人卡池；新機師要先在 scripts/lib/pilotGachaCards.json 補一行')
     sys.exit(0)
 
 targets = []  # (輸出子資料夾名, 卡池鍵)
 if args.all:
     targets += [(WAP_OF[norm(key)], key) for key in POOLS if norm(key) in WAP_OF]
-for wap in args.wap or []:
+for wap in (args.wap or []) + (args.id or []):
     key = CARDS.get(wap)
     real = next((p for p in POOLS if key and norm(p) == norm(key)), None)
     if not real:
-        sys.exit(f'wap {wap}：' + ('mechGachaCards.json 沒有這台的卡池鍵' if not key else f'封包裡沒有 WapGacha{key}PoolItemPrefab'))
+        sys.exit(f'{wap}：' + (f'{Path(CARD_FILES[KIND]).name} 沒有這{"台" if KIND == "mech" else "位"}的卡池鍵' if not key else f'封包裡沒有 {key} 的卡池 prefab'))
     targets.append((wap, real))
 for key in args.prefab or []:
     real = next((p for p in POOLS if norm(p) == norm(key)), None)
     if not real:
-        sys.exit(f'封包裡沒有 WapGacha{key}PoolItemPrefab（--list 看全部）')
+        sys.exit(f'封包裡沒有 {key} 的卡池 prefab（--list 看全部）')
     targets.append((WAP_OF.get(norm(real), real), real))
 
 man = next(o for o in UnityPy.load(str(ROOT / MANIFEST)).objects if o.type.name == 'AssetBundleManifest').read_typetree()
@@ -139,6 +163,8 @@ while todo:
     if i not in seen:
         seen.add(i); todo += infos[i]['AssetBundleDependencies']
 deps = sorted(names[i] for i in seen if names[i] != PREFAB_BUNDLE)
+if KIND == 'pilot':
+    deps = [d for d in deps if not d.startswith(PILOT_SKIP) or d in PILOT_KEEP]
 env = UnityPy.load(str(ROOT / PREFAB_BUNDLE), *[str(ROOT / d) for d in deps if (ROOT / d).exists()])
 _cab = env.get_cab(next(iter(POOLS.values())).assets_file.name)
 POOLS = {key: _cab.objects[o.path_id] for key, o in POOLS.items()}
@@ -306,6 +332,12 @@ def export_one(folder, key):
                 node.setdefault('mb', []).append(entry)
             elif t == 'CanvasGroup':
                 node['canvasGroup'] = clean(co.read_typetree())
+            elif t == 'Animator':
+                try:
+                    ctrl = co.read().m_Controller.deref().read().m_Name
+                except Exception:
+                    ctrl = None
+                node['animator'] = {'enabled': co.read_typetree().get('m_Enabled', 1), 'controller': ctrl}
             if t not in EXPORTED:
                 skipped.setdefault(t, []).append(g.m_Name)
         nodes.append(node)
@@ -327,7 +359,7 @@ def export_one(folder, key):
     for msg in dict.fromkeys(notes):
         print(f'  · {msg}')
     if str(folder).isdigit():
-        print(f'  下一步：node scripts/build-gacha-fx.mjs "{out}" --wap {folder} --dry-run')
+        print(f'  下一步：node scripts/build-gacha-fx.mjs "{out}" {"--wap" if KIND == "mech" else "--pilot"} {folder} --dry-run')
 
 
 for folder, key in targets:

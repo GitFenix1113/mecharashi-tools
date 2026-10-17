@@ -27,3 +27,16 @@ test('同名復刻只留最早那次；只差結尾驚嘆號算同一個；台�
   const s = gachaTitleSuggestions('藍柱石', v)
   assert.deepEqual(s.map((x) => [x.server, x.title, x.date]), [['tw', '輝光燦然', '2024/10/16'], ['cn', '辉光灿然', '2024/03/01']])
 })
+
+test('機師（kind = pilot）：只看 specificPilotBanner 的 pilots，機甲卡池不算', () => {
+  const pact = (name: string, pilots: string[], startDate: string, type = 'specificPilotBanner'): TimedActivity =>
+    ({ name, pilots, startDate, type } as TimedActivity)
+  const v = [ver('3.4', half([
+    pact('數據深淵', ['海莉絲'], '2026/09/03'),
+    pact('另一位的卡池', ['葉夫根尼'], '2026/09/03'),
+    act('機甲的卡池', ['海莉絲'], '2026/09/03'),
+  ]))]
+  assert.deepEqual(gachaTitleSuggestions('海莉絲', v, 'pilot').map((s) => s.title), ['數據深淵'])
+  // 預設仍是機甲：同一份資料用機甲的規則找，只認得機甲卡池
+  assert.deepEqual(gachaTitleSuggestions('海莉絲', v).map((s) => s.title), ['機甲的卡池'])
+})

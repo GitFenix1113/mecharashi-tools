@@ -24,7 +24,7 @@
 // ⚠ 路徑不含 BASE_URL，呼叫端套 imageCandidates()／assetUrl()——與 assets.ts 其他 helper 相同，
 //   這樣本檔不碰 import.meta.env、可以 node --test。
 
-import { GAME_MAKER_STAGES, GAME_MECH_ART, GAME_MECH_CARDS, GAME_MECH_SKINS, GAME_NPC_ART, GAME_PILOT_ART, GAME_PILOT_NPC_SKINS, GAME_PILOT_SKINS } from '../data/gameArtIndex.ts'
+import { GAME_MAKER_STAGES, GAME_MECH_ART, GAME_MECH_CARDS, GAME_MECH_SKINS, GAME_NPC_ART, GAME_PILOT_ART, GAME_PILOT_CARDS, GAME_PILOT_NPC_SKINS, GAME_PILOT_SKINS } from '../data/gameArtIndex.ts'
 import type { LoreDocBase, LoreSkinSetting } from '../types'
 
 /** 機師的四種官方圖：頭像 340²／頭部特寫 90²／半身 1240×1080／機師卡 340² */
@@ -194,6 +194,16 @@ export function mechCardArt(mech: { gameId?: string } | null | undefined): strin
   const wap = mech?.gameId
   const key = wap ? GAME_MECH_CARDS.get(wap) : undefined
   return key ? `${GAME_ROOT}/mechs/${wap}/card/mechcard_illustration_${key}.webp` : undefined
+}
+
+/**
+ * 機師的招募插畫（2600×1080 卡池主視覺，PLAN-042-A Phase J）；沒開過專屬卡池的機師回 undefined（多數不是錯誤）。
+ * 以 gameId 查（圖在 `pilots/<gameId>/card/`）：還沒有機師卡的 NPC 轉正角色（例：摩根娜）在連上 gameId 前沒有。
+ */
+export function pilotCardArt(pilot: { gameId?: string } | null | undefined): string | undefined {
+  const id = pilot?.gameId
+  const key = id ? GAME_PILOT_CARDS.get(id) : undefined
+  return key ? `${GAME_ROOT}/pilots/${id}/card/pilot_gacha_${key}.webp` : undefined
 }
 
 /** 廠商舞台（2048×1024）：`stage` 欄位優先、否則用文件 ID；站上沒有那張圖回 undefined */

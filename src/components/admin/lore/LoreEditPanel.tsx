@@ -114,6 +114,7 @@ export function LoreEditPanel({
         nameEn: form.nameEn?.trim() || undefined,
         intro: form.intro?.trim() || undefined,
         frontSource: form.frontSource?.trim() || undefined,
+        gachaTitle: form.gachaTitle?.trim() || undefined,
         dossier: normalizeDossier(form.dossier),
         chapters: form.chapters.map((ch) => ({ ...ch, commentary: normalizeCommentary(ch.commentary) })),
         // 名稱在存檔時才 trim（打字中 trim 會把正要打的空白吃掉）

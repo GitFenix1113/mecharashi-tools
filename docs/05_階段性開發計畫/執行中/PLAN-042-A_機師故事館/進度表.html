@@ -9,6 +9,7 @@
 /* 共用 style.css 未定義 red 變體（既有頁面多依賴其橘色預設，故不動共用檔），此處僅為本頁補上 */
 .hero-badge.red    { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.06); }
 .section-label.red { color: var(--accent-red); }
+.section-label.yellow { color: var(--accent-yellow); }
 
 /* ── Status Badges ── */
 .status {
@@ -209,15 +210,15 @@
 
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">16</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">19</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">3</div><div class="summary-lbl">待開始</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">17 + 2</div><div class="summary-lbl">開發者任務 + 管理員作業</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">5</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">21 + 3</div><div class="summary-lbl">開發者任務 + 管理員作業</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-green);">16 / 19</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 84%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-green);">19 / 24</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 79%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -226,6 +227,7 @@
   </div>
 
   <div class="warn-block">
+    <strong style="color:var(--accent-yellow);">◆ 2026-10-17 立 Phase J 卡池動態</strong>：站長要機師的招募插畫與官方特效比照機甲（042-B Phase J）。新增 J-1～J-5（開發者 4＋管理員 1），總數 19 → 24。<b>同日 J-1～J-3 完成（19／24）</b>：招募插畫 62 位上站、卷宗卡池卡＋全景鑑賞＋卡池名稱欄位、管線泛化並上 12 位卡池動態。剩 J-4（引擎補功能，與 042-B J 一起排）、J-5（站長填卡池名稱）。<br><br>
     <strong style="color:var(--accent-green);">◆ 2026-10-13 對外開放</strong>：站長宣布公開（PLAN-042-D「舞台＋卷宗」改版完成當天）。
     <code>LORE_INTERNAL_ONLY</code> 改 <code>false</code>；未公開的履歷條目整併成一組開館條目、日期 2026-10-13（舊條目描述的是公開前的狀態，訪客沒看過）。
     旗標與 <code>useLoreEntryVisible()</code> 等穩定一陣子再刪（useLoreEntry.ts 收尾 ③）。<br><br>
@@ -957,6 +959,113 @@
         <div class="task-file">src/data/lore/ · scripts/export-lore.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+</section>
+<section class="section">
+  <div class="section-label yellow">Phase J</div>
+  <div class="section-title">卡池動態（2026-10-17 立案）</div>
+
+  <div class="section-desc">比照 <a href="../PLAN-042-B_機甲故事館/進度表.html" style="color:var(--accent-yellow);">042-B Phase J</a>：招募插畫當卷宗附件＋全景鑑賞，動態只在全景播。
+    評估與逐位卡點：<code>_local-notes/2026-10/2026-10-17_機師卡池動態評估/</code>；72 個 prefab 匯出存在 <code>E:\Mecharashi_Data\gacha-export-pilot\</code>。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">J-1 &nbsp; 招募插畫上站</div>
+      <div class="task-group-meta">scripts/lib/pilotGachaCards.json · scripts/import-game-assets.mjs · scripts/generate-art-index.mjs · src/utils/gameArt.ts</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">對照表＋匯入模式＋索引</div>
+        <div class="task-desc">人工對照表 <code>pilotGachaCards.json</code>（gameId → 卡池鍵；非一般命名的切片另列）；<code>import-game-assets.mjs --pilot-lore</code>
+          把兩片 1024² 拉回 1300×1080 拼成 2600×1080 → <code>game/pilots/&lt;gameId&gt;/card/pilot_gacha_&lt;卡池鍵&gt;.webp</code>（只收站上有的 gameId）；
+          索引 <code>GAME_PILOT_CARDS</code>、查詢 <code>pilotCardArt()</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 對照表 63 位（例外命名 7 組寫在 <code>tiles</code>）；匯入 <b>62 位、13.1 MB</b>（2600×1080、q80，逐張驗尺寸）——摩根娜等她有 gameId 資料夾（J-5）。
+          報告列「對不到機師的切片」：<code>EilLor</code>／<code>HonSyl</code>（雙人）、<code>Permanent</code>／<code>Predictive</code>／<code>SelectTactician</code>，皆不必補；<code>Img_1_pilot_gacha_001／002_Raw</code> 是沒有鍵名的通用卡池背景，比對式要求鍵以英文字母開頭排除。
+          <code>diff-game-dump.mjs</code> 的照抄清單同步提示 <code>--pilot-lore</code>。匯入腳本加 <code>--jobs=N</code>：遊戲客戶端開著時 6 並行會讓 sharp 配置記憶體失敗，<code>--jobs=1</code> 可過。</div>
+        <div class="task-file">scripts/lib/pilotLoreAssets.mjs · public/images/game/pilots/*/card/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">J-2 &nbsp; 卷宗卡池附件＋全景鑑賞＋卡池名稱</div>
+      <div class="task-group-meta">src/components/lore/LoreDossier.tsx · src/pages/lore/PilotLorePage.tsx · src/components/admin/lore/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">卷宗最後一張「卡池」卡、鑑賞切換、後台卡池名稱欄位</div>
+        <div class="task-desc">樣式沿用機甲卷宗的 <code>.lore-gacha</code>；鑑賞時圖名＝「機師・卡池名」，有動態才出現「卡池 動態／靜態」切換。
+          <code>pilotLore.gachaTitle</code>（型別、文件同步）＋後台扉頁欄位，建議從 <code>specificPilotBanner</code> 帶出（<code>gachaTitleSuggestions</code> 泛化成兩館共用）。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>gachaTitle</code> 從 <code>MechLoreDoc</code> 移到 <code>LoreDocBase</code>（兩館同義）；卷宗座機卡之後多一張卡池卡；鑑賞看招募插畫時圖名「機師・卡池名」、
+          外觀列換成「卡池 動態／靜態」；動態偏好抽成兩館共用的 <code>gachaFxPref.ts</code>（換館也記得）。後台扉頁分頁加欄位與公告建議、預覽帶卡池卡。
+          資料庫設計文件 <code>pilotLore.html</code>／<code>mechLore.html</code> 已同步。⚠ 後台欄位只過了型別檢查，沒有登入實測。</div>
+        <div class="task-file">src/types/lore.ts · src/components/lore/mechGachaTitle.ts · src/components/admin/lore/LoreFrontEditor.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">J-3 &nbsp; 管線泛化＋第一批 12 位</div>
+      <div class="task-group-meta">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">匯出 <code>--kind pilot</code>、builder <code>--pilot</code>、registry 分命名空間，上 12 位</div>
+        <div class="task-desc">匯出：封包 <code>ui_prefabs_pilotgacha_abs.b</code>、比對式 <code>PilotGacha(.+)ItemPrefab</code>、對照表 <code>pilotGachaCards.json</code>；
+          相依只載 shader／<code>ui_uifx_*</code>／<code>ui_uianimation_*</code>／招募插畫封包（全載 108 個在遊戲開著時會 <code>MemoryError</code>）。
+          匯出多記 Animator，builder 對開著的 Animator 報 ⚠（原本只在匯出的「略過的元件」裡，dry-run 看不到）。
+          輸出 <code>src/data/gachaFx/pilots/&lt;gameId&gt;.json</code>；第一批：安、零、貝爾莎、卡蜜拉、卡夏、迪恩、菲婭、芙烈達、虹、梅利莎、維娜、維羅妮卡。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> 正式腳本重匯 63 位、新 builder 全部試跑：0 ⚠ 正好是這 12 位（＋羅娜，卡池本來就沒有特效、不寫）；Animator 檢查實測抓得到海莉絲、凱瑟琳。
+          寫入 12 份 JSON（4–28 KB）、新特效貼圖 17 張 350 KB，既有機甲貼圖 0 張被改。registry 改用鍵 <code>&lt;wap&gt;</code>／<code>pilots/&lt;gameId&gt;</code>，<code>GachaFxLive</code> 的 prop 改名 <code>fxKey</code>。
+          驗收（production 預覽＋headless Playwright，腳本在評估夾 <code>scripts/smoke-*.mjs</code>）：12 位動態畫布皆就緒、特效像素佔 0.1–49%、隔 0.7 秒有變化、0 警告 0 錯誤；
+          對照組海莉絲（有插畫無動態）顯示「點一下看全景」、沒有動態切換；機甲回歸（芬里厄、都卜勒）正常。
+          ⚠ 這 12 位有 9 位用到透明混色，<b>還沒拿遊戲畫面並排比</b>（同機甲 J 的提醒）。</div>
+        <div class="task-file">src/data/gachaFx/pilots/ · public/images/game/fx/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">J-4 &nbsp; 引擎補功能（與 042-B J 續作一起排）</div>
+      <div class="task-group-meta">src/components/lore/gacha/ · scripts/build-gacha-fx.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">依序補功能、每補一項重跑全部 dry-run</div>
+        <div class="task-desc">評估的累計（機師）：圓形發射／startDelay／靜態發光層 → 16、流動材質當粒子 → 24、速度類模組 → 32、新 shader（<code>UI_General</code>、<code>UI/Common</code>、<code>SpeedLine</code>）→ 41、
+          Animator 循環片段 → 49；拖尾 2 位比照機甲維持靜態，零星缺口 11 位逐位判斷。同一批功能也解鎖機甲（startDelay 7、orbital 7、流動材質當粒子 7、Animator 3）。
+          透明混色與繪製順序沒對過遊戲畫面的，上站前拿遊戲視窗並排比。</div>
+        <div class="task-file">_local-notes/2026-10/2026-10-17_機師卡池動態評估/data/classify.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">J-5 &nbsp; 卡池名稱填寫、摩根娜 gameId</div>
+      <div class="task-group-meta">後台故事館編輯台</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">逐位採用卡池名稱建議；摩根娜連上機師卡後重跑 <code>--pilot-lore</code></div>
+        <div class="task-desc">卡池名稱照錄公告原文不改字（同機甲）；查不到的留空（前台顯示「卡池」）。摩根娜的插畫要等她在站上有 gameId 資料夾（機師卡 <code>Icon_item_13038A</code> 匯入）才收得進來。</div>
+        <div class="task-file">pilotLore.gachaTitle</div>
+      </div>
+      <div class="task-assignee">管理員</div>
       <span class="status pending">待開始</span>
     </div>
   </div>

@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /**
- * 機甲卡池動態（PLAN-042-B Phase J）：把卡池 prefab 的匯出檔瘦身成站上用的資料。
+ * 卡池動態（機甲 PLAN-042-B Phase J、機師 PLAN-042-A Phase J）：把卡池 prefab 的匯出檔瘦身成站上用的資料。
  *
- *   node scripts/build-gacha-fx.mjs <匯出資料夾> --wap 2054 [--dry-run]
+ *   node scripts/build-gacha-fx.mjs <匯出資料夾> --wap 2054 [--dry-run]          機甲 → src/data/gachaFx/2054.json
+ *   node scripts/build-gacha-fx.mjs <匯出資料夾> --pilot 10103174 [--dry-run]    機師 → src/data/gachaFx/pilots/10103174.json
+ *   機師的匯出：export-gacha-prefab.py --kind pilot --id <gameId>（見它的檔頭）。機師與機甲的 prefab 同構
+ *   （根節點 2500×1080、兩片招募插畫拼 2600×1080、同一套 shader），以下規則兩邊通用；背景是 pilots/<gameId>/card/ 那張。
  *
  * ── 新增一台的完整流程（站長照抄；第一次要先建 venv，見 scripts/export-gacha-prefab.py 檔頭）──────────
  *   ① 匯出（從陸版封包直接讀，約 5 秒）：
@@ -51,10 +54,13 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const args = process.argv.slice(2)
 const srcDir = args.find((a) => !a.startsWith('--'))
-const wap = args[args.indexOf('--wap') + 1]
+// 機甲 --wap、機師 --pilot：只差輸出的位置（機師放 gachaFx/pilots/，與 4 碼 wap 分開，見 gachaFxRegistry.ts）
+const isPilot = args.includes('--pilot')
+const wap = args[args.indexOf(isPilot ? '--pilot' : '--wap') + 1]
 const dryRun = args.includes('--dry-run')
-if (!srcDir || !args.includes('--wap') || !/^\d+$/.test(wap ?? '')) {
+if (!srcDir || (isPilot === args.includes('--wap')) || !/^\d+$/.test(wap ?? '')) {
   console.error('用法：node scripts/build-gacha-fx.mjs <匯出資料夾> --wap <機甲遊戲 ID，例 2054> [--dry-run]')
+  console.error('　　　node scripts/build-gacha-fx.mjs <匯出資料夾> --pilot <機師遊戲 ID，例 10103174> [--dry-run]')
   process.exit(1)
 }
 
@@ -690,6 +696,17 @@ for (const i of [...sysAt, ...flowAt]) {
 }
 
 /**
+ * Animator（Unity 動畫片段，2026-10-17 機師 J-3 補）：機師卡池有 14 位在特效容器上掛循環片段（1.3–8 秒，動發光層的顏色／透明度、位移、開關），
+ * 機甲 3 台。引擎沒有片段播放器，照畫會是片段之外的靜止狀態——報 ⚠，等 J-4。匯出檔 10-17 前沒有 animator 欄位（舊匯出看不到，要重匯）。
+ * 只看開著的、而且在要畫的節點或它的祖先上的（羅斯瑪麗那個是關的）。
+ */
+const animated = new Set()
+for (const i of [...sysAt, ...flowAt]) {
+  for (let x = i; x != null; x = nodes[x].parent) if (nodes[x].animator && nodes[x].animator.enabled !== 0) animated.add(x)
+}
+for (const x of animated) warn(`${nodes[x].name}：Animator（${nodes[x].animator.controller ?? '控制器讀不到'}）會在執行時做動畫，引擎不支援`)
+
+/**
  * 繪製順序（10-17 J-1 補）：Unity UI 照階層前序畫，UIParticle 在它的節點位置畫底下的粒子、Image 在自己的位置畫。
  * 引擎是「粒子全部畫完再畫流動圖層」；階層在所有 UIParticle 之前的圖層輸出 under，引擎先畫它（1028、2055、2061、3020 的 Flow1 圖層，
  * 其中 2061、3020 與 2055 的 Fire 是透明混色，畫在粒子後面會把粒子蓋住）。已上站各台的 UI_CommonFlow 圖層全在粒子之後，不受影響。
@@ -708,7 +725,7 @@ const out = { v: 1, prefab: D.prefab, canvas: CANVAS, unit: 100, systems, flows 
 const json = JSON.stringify(out)
 
 // ── 輸出 ──────────────────────────────────────────────────────────────────
-const dataOut = join(ROOT, 'src/data/gachaFx', `${wap}.json`)
+const dataOut = join(ROOT, isPilot ? 'src/data/gachaFx/pilots' : 'src/data/gachaFx', `${wap}.json`)
 const texDir = join(ROOT, 'public/images/game/fx')
 const missing = [...usedTex].filter((t) => !existsSync(join(srcDir, D.textures[t]?.file ?? `tex/${t}.png`)))
 for (const t of missing) warn(`貼圖檔 ${t} 不在 ${srcDir}`)
@@ -726,4 +743,4 @@ for (const t of usedTex) {
   if (missing.includes(t)) continue
   copyFileSync(join(srcDir, D.textures[t]?.file ?? `tex/${t}.png`), join(texDir, `${t}.png`))
 }
-console.log(`✅ 寫入 src/data/gachaFx/${wap}.json，貼圖 ${usedTex.size - missing.length} 張 → public/images/game/fx/`)
+console.log(`✅ 寫入 src/data/gachaFx/${isPilot ? 'pilots/' : ''}${wap}.json，貼圖 ${usedTex.size - missing.length} 張 → public/images/game/fx/`)

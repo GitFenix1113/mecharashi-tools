@@ -6,7 +6,8 @@ import LoreChapterBody from '../../lore/LoreChapterBody'
 import { defaultStageArt, loreSideOf, skinStageArt } from '../../lore/loreStageArt'
 import { pilotSubject } from '../../lore/loreSubject'
 import { publishedChapters } from '../../lore/loreText'
-import { pilotSkinCatalog } from '../../../utils/gameArt'
+import { pilotCardArt, pilotSkinCatalog } from '../../../utils/gameArt'
+import { assetUrl } from '../../../utils/assets'
 import { emblemTitle, emblemsById } from '../../../utils/factionEmblems'
 import { useGameData } from '../../../contexts/GameDataContext'
 
@@ -50,6 +51,7 @@ export function LorePreview({ pilot, lore, skinKey, chapterKey }: LorePreviewPro
     return skin ? skinStageArt(pilot, skin) : defaultStageArt(pilot)
   }, [pilot, skinKey])
   const chapters = lore.chapters ?? []
+  const card = pilotCardArt(pilot)
   const readIndex = chapterKey ? chapters.findIndex((c) => c.key === chapterKey) : -1
   const reading = readIndex >= 0
 
@@ -74,7 +76,7 @@ export function LorePreview({ pilot, lore, skinKey, chapterKey }: LorePreviewPro
                 pilotName={pilot.name}
               />
             ) : (
-              <LoreDossier pilot={pilot} lore={lore} chapters={publishedChapters(chapters)} chapterHref={() => '#'} logoLabel={logoLabel} />
+              <LoreDossier pilot={pilot} lore={lore} chapters={publishedChapters(chapters)} chapterHref={() => '#'} logoLabel={logoLabel} cardSrc={card ? assetUrl(card) : undefined} />
             )}
           </main>
         </div>
