@@ -1,11 +1,12 @@
 // 機甲卡池動態（PLAN-042-B Phase J）：WebGL2 播放器。只在招募插畫的全景鑑賞裡用，由 GachaFxLive 動態載入。
 //
 // 畫面＝招募插畫（背景，不混色）＋粒子系統（Unity 的 UIFx_Alpha：Blend SrcAlpha [_Dst3]，預設疊加、材質可指定一般透明）
-// ＋流動圖層（UI_CommonFlow 的重寫，一律疊加）。
-// 粒子模擬在 gachaFxSim.ts；這裡只管 GL 狀態、貼圖與每格把粒子組成四邊形。
+// ＋流動圖層（UI_CommonFlow 的重寫，一律疊加；UI/Flow1 照反組譯的公式，疊加或透明照材質）。
+// 粒子模擬在 gachaFxSim.ts、Flow1 的 uniform 打包在 gachaFxFlow1.ts；這裡只管 GL 狀態、貼圖與每格把粒子組成四邊形。
 //
-// 透明混色和疊加不同，畫的先後會影響結果：系統之間照 sortingOrder、同值照 prefab 階層（＝資料順序），流動圖層在所有粒子之後。
-// 這個順序是芬里厄（全疊加、順序無關）時期定的，混用透明的機甲上站前要對遊戲畫面確認。
+// 透明混色和疊加不同，畫的先後會影響結果：系統之間照 sortingOrder、同值照 prefab 階層（＝資料順序）；流動圖層帶 under 的
+// （遊戲裡階層在所有 UIParticle 之前，10-17 起 builder 會判斷）先畫，其餘在所有粒子之後。
+// 系統之間的順序是芬里厄（全疊加、順序無關）時期定的，混用透明的機甲上站前要對遊戲畫面確認。
 // 系統與圖層帶 clip 的（遊戲裡祖先的 RectMask2D）用 scissor 裁成那個矩形，例：2052 裁決者的風只在左半邊。
 //
 // ── 和遊戲校準過的定值（10-16 芬里厄試作，站長判定「很像」）────────────────────────
@@ -18,8 +19,9 @@
 // 實際公式的擾動是 (2r−1)×_DisturbValue×0.1、預設兩軸都推，alpha 也乘 _MainValue，溶解也有確切算式——都和上面的校準版不同，
 // 但校準值是對遊戲畫面調的，沒重新對過畫面前不動。反組譯檔：_local-notes/2026-10/2026-10-17_卡池動態_流動圖層預設貼圖/。
 
+import { flow1Uniforms, isFlow1, splitFlows } from './gachaFxFlow1'
 import { evalMinMax, evalMinMaxGradient, makePerlin, ParticleSim, uvFrame, uvRect } from './gachaFxSim'
-import type { FxClip, FxFlow, FxTO, GachaFxData } from './gachaFxTypes'
+import type { FxClip, FxCommonFlow, FxFlow, FxFlow1, FxFlow1Tex, FxTO, GachaFxData } from './gachaFxTypes'
 
 const FLOW_DISTURB_K = 0.1
 const FLOW_GAIN = 0.85
@@ -48,11 +50,12 @@ void main(){ vec2 c = (aPos - uView.xy) / uView.zw * 2.0 - 1.0; gl_Position = ve
 const FS_BG = `#version 300 es
 precision highp float; in vec2 vUV; in vec4 vCol; uniform sampler2D uTex; out vec4 o; void main(){ o = texture(uTex, vUV); }`
 
-// 粒子（UIFx_Alpha）：rgb×頂點色×顏色強度，alpha＝貼圖 a×頂點 a。uRot＝主貼圖旋轉（UI_CommonFlow 當粒子材質時用）
+// 粒子（UIFx_Alpha）：rgb×頂點色×顏色強度，alpha＝貼圖 a×頂點 a（×uStrA：UI/Flow1 的強度也乘 alpha，其他材質是 1）。
+// uRot＝主貼圖旋轉（UI_CommonFlow／UI/Flow1 當粒子材質時用）
 const FS_PARTICLE = `#version 300 es
-precision highp float; in vec2 vUV; in vec4 vCol; uniform sampler2D uTex; uniform float uStr; uniform float uRot; out vec4 o;
+precision highp float; in vec2 vUV; in vec4 vCol; uniform sampler2D uTex; uniform float uStr; uniform float uStrA; uniform float uRot; out vec4 o;
 void main(){ vec2 uv = vUV - 0.5; float c = cos(uRot), s = sin(uRot); uv = vec2(c*uv.x - s*uv.y, s*uv.x + c*uv.y) + 0.5;
-  vec4 t = texture(uTex, uv); o = vec4(t.rgb * vCol.rgb * uStr, t.a * vCol.a); }`
+  vec4 t = texture(uTex, uv); o = vec4(t.rgb * vCol.rgb * uStr, t.a * vCol.a * uStrA); }`
 
 // 流動圖層（UI_CommonFlow）：擾動貼圖捲動、沿 U 推移主貼圖（校準版）；UV 的變換順序與遮罩照 shader；不做溶解（見檔頭）。
 // 旋轉的 r＝(cos, sin)，方向照 shader（UV 乘 [[c, s], [−s, c]]）。rot／to 以 0.5 為中心，但寫成「線性部分＋只含 uniform 的常數」：
@@ -81,6 +84,47 @@ void main(){
   o = vec4(m.rgb * vCol.rgb * uMainValue, m.a * vCol.a * s);
 }`
 
+// 流動圖層（UI/Flow1）：照反組譯逐行寫（_local-notes/2026-10/2026-10-17_卡池動態_Flow1/README.md 的「片段 shader」）。
+// 沒有校準值，跟上面的 FS_FLOW 不同：擾動是往 D 內插（axis 選推哪幾軸）、TO 的位移在擾動前、tiling 在擾動後，
+// 遮罩與溶解乘四個通道，mainValue 也乘 alpha。旋轉方向同 FS_FLOW 的 rot()；sc() 是只有 tiling 的 TO。
+// 預設值時 rot／sc／擾動都恰好恆等（旋轉 (1,0)、tiling 1、k＝0），白貼圖的遮罩、溶解恰好是 1。
+// 第二張主貼圖 _MainTex2（41 個材質的 _Tex2Intensity 全是 0）與粒子 Custom Data（_ModeCtrl）沒做，builder 遇到會報 ⚠。
+const FS_FLOW1 = `#version 300 es
+precision highp float; in vec2 vUV; in vec4 vCol;
+uniform sampler2D uMain, uColor, uDst, uDis, uDisMask, uMask1, uMask2;
+uniform float uTime, uK, uVClamp, uChR, uM1Soft, uM1Rev, uM2Soft, uM2Rev, uDisRev, uDisC, uDisSoft, uMainValue;
+uniform vec2 uMainRot, uColRot, uM1Rot, uMainFlow, uDstFlow, uDisFlow, uAxis, uDisAxis;
+uniform vec4 uMainTO, uDstTO, uColST, uM1ST, uM2ST, uDisST, uDisMaskST; out vec4 o;
+vec2 rot(vec2 p, vec2 r){ return vec2(r.x * p.x + r.y * p.y, r.x * p.y - r.y * p.x) + (0.5 - vec2(r.x + r.y, r.x - r.y) * 0.5); }
+vec2 to(vec2 p, vec4 t){ return p * t.xy + ((t.zw - 0.5) * t.xy + 0.5); }
+vec2 sc(vec2 p, vec4 t){ return p * t.xy + (0.5 - 0.5 * t.xy); }
+float mask(vec4 k, float soft, float rev){
+  float s = clamp((k.r * k.a - soft) / (1.0 - 2.0 * soft), 0.0, 1.0);
+  s = s * s * (3.0 - 2.0 * s);
+  return rev > 0.5 ? 1.0 - s : s;
+}
+void main(){
+  vec2 uvR = rot(vUV, uMainRot);
+  float d = texture(uDst, to(uvR + uTime * (uMainFlow + uDstFlow), uDstTO)).r;
+  vec2 q = uvR + uTime * uMainFlow + uMainTO.zw;
+  q += uK * (d - q) * uAxis;
+  q = sc(q, uMainTO);
+  if (uVClamp > 0.5) q.y = clamp(q.y, 0.0, 1.0);
+  vec4 m = texture(uMain, q);
+  if (uChR > 0.5) m = m.rrrr;
+  m.a = clamp(m.a, 0.0, 1.0);
+  m *= mask(texture(uMask1, rot(vUV * uM1ST.xy + uM1ST.zw, uM1Rot)), uM1Soft, uM1Rev);
+  m *= mask(texture(uMask2, vUV * uM2ST.xy + uM2ST.zw), uM2Soft, uM2Rev);
+  vec2 dq = vUV * uDisST.xy + uDisST.zw + uTime * uDisFlow;
+  dq += uK * (d - dq) * uDisAxis;
+  vec4 dn = texture(uDis, dq), dm = texture(uDisMask, vUV * uDisMaskST.xy + uDisMaskST.zw);
+  float n = dn.r * dn.a;
+  if (uDisRev > 0.5) n = 1.0 - n;
+  float x = clamp((dm.r * dm.a * n + uDisC - uDisSoft) / (1.0 - 2.0 * uDisSoft), 0.0, 1.0);
+  m *= min(x * x * (3.0 - 2.0 * x), 1.0);
+  o = m * texture(uColor, rot(vUV * uColST.xy + uColST.zw, uColRot)) * vCol * uMainValue;
+}`
+
 /** 動態頂點緩衝：每個頂點 pos2 uv2 col4＝8 個 float */
 const FLOATS = 8
 const FULL_UV = [0, 0, 1, 1] as const
@@ -102,28 +146,31 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     const p = gl.createProgram()!
     gl.attachShader(p, shader(gl.VERTEX_SHADER, VS))
     gl.attachShader(p, shader(gl.FRAGMENT_SHADER, fs))
+    // 每支程式的屬性都固定在同樣的位置：共用一個 VAO 時不會因編譯器排的位置不同而錯綁
+    for (const [i, name] of ['aPos', 'aUV', 'aCol'].entries()) gl.bindAttribLocation(p, i, name)
     gl.linkProgram(p)
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) ?? 'shader 連結失敗')
     return p
   }
-  const P_BG = program(FS_BG), P_PT = program(FS_PARTICLE), P_FLOW = program(FS_FLOW)
+  const P_BG = program(FS_BG), P_PT = program(FS_PARTICLE), P_FLOW = program(FS_FLOW), P_FLOW1 = program(FS_FLOW1)
   const U = (p: WebGLProgram, names: string[]) => Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(p, n)]))
   const uBg = U(P_BG, ['uView', 'uTex'])
-  const uPt = U(P_PT, ['uView', 'uTex', 'uStr', 'uRot'])
+  const uPt = U(P_PT, ['uView', 'uTex', 'uStr', 'uStrA', 'uRot'])
   const uFl = U(P_FLOW, ['uView', 'uMain', 'uDst', 'uMask', 'uTime', 'uMainValue', 'uDstVal', 'uVRepeat', 'uRepeatU', 'uDstFlow', 'uMainFlow',
     'uMainRot', 'uMainTO', 'uDstTO', 'uMainST', 'uMaskST', 'uMaskTO', 'uMaskRot', 'uMaskSoft', 'uMaskRev', 'uMaskDst'])
+  /** FS_FLOW1 的貼圖槽（照順序綁 TEXTURE0…6） */
+  const FLOW1_TEX = ['uMain', 'uColor', 'uDst', 'uDis', 'uDisMask', 'uMask1', 'uMask2'] as const
+  const uF1 = U(P_FLOW1, ['uView', ...FLOW1_TEX, 'uTime', 'uK', 'uVClamp', 'uChR', 'uM1Soft', 'uM1Rev', 'uM2Soft', 'uM2Rev', 'uDisRev', 'uDisC', 'uDisSoft',
+    'uMainValue', 'uMainRot', 'uColRot', 'uM1Rot', 'uMainFlow', 'uDstFlow', 'uDisFlow', 'uAxis', 'uDisAxis',
+    'uMainTO', 'uDstTO', 'uColST', 'uM1ST', 'uM2ST', 'uDisST', 'uDisMaskST'])
 
   const vbo = gl.createBuffer(), vao = gl.createVertexArray()
   gl.bindVertexArray(vao)
   gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-  // 三支程式的屬性名稱一樣；同一個 VAO 照位置綁一次（各程式的位置不一定相同，所以三支都綁）
-  for (const p of [P_BG, P_PT, P_FLOW]) {
-    for (const [name, size, off] of [['aPos', 2, 0], ['aUV', 2, 8], ['aCol', 4, 16]] as const) {
-      const loc = gl.getAttribLocation(p, name)
-      if (loc < 0) continue
-      gl.enableVertexAttribArray(loc)
-      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, FLOATS * 4, off)
-    }
+  // 各程式的屬性名稱與位置都一樣（見 program）；同一個 VAO 綁一次
+  for (const [loc, size, off] of [[0, 2, 0], [1, 2, 8], [2, 4, 16]] as const) {
+    gl.enableVertexAttribArray(loc)
+    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, FLOATS * 4, off)
   }
   let verts = new Float32Array(FLOATS * 6 * 1024), vn = 0
   /** 四角（逆時針：左下、右下、右上、左上）；uv＝貼圖範圍 [u0, v0, u1, v1]，預設整張（序列幀時是那一格，見 uvRect） */
@@ -184,16 +231,25 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
   // 預熱在建構時跑（每個系統 duration×30 步）
   const sims = data.systems.map((s) => new ParticleSim(s, Math.random, perlin))
   const order = sims.map((s, i) => [s, i] as const).sort((a, b) => a[0].sys.order - b[0].sys.order || a[1] - b[1]).map((x) => x[0])
+  /** UI/Flow1 的選填貼圖：省略＝shader 預設 white */
+  const f1Tex = (t: FxFlow1Tex | undefined) => (t ? fxTex(t.tex, !!t.repeat) : Promise.resolve(T_WHITE))
+  type FlowEntry =
+    | { kind: 'common'; f: FxCommonFlow; main: WebGLTexture; dst: WebGLTexture; mask: WebGLTexture }
+    | { kind: 'flow1'; f: FxFlow1; tex: WebGLTexture[] }
   const [T_BG, drawList, flowTex] = await Promise.all([
     loadTex(opts.background, false),
     Promise.all(order.map(async (s) => ({ sim: s, tex: await fxTex(s.sys.material.tex) }))),
-    Promise.all(data.flows.map(async (f) => ({
-      f,
-      main: await fxTex(f.mainTex, f.vRepeat || !!f.mainRepeatU),
-      dst: f.disturbTex ? await fxTex(f.disturbTex, true) : T_BLACK,
-      mask: f.mask ? await fxTex(f.mask.tex, f.mask.repeat) : T_WHITE,
-    }))),
+    Promise.all(data.flows.map(async (f): Promise<FlowEntry> => isFlow1(f)
+      // 照 FLOW1_TEX 的順序
+      ? { kind: 'flow1', f, tex: await Promise.all([f.main, f.colorTex, f.disturb?.tex, f.dissolve?.tex, f.dissolve?.mask, f.mask1?.tex, f.mask2?.tex].map(f1Tex)) }
+      : {
+          kind: 'common', f,
+          main: await fxTex(f.mainTex, f.vRepeat || !!f.mainRepeatU),
+          dst: f.disturbTex ? await fxTex(f.disturbTex, true) : T_BLACK,
+          mask: f.mask ? await fxTex(f.mask.tex, f.mask.repeat) : T_WHITE,
+        })),
   ])
+  const flowParts = splitFlows(flowTex, (e) => !!e.f.under)
 
   /** 裁切矩形（畫布座標）→ scissor（畫面緩衝像素，原點左下，和畫布的 y 朝上同向）；沒有就關掉 */
   function scissor(c: FxClip | undefined) {
@@ -212,6 +268,7 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, tex)
     gl.uniform1f(uPt.uStr, S.material.strength)
+    gl.uniform1f(uPt.uStrA, S.material.strengthAlpha ? S.material.strength : 1)
     gl.uniform1f(uPt.uRot, S.material.texRotate)
     // Unity 只換目的因子（[_Dst3]），片段輸出兩種模式相同；canvas 是 alpha:false，畫面緩衝的 alpha 不影響頁面合成
     gl.blendFunc(gl.SRC_ALPHA, S.material.blend === 'alpha' ? gl.ONE_MINUS_SRC_ALPHA : gl.ONE)
@@ -242,8 +299,57 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     flush()
   }
 
-  function drawFlow(f: FxFlow, main: WebGLTexture, dst: WebGLTexture, mask: WebGLTexture, time: number) {
+  /** 流動圖層的矩形（兩種 shader 共用）：size 為負＝鏡像，四角的 UV 跟著對調 */
+  function flowQuad(f: FxFlow) {
+    const [x, y] = f.pos, hw = f.size[0] / 2, hh = f.size[1] / 2
+    if (f.rot) {
+      // 平面上轉過的矩形（UV 跟著四角走，貼圖一起轉）：四角對中心轉 rot
+      const c = Math.cos(f.rot), s = Math.sin(f.rot)
+      const P = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(([dx, dy]) => [x + dx * c - dy * s, y + dx * s + dy * c])
+      quad(P[0][0], P[0][1], P[1][0], P[1][1], P[2][0], P[2][1], P[3][0], P[3][1], f.color)
+    } else quad(x - hw, y - hh, x + hw, y - hh, x + hw, y + hh, x - hw, y + hh, f.color)
+    flush()
+  }
+
+  function drawFlow1(f: FxFlow1, tex: WebGLTexture[], time: number) {
     scissor(f.clip)
+    gl.blendFunc(gl.SRC_ALPHA, f.blend === 'alpha' ? gl.ONE_MINUS_SRC_ALPHA : gl.ONE)
+    FLOW1_TEX.forEach((name, i) => { gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, tex[i]); gl.uniform1i(uF1[name], i) })
+    const u = flow1Uniforms(f)
+    gl.uniform1f(uF1.uTime, time)
+    gl.uniform1f(uF1.uK, u.k)
+    gl.uniform1f(uF1.uVClamp, u.vClamp)
+    gl.uniform1f(uF1.uChR, u.channelR)
+    gl.uniform1f(uF1.uM1Soft, u.mask1Soft)
+    gl.uniform1f(uF1.uM1Rev, u.mask1Rev)
+    gl.uniform1f(uF1.uM2Soft, u.mask2Soft)
+    gl.uniform1f(uF1.uM2Rev, u.mask2Rev)
+    gl.uniform1f(uF1.uDisRev, u.dissolveRev)
+    gl.uniform1f(uF1.uDisC, u.dissolveC)
+    gl.uniform1f(uF1.uDisSoft, u.dissolveSoft)
+    gl.uniform1f(uF1.uMainValue, u.mainValue)
+    gl.uniform2fv(uF1.uMainRot, u.mainRot)
+    gl.uniform2fv(uF1.uColRot, u.colorRot)
+    gl.uniform2fv(uF1.uM1Rot, u.mask1Rot)
+    gl.uniform2fv(uF1.uMainFlow, u.mainFlow)
+    gl.uniform2fv(uF1.uDstFlow, u.disturbFlow)
+    gl.uniform2fv(uF1.uDisFlow, u.dissolveFlow)
+    gl.uniform2fv(uF1.uAxis, u.axis)
+    gl.uniform2fv(uF1.uDisAxis, u.dissolveAxis)
+    gl.uniform4fv(uF1.uMainTO, u.mainTO)
+    gl.uniform4fv(uF1.uDstTO, u.disturbTO)
+    gl.uniform4fv(uF1.uColST, u.colorST)
+    gl.uniform4fv(uF1.uM1ST, u.mask1ST)
+    gl.uniform4fv(uF1.uM2ST, u.mask2ST)
+    gl.uniform4fv(uF1.uDisST, u.dissolveST)
+    gl.uniform4fv(uF1.uDisMaskST, u.dissolveMaskST)
+    flowQuad(f)
+    gl.activeTexture(gl.TEXTURE0)
+  }
+
+  function drawFlow(f: FxCommonFlow, main: WebGLTexture, dst: WebGLTexture, mask: WebGLTexture, time: number) {
+    scissor(f.clip)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE)   // UI_CommonFlow 一律疊加（builder 遇到 _Dst≠1 會報 ⚠）
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, main); gl.uniform1i(uFl.uMain, 0)
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, dst); gl.uniform1i(uFl.uDst, 1)
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, mask); gl.uniform1i(uFl.uMask, 2)
@@ -265,15 +371,21 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     gl.uniform1f(uFl.uMaskSoft, K?.softness ?? 0)
     gl.uniform1f(uFl.uMaskRev, K?.revert ? 1 : 0)
     gl.uniform1f(uFl.uMaskDst, K?.disturbed ? 1 : 0)
-    const [x, y] = f.pos, hw = f.size[0] / 2, hh = f.size[1] / 2
-    if (f.rot) {
-      // 平面上轉過的矩形（UV 跟著四角走，貼圖一起轉）：四角對中心轉 rot
-      const c = Math.cos(f.rot), s = Math.sin(f.rot)
-      const P = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(([dx, dy]) => [x + dx * c - dy * s, y + dx * s + dy * c])
-      quad(P[0][0], P[0][1], P[1][0], P[1][1], P[2][0], P[2][1], P[3][0], P[3][1], f.color)
-    } else quad(x - hw, y - hh, x + hw, y - hh, x + hw, y + hh, x - hw, y + hh, f.color)
-    flush()
+    flowQuad(f)
     gl.activeTexture(gl.TEXTURE0)
+  }
+
+  /** 一段流動圖層（under 或 over）：照資料順序，各層自己換程式、設混色 */
+  function drawFlows(list: readonly FlowEntry[], view: readonly [number, number, number, number], time: number) {
+    for (const e of list) {
+      if (e.kind === 'flow1') {
+        gl.useProgram(P_FLOW1); gl.uniform4f(uF1.uView, ...view)
+        drawFlow1(e.f, e.tex, time)
+      } else {
+        gl.useProgram(P_FLOW); gl.uniform4f(uFl.uView, ...view)
+        drawFlow(e.f, e.main, e.dst, e.mask, time)
+      }
+    }
   }
 
   // ── 迴圈 ──
@@ -300,14 +412,12 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     flush()
 
     gl.enable(gl.BLEND)
+    // 階層在所有 UIParticle 之前的圖層先畫（見檔頭）；每個系統、圖層都自己設混色
+    drawFlows(flowParts.under, view, time)
     gl.useProgram(P_PT)
     gl.uniform4f(uPt.uView, ...view)
-    for (const { sim, tex } of drawList) drawParticles(sim, tex)   // 每個系統自己設混色
-
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE)   // 流動圖層一律疊加；最後一個粒子系統可能把混色留在透明
-    gl.useProgram(P_FLOW)
-    gl.uniform4f(uFl.uView, ...view)
-    for (const { f, main, dst, mask } of flowTex) drawFlow(f, main, dst, mask, time)
+    for (const { sim, tex } of drawList) drawParticles(sim, tex)
+    drawFlows(flowParts.over, view, time)
     gl.disable(gl.SCISSOR_TEST)   // 下一格的 clear 要清整個畫面
 
     if (first) { first = false; opts.onFirstFrame?.() }
@@ -326,7 +436,7 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
       if (gl.isContextLost()) return
       for (const t of textures) gl.deleteTexture(t)
       gl.deleteBuffer(vbo); gl.deleteVertexArray(vao)
-      for (const p of [P_BG, P_PT, P_FLOW]) gl.deleteProgram(p)
+      for (const p of [P_BG, P_PT, P_FLOW, P_FLOW1]) gl.deleteProgram(p)
       // 鑑賞一關就把 GPU 資源還回去：反覆開關不會累積 context（瀏覽器上限約 16 個）
       gl.getExtension('WEBGL_lose_context')?.loseContext()
     },

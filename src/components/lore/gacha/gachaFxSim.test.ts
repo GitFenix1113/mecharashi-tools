@@ -167,8 +167,10 @@ test('站上每一台的卡池動態：跑 10 秒不出現 NaN、貼圖都在 pu
   assert.ok(list.length >= 1, '至少有芬里厄（2054）')
   for (const [file, data] of list) {
     assert.equal(data.v, 1, file)
-    // 流動圖層的擾動圖、遮罩是選填（沒有＝引擎綁 shader 預設的純色）
-    const flowTex = data.flows.flatMap((f) => [f.mainTex, f.disturbTex, f.mask?.tex]).filter((t): t is string => !!t)
+    // 流動圖層的擾動圖、遮罩是選填（沒有＝引擎綁 shader 預設的純色）；UI/Flow1 的貼圖全是選填
+    const flowTex = data.flows.flatMap((f) => (f.shader === 'flow1'
+      ? [f.main, f.colorTex, f.disturb?.tex, f.dissolve?.tex, f.dissolve?.mask, f.mask1?.tex, f.mask2?.tex].map((t) => t?.tex)
+      : [f.mainTex, f.disturbTex, f.mask?.tex])).filter((t): t is string => !!t)
     const tex = new Set([...data.systems.map((s) => s.material.tex), ...flowTex])
     for (const t of tex) assert.ok(fs.existsSync(texFile(t)), `${file}：缺貼圖 ${t}.png`)
     for (const def of data.systems) {

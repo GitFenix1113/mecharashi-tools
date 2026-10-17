@@ -3,6 +3,9 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-17', type: 'feat', summary: '機甲故事館再加 <b>7 台會動的招募插畫</b>：疾嘯、日弩、雪鴞、彌造者、螢石、美杜莎MK2、藍柱石——'
+      + '武器光束、槍口火焰、電弧與煙塵的流動特效也照遊戲播出來；卷宗最後的「卡池」點開全景就會播放，目前共 31 台。' },
+
     { date: '2026-10-17', type: 'feat', summary: '機甲故事館的<b>獵鬥士</b>招募插畫也會動了——卷宗最後的「卡池」點開全景就會播放卡池特效，'
       + '目前共 24 台。' },
 

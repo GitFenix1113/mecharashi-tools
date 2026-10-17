@@ -30,17 +30,18 @@
  * ── 引擎不支援的東西會印出 ⚠ ──────────────────────────────────────────────
  * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）、
  * 序列幀（UVModule 的 Grid 模式、依壽命／依 fps）、流動圖層照 shader 規格的選填貼圖、主貼圖 tiling／旋轉／捲動與遮罩（見 UI_CommonFlow 的規格），
- * 以及祖先的位移／旋轉／縮放、錨點與 RectMask2D 裁切（見「版面」）、流動圖層的平面旋轉、方塊發射形狀（Box，見 SUPPORTED_SHAPES）。
- * 下一台若用到拖尾、Flow1、序列幀的其他模式等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
+ * 以及祖先的位移／旋轉／縮放、錨點與 RectMask2D 裁切（見「版面」）、流動圖層的平面旋轉、方塊發射形狀（Box，見 SUPPORTED_SHAPES）、
+ * 第二支流動 shader UI/Flow1（圖層照反組譯全做、粒子取單張貼圖，見「UI/Flow1 的規格」）、流動圖層的自身鏡像與繪製順序（under）。
+ * 下一台若用到拖尾、序列幀的其他模式等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
  * 10-17 對 61 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run；2060 彌造者的 prefab 官方拼成 …PoollItemPrefab，後來才補進來）：
- * 0 ⚠ 有 24 台＝2054、1011、1012、2017、2019、2022、3005、3017
+ * 0 ⚠ 有 31 台＝2054、1011、1012、2017、2019、2022、3005、3017
  * （以上透明混色就解開）＋1014、2042、2302（序列幀解開）＋1027、1040、1301（流動圖層缺擾動貼圖、遮罩、捲動解開）
  * ＋2071、3006、3019（不發射的系統略過就解開，見 isSilent；60 台共略過 37 個）＋1017、1034、2003、2047、2050、2052（累積祖先的變換解開）
- * ＋2053（方塊形狀解開）。
- * 剩下 37 台卡最多的是 Flow1 21、速度模組的 orbital 等 17、startDelay 7、流動材質當粒子 7；只差一種的 17 台：
- * Flow1 8（1028、1035、2027、2055、2060、2061、2070、3014）、startDelay 4、orbital 3（1052、2040、2043：方塊解開後只剩灰燼的 orbitalZ）、
- * 拖尾 1、Image 用 UIFx_Alpha 1。Flow1 的材質會多報一條「主貼圖是空的」（貼圖屬性叫 _MainTex1），算台數時併進 Flow1。
- * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_Box形狀/（更早的版本在同月的「祖先位移」「不發射系統略過」「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
+ * ＋2053（方塊形狀解開）＋1028、2027、2055、2060、2061、2070、3014（Flow1 解開）。
+ * 剩下 30 台卡最多的是速度模組的 orbital 等 17、startDelay 7、流動材質當粒子 7、Flow1 粒子用到單張貼圖以外的設定 5（2018、2049、2062、3007、3047）；
+ * 只差一種的 14 台：orbital 7（1036、1052、1303、2040、2043、3020、3028：1303、3020 是 Flow1 解開後只剩灰燼的 orbitalZ）、startDelay 4、
+ * TweenAlpha 1（1035：Flow1 解開後只剩這個，見主迴圈後的 Tween 檢查）、流動材質當粒子 1、Image 用 UIFx_Alpha 1。
+ * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_Flow1/（更早的版本在同月的「Box形狀」「祖先位移」「不發射系統略過」「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
  * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質、或 emission 關又沒有 burst 的粒子會略過），照常可以上站。
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -223,6 +224,7 @@ function clipOf(at, owner) {
 // ── 材質與貼圖 ────────────────────────────────────────────────────────────
 const SHADER_PARTICLE = 'ProjectFM/UI/UIFx_Alpha'
 const SHADER_FLOW = 'ProjectFM/UI/UI_CommonFlow'
+const SHADER_FLOW1 = 'UI/Flow1'
 const usedTex = new Set()
 /**
  * 貼圖名是空的：引擎照樣會去載（undefined.png），讀不到就整台播不出來，所以一定要報 ⚠。
@@ -252,12 +254,82 @@ function flowUnsupported(m, owner) {
   if (m.floats._ChannelChoose) warn(`${owner} 的 _ChannelChoose＝${m.floats._ChannelChoose}（只取 R 通道），引擎不支援`)
 }
 
+// ── UI/Flow1 的規格（10-17 同樣反組譯 shader_abs.b，詳細公式與 41 個材質的盤點在 _local-notes/2026-10/2026-10-17_卡池動態_Flow1/）──
+// 跟 UI_CommonFlow 是同一個 ASE 範本，但不能共用：擾動是往 D 內插（lerp）不是相加、所有貼圖預設 white（含 _DisturbTex）、
+// _VRepeatSwitch 預設 1、主貼圖叫 _MainTex1 且沒有 TRANSFORM_TEX、_MainTex 是另外乘上去的顏色貼圖（Image／RawImage 掛的圖會變成它）、
+// 遮罩與溶解乘四個通道、_MainValue 也乘 alpha。Blend SrcAlpha [_Dst]（預設 10＝透明）。
+// 引擎照公式全做，只有第二張主貼圖 _MainTex2（_Tex2Intensity，41 個材質全是 0）與粒子 Custom Data（_ModeCtrl，全是 0）沒做。
+const isWhite = (c) => !c || c.every((x) => x === 1)
+/** Flow1 材質裡引擎沒做、或做了也會畫錯的設定：圖層與粒子兩條路徑共用 */
+function flow1Unsupported(m, owner) {
+  const f = m.floats
+  if (f._ModeCtrl) warn(`${owner} 的 _ModeCtrl＝${f._ModeCtrl}（粒子 Custom Data 控制位移／擾動／溶解），引擎不支援`)
+  if (f._Tex2Intensity) warn(`${owner} 的 _Tex2Intensity＝${f._Tex2Intensity}（第二張主貼圖 _MainTex2），引擎不支援`)
+  for (const k of ['_ChannelChoose', '_ModeCtrl1', '_ModeCtrl2']) if (f[k] != null && f[k] !== 0 && f[k] !== 1) warn(`${owner} 的 ${k}＝${f[k]} 不是 0／1，引擎當成 ${f[k] ? 1 : 0}`)
+  if ((f._ColorMask ?? 15) !== 15) warn(`${owner} 的 _ColorMask＝${f._ColorMask}（只寫部分通道），引擎不支援`)
+  // 模板：61 台沒有 Mask 元件（只有 RectMask2D），模板緩衝恆為 0，材質的 Ref／Comp 照字面比——2061 螢石的 BGNoise 是 Ref 1、Comp 6.88
+  // （Unity 取整數 6＝NotEqual，1≠0 恆通過）。比不過的話遊戲裡畫不出來。
+  const comp = Math.trunc(f._StencilComp ?? 8), ref = (f._Stencil ?? 0) & (f._StencilReadMask ?? 255)
+  const pass = [true, false, ref < 0, ref === 0, ref <= 0, ref > 0, ref !== 0, ref >= 0, true][comp]
+  if (comp !== 8 && comp !== 0 && (hasMask || !pass)) warn(`${owner} 的模板測試 Ref ${f._Stencil}／Comp ${comp}${hasMask ? '（prefab 裡有 Mask 元件）' : '對空的模板緩衝比不過'}，引擎不支援`)
+  if (f._StencilOp) warn(`${owner} 的 _StencilOp＝${f._StencilOp}（會寫模板），引擎不支援`)
+}
+const hasMask = nodes.some((n) => (n.mb ?? []).some((b) => b.script === 'Mask'))
+/** 溶解在沒有溶解貼圖／遮罩（＝white）時是常數：照 shader 算出來，1 就等於沒有溶解 */
+function dissolveConst(f) {
+  const n = f._DissolveMaskRevert ? 0 : 1, soft = f._DissolveSoftness ?? 0
+  const x = Math.min(1, Math.max(0, (n + 1.1 - 2.1 * (f._DissolveValue ?? 0) - soft) / (1 - 2 * soft)))
+  return Math.min(1, x * x * (3 - 2 * x))
+}
+const dissolveActive = (m) => !!(m.tex._DissolveTex?.tex || m.tex._DissolveMask?.tex) || dissolveConst(m.floats) < 1
+const deg = (d) => num(((d ?? 0) * Math.PI) / 180)
+
+/**
+ * UI/Flow1 當粒子材質（2060 彌造者、2070、3014 的閃電與火花）：粒子 UV 就是 0–1（或序列幀那一格），所以 _MainTex1 與 _MainTex
+ * 只有一張有指定時，畫面＝那張貼圖 × 頂點色 × _MainValue（四個通道都乘，輸出 strengthAlpha），沿用粒子 shader。
+ * 旋轉的方向跟引擎粒子 shader 的 uRot 相反，換號輸出。主貼圖是 white 時 _ChannelChoose 沒有作用（1303／2060 的 Light02 就是這樣）。
+ */
+function flow1ParticleMaterial(m, name, owner, dst) {
+  const f = m.floats, c = m.colors, own = `${owner}：材質 ${name}（UI/Flow1）`
+  flow1Unsupported(m, own)
+  const main = m.tex._MainTex1?.tex, col = m.tex._MainTex?.tex
+  if (main && col) warn(`${own} 的主貼圖 _MainTex1 與顏色貼圖 _MainTex 都有指定，粒子路徑只畫得了一張`)
+  const gaps = []
+  if (main) {
+    if (f._ChannelChoose) gaps.push('只取 R 通道 _ChannelChoose')
+    if (c._Tex1Flow?.[0] || c._Tex1Flow?.[1]) gaps.push('主貼圖捲動 _Tex1Flow')
+    if (!isIdentityST((c._MainTex1TO ?? ST_ID).map(num))) gaps.push('主貼圖 tiling／位移 _MainTex1TO')
+    if (f._DisturbValue) gaps.push('擾動')
+  } else if (col && !isIdentityST(texST(m.tex._MainTex))) gaps.push('顏色貼圖 tiling／位移')
+  const tex = main ?? col
+  const rotate = main ? f._MainTexRotate : f._ColorRotate
+  // 轉過的角落會超出 0–1：引擎的粒子貼圖一律夾邊
+  if (rotate && tex && repeats(tex)) gaps.push('旋轉後角落的貼圖重複（wrap＝Repeat）')
+  if (m.tex._Mask1?.tex || f._Mask1Revert2) gaps.push('遮罩 _Mask1')
+  if (m.tex._Mask2?.tex || f._Mask2Revert2) gaps.push('遮罩 _Mask2')
+  if (dissolveActive(m)) gaps.push('溶解')
+  if (!isWhite(c._Color)) gaps.push('顏色 _Color')
+  if (gaps.length) warn(`${own}當粒子材質，引擎只畫一張貼圖 × 強度，${gaps.join('、')}會被忽略`)
+  return {
+    tex: useTex(tex, `${own} 的主貼圖（_MainTex1 與 _MainTex 都沒指定）`),
+    strength: num(f._MainValue ?? 1),
+    texRotate: rotate ? -deg(rotate) : 0,
+    ...(dst === 10 ? { blend: 'alpha' } : {}),
+    strengthAlpha: true,
+  }
+}
+
 /** 粒子材質：UIFx_Alpha 直接用；UI_CommonFlow 當粒子材質時只取主貼圖、亮度與旋轉（試作的做法，芬里厄的日蝕光環），其餘功能用到就報 ⚠ */
 function particleMaterial(name, owner) {
   // 官方沒指定材質（各台的 Particle_SSR／Particle_All 常見，匯出存 null）：遊戲裡也畫不出東西，直接略過
   if (name == null) { note(`${owner}：官方沒指定材質，略過`); return null }
   const m = D.materials[name]
   if (!m) { warn(`${owner}：找不到材質 ${name}`); return null }
+  if (m.shader === SHADER_FLOW1) {
+    const dst = m.floats._Dst ?? 10
+    if (dst !== 1 && dst !== 10) warn(`${owner}：材質 ${name} 的混色 SrcAlpha／${dst} 引擎不支援（只有 1＝疊加、10＝透明），當成疊加`)
+    return flow1ParticleMaterial(m, name, owner, dst)
+  }
   if (m.shader !== SHADER_PARTICLE && m.shader !== SHADER_FLOW) warn(`${owner}：材質 ${name} 的 shader ${m.shader} 引擎不支援`)
   const isFlow = m.shader === SHADER_FLOW
   // 混色看 shader 的 Blend 狀態（shader_abs.b，10-17 查證）：UIFx_Alpha＝Blend SrcAlpha [_Dst3]、UI_CommonFlow＝Blend SrcAlpha [_Dst]，
@@ -407,25 +479,43 @@ function particleSystem(n, at) {
   return sys
 }
 
-// ── 流動圖層（Image＋UI_CommonFlow）─────────────────────────────────────────
+// ── 流動圖層（Image／RawImage＋UI_CommonFlow 或 UI/Flow1）──────────────────────────
 /**
+ * 兩種 shader 共用的版面：{ pos, size, rot?, clip? }（輸出時接在 name 後面，鍵的順序與 10-17 前相同）。
+ * 矩形：中心＝pivot 換到正中央再過變換；大小＝矩形×自己的縮放×祖先累積的縮放；旋轉＝變換後 x 軸在畫布上的角度（自己＋祖先）。
+ * 1027 銜尾蛇、1301 破曉者-02 的圖層自己就轉了 −128°～+153°，10-17 前沒輸出、被畫成水平的。
+ * 自己的負縮放（2055 雪鴞的 Light02、Fire：localScale.x＝−1）＝鏡像：size 本來就帶著 s 的正負號，引擎的四角 UV 會跟著左右／上下對調；
+ * 旋轉要先把這個鏡像拿掉再量（不拿掉的話 x 軸朝左會被量成轉 180°，疊上負寬度變成上下翻）。正縮放時乘的是 1，已上站的 rot 逐位元不變。
+ * 引擎畫的是平面上轉過的矩形：繞 x／y 軸轉（傾斜、翻面）、祖先的鏡像、非均勻縮放疊旋轉造成的歪斜報 ⚠
+ */
+function flowGeom(n, at, owner) {
+  const s = n.rect.m_LocalScale, Mp = at.parent.M, M = at.M
+  const k = [Math.hypot(Mp[0][0], Mp[1][0], Mp[2][0]), Math.hypot(Mp[0][1], Mp[1][1], Mp[2][1])]
+  const center = mApply(M, [(0.5 - at.pivot[0]) * at.size[0], (0.5 - at.pivot[1]) * at.size[1], 0]).map((v, i) => v + at.t[i])
+  const sx = s.x < 0 ? -1 : 1, sy = s.y < 0 ? -1 : 1
+  const rot = Math.atan2(M[1][0] * sx, M[0][0] * sx)
+  if (Math.abs(at.q[0]) > 1e-4 || Math.abs(at.q[1]) > 1e-4) warn(`${owner}：圖層（含祖先）繞 x／y 軸轉，引擎只畫平面上的旋轉`)
+  if ((M[0][0] * M[1][1] - M[0][1] * M[1][0]) * sx * sy < 0) warn(`${owner}：圖層的祖先有負縮放（鏡像），引擎不翻轉貼圖`)
+  else if (Math.abs(M[0][0] * M[0][1] + M[1][0] * M[1][1]) > 1e-3 * Math.hypot(M[0][0], M[1][0]) * Math.hypot(M[0][1], M[1][1])) warn(`${owner}：祖先的非均勻縮放疊上旋轉、圖層會歪斜，引擎畫成矩形`)
+  const clip = clipOf(at, n.name)
+  return {
+    pos: [num(center[0]), num(center[1])],
+    size: [num(at.size[0] * s.x * k[0]), num(at.size[1] * s.y * k[1])],
+    // 不轉的不輸出（已上站其他台的 JSON 不變）
+    ...(Math.abs(rot) > 1e-6 ? { rot: num(rot) } : {}),
+    ...(clip ? { clip } : {}),
+  }
+}
+
+/**
+ * Image＋UI_CommonFlow。
  * 溶解貼圖刻意不輸出：10-16 對遊戲畫面校準時，照字面套「噪聲溶解」會整塊閃（每格變化量 7.9 對遊戲 1.5），
  * 關掉溶解才對得上（1.6）。引擎的流動 shader 因此沒有溶解這一段，見 gachaFxEngine.ts。
  */
 function flowLayer(n, img, at) {
   const m = D.materials[img.material], f = m.floats, owner = `${n.name}：材質 ${img.material}`
-  const r = n.rect, c = img.fields.m_Color, mc = m.colors._Color ?? [1, 1, 1, 1]
-  // 矩形：中心＝pivot 換到正中央再過變換；大小＝矩形×自己的縮放×祖先累積的縮放；旋轉＝變換後 x 軸在畫布上的角度（自己＋祖先）。
-  // 1027 銜尾蛇、1301 破曉者-02 的圖層自己就轉了 −128°～+153°，10-17 前沒輸出、被畫成水平的。
-  // 引擎畫的是平面上轉過的矩形：繞 x／y 軸轉（傾斜、翻面）、鏡像、非均勻縮放疊旋轉造成的歪斜報 ⚠
-  const s = r.m_LocalScale, Mp = at.parent.M, M = at.M
-  const k = [Math.hypot(Mp[0][0], Mp[1][0], Mp[2][0]), Math.hypot(Mp[0][1], Mp[1][1], Mp[2][1])]
-  const center = mApply(M, [(0.5 - at.pivot[0]) * at.size[0], (0.5 - at.pivot[1]) * at.size[1], 0]).map((v, i) => v + at.t[i])
-  const rot = Math.atan2(M[1][0], M[0][0])
-  if (Math.abs(at.q[0]) > 1e-4 || Math.abs(at.q[1]) > 1e-4) warn(`${owner}：圖層（含祖先）繞 x／y 軸轉，引擎只畫平面上的旋轉`)
-  if (M[0][0] * M[1][1] - M[0][1] * M[1][0] < 0) warn(`${owner}：圖層（含祖先）有負縮放（鏡像），引擎不翻轉貼圖`)
-  else if (Math.abs(M[0][0] * M[0][1] + M[1][0] * M[1][1]) > 1e-3 * Math.hypot(M[0][0], M[1][0]) * Math.hypot(M[0][1], M[1][1])) warn(`${owner}：祖先的非均勻縮放疊上旋轉、圖層會歪斜，引擎畫成矩形`)
-  const clip = clipOf(at, n.name)
+  const c = img.fields.m_Color, mc = m.colors._Color ?? [1, 1, 1, 1]
+  const geom = flowGeom(n, at, owner)
   for (const k of ['_MainTex1TO', '_dIsturbTexTO', '_DisturbFlow']) if (!m.colors[k]) warn(`${owner} 缺 ${k}`)
   // 流動圖層引擎只畫疊加（10-17 盤點 60 台的 UI_CommonFlow 圖層 _Dst 全是 1；沒存時 shader 預設是 10＝透明）
   if ((f._Dst ?? 10) !== 1) warn(`${owner} 的混色 SrcAlpha／${f._Dst ?? '10（預設）'}，流動圖層引擎只畫疊加`)
@@ -448,11 +538,7 @@ function flowLayer(n, img, at) {
   if (maskTex && D.textures[maskTex]?.wrap && D.textures[maskTex].wrap[0] !== D.textures[maskTex].wrap[1]) warn(`${owner} 的 _Mask1 兩軸 wrap 不同，引擎取 U 的`)
   return {
     name: n.name,
-    pos: [num(center[0]), num(center[1])],
-    size: [num(at.size[0] * s.x * k[0]), num(at.size[1] * s.y * k[1])],
-    // 不轉的不輸出（已上站其他台的 JSON 不變）
-    ...(Math.abs(rot) > 1e-6 ? { rot: num(rot) } : {}),
-    ...(clip ? { clip } : {}),
+    ...geom,
     color: [num(c.r * mc[0]), num(c.g * mc[1]), num(c.b * mc[2]), num(c.a * mc[3])],
     mainTex,
     ...(disturbTex ? { disturbTex: useTex(disturbTex, `${owner} 的 _DisturbTex`) } : {}),
@@ -484,16 +570,138 @@ function flowLayer(n, img, at) {
   }
 }
 
+/**
+ * Image／RawImage＋UI/Flow1（1028、1035、2027、2055、2061、3020…）。公式見「UI/Flow1 的規格」；這裡把材質換成 FxFlow1，預設值不輸出。
+ * 網格：Image 沒掛 sprite（61 台都是）時 UV 是整張、_MainTex＝材質的；RawImage 有 texture 就用它當 _MainTex（Unity 的 mainTexture，
+ * 1035 海拉的 Flash_Mask01 就是）。sprite 會連 UV 一起換掉、匯出檔又沒有 sprite，所以掛了就報 ⚠。
+ */
+function flow1Layer(n, mb, at) {
+  const m = D.materials[mb.material], f = m.floats, c = m.colors, owner = `${n.name}：材質 ${mb.material}（UI/Flow1）`
+  const geom = flowGeom(n, at, owner)
+  flow1Unsupported(m, owner)
+  const F = mb.fields
+  if (mb.script === 'Image') {
+    if (F.m_Sprite?.pid && F.m_Sprite.pid !== '0') warn(`${owner}：Image 掛了 sprite（會換掉 _MainTex 與 UV），匯出檔沒有 sprite，引擎不支援`)
+    if (F.m_Type) warn(`${owner}：Image 的類型 ${F.m_Type}（不是 Simple），引擎只畫整張矩形`)
+    if (F.m_PreserveAspect) warn(`${owner}：Image 開了 preserveAspect，引擎不支援`)
+  } else {
+    const u = F.m_UVRect
+    if (u && (u.x || u.y || u.width !== 1 || u.height !== 1)) warn(`${owner}：RawImage 的 uvRect 不是整張（${JSON.stringify(u)}），引擎不支援`)
+  }
+  const dst = f._Dst ?? 10
+  if (dst !== 1 && dst !== 10) warn(`${owner} 的混色 SrcAlpha／${dst} 引擎不支援（只有 1＝疊加、10＝透明），當成疊加`)
+  /** 貼圖：省略＝shader 預設 white；wrap 照匯出（兩軸不同時取 U） */
+  const tx = (name, what) => {
+    if (!name) return undefined
+    const w = D.textures[name]?.wrap
+    if (!w) warn(`${owner}：匯出檔沒有 ${what} 的 wrap（10-17 前的匯出），請用 export-gacha-prefab.py 重匯`)
+    else if (w[0] !== w[1]) warn(`${owner} 的 ${what} 兩軸 wrap 不同，引擎取 U 的`)
+    return { tex: useTex(name, `${owner} 的 ${what}`), ...(repeats(name) ? { repeat: true } : {}) }
+  }
+  const mainTO = (c._MainTex1TO ?? ST_ID).map(num), mainFlow = [num(c._Tex1Flow?.[0]), num(c._Tex1Flow?.[1])]
+  const main = tx(m.tex._MainTex1?.tex, '_MainTex1')
+  const colName = mb.texture ?? m.tex._MainTex?.tex
+  const colST = texST(m.tex._MainTex)
+  const disturbValue = num(f._DisturbValue ?? 0)
+  const disturbTO = (c._DisturbTO ?? ST_ID).map(num)
+  const ic = F.m_Color, mc = c._Color ?? [1, 1, 1, 1]
+  const mask = (i) => {
+    const t = m.tex[`_Mask${i}`]?.tex, rev = !!f[`_Mask${i}Revert2`]
+    if (!t) { if (rev) warn(`${owner} 沒有 _Mask${i} 卻開了反轉遮罩：預設白色反轉後整層透明，遊戲裡看不見`); return undefined }
+    return {
+      tex: tx(t, `_Mask${i}`), st: texST(m.tex[`_Mask${i}`]),
+      ...(i === 1 ? { rotate: deg(f._Mask1Rotate) } : {}),
+      softness: num(f[`_Mask${i}Softness`] ?? 0), ...(rev ? { revert: true } : {}),
+    }
+  }
+  const mask1 = mask(1), mask2 = mask(2)
+  return {
+    shader: 'flow1',
+    name: n.name,
+    ...geom,
+    color: [num(ic.r * mc[0]), num(ic.g * mc[1]), num(ic.b * mc[2]), num(ic.a * mc[3])],
+    ...(dst === 10 ? { blend: 'alpha' } : {}),
+    mainValue: num(f._MainValue ?? 1),
+    ...(main ? { main } : {}),
+    ...(f._MainTexRotate ? { mainRotate: deg(f._MainTexRotate) } : {}),
+    ...(mainFlow[0] || mainFlow[1] ? { mainFlow } : {}),
+    ...(isIdentityST(mainTO) ? {} : { mainTO }),
+    ...((f._VRepeatSwitch ?? 1) === 0 ? { vClamp: true } : {}),
+    // 主貼圖是 white 時取 R 沒有差別，不輸出
+    ...(main && f._ChannelChoose ? { channelR: true } : {}),
+    ...(colName
+      ? { colorTex: { ...tx(colName, mb.texture ? `${mb.script} 的 texture` : '_MainTex'), ...(isIdentityST(colST) ? {} : { st: colST }), ...(f._ColorRotate ? { rotate: deg(f._ColorRotate) } : {}) } }
+      : {}),
+    // 擾動量是 0 時 D 用不到（不論有沒有擾動圖）
+    ...(disturbValue
+      ? {
+          disturb: {
+            ...(m.tex._DisturbTex?.tex ? { tex: tx(m.tex._DisturbTex.tex, '_DisturbTex') } : {}),
+            value: disturbValue,
+            flow: [num(c._DisturbFlow?.[0]), num(c._DisturbFlow?.[1])],
+            to: disturbTO,
+            ...(f._ModeCtrl1 ? { axis: f._ModeCtrl2 ? 'v' : 'u' } : {}),
+          },
+        }
+      : {}),
+    ...(dissolveActive(m)
+      ? {
+          dissolve: {
+            ...(m.tex._DissolveTex?.tex ? { tex: tx(m.tex._DissolveTex.tex, '_DissolveTex') } : {}),
+            st: texST(m.tex._DissolveTex),
+            flow: [num(f._DisFlowU ?? 0), num(f._DisFlowV ?? 0)],
+            ...(m.tex._DissolveMask?.tex ? { mask: tx(m.tex._DissolveMask.tex, '_DissolveMask') } : {}),
+            maskST: texST(m.tex._DissolveMask),
+            value: num(f._DissolveValue ?? 0),
+            softness: num(f._DissolveSoftness ?? 0),
+            ...(f._DissolveMaskRevert ? { revert: true } : {}),
+          },
+        }
+      : {}),
+    ...(mask1 ? { mask1 } : {}),
+    ...(mask2 ? { mask2 } : {}),
+  }
+}
+
 const systems = [], flows = []
+/** 輸出的系統／圖層在 nodes 裡的位置（排繪製順序用） */
+const sysAt = [], flowAt = []
 for (const [i, n] of nodes.entries()) {
   if (!isActive(n)) continue
-  if (n.ps) { const s = particleSystem(n, layout[i]); if (s) systems.push(s); continue }
+  if (n.ps) { const s = particleSystem(n, layout[i]); if (s) { systems.push(s); sysAt.push(i) } continue }
   for (const mb of n.mb ?? []) {
     if (!mb.material) continue
     const shader = D.materials[mb.material]?.shader
-    if (mb.script === 'Image' && shader === SHADER_FLOW) flows.push(flowLayer(n, mb, layout[i]))
+    if (mb.script === 'Image' && shader === SHADER_FLOW) { flows.push(flowLayer(n, mb, layout[i])); flowAt.push(i) }
+    else if ((mb.script === 'Image' || mb.script === 'RawImage') && shader === SHADER_FLOW1) { flows.push(flow1Layer(n, mb, layout[i])); flowAt.push(i) }
     else if (shader) warn(`${n.name}：${mb.script} 用了材質 ${mb.material}（${shader}），引擎不畫`)
   }
+}
+
+/**
+ * Tween 類元件（TweenAlpha／TweenScale…，遊戲自己的 UITweener 系列）會在執行時改顏色或變換，引擎都沒做。
+ * 61 台只有 1035 海拉的 Flash_Mask01、2014 的 BG_Fx 在畫的節點上掛 TweenAlpha（1.5 秒循環的閃爍）；
+ * 語意照 NGUI 推得出來，但遊戲是 IL2CPP、沒有原始碼可對，對遊戲畫面確認前不實作——不處理會畫成常亮，所以報 ⚠。
+ */
+for (const i of [...sysAt, ...flowAt]) {
+  for (let x = i; x != null; x = nodes[x].parent) {
+    for (const b of nodes[x].mb ?? []) if (/^Tween/.test(b.script) && b.fields?.m_Enabled !== 0) warn(`${nodes[i].name}：${x === i ? '' : `祖先 ${nodes[x].name} 的 `}${b.script} 會在執行時做動畫，引擎不支援`)
+  }
+}
+
+/**
+ * 繪製順序（10-17 J-1 補）：Unity UI 照階層前序畫，UIParticle 在它的節點位置畫底下的粒子、Image 在自己的位置畫。
+ * 引擎是「粒子全部畫完再畫流動圖層」；階層在所有 UIParticle 之前的圖層輸出 under，引擎先畫它（1028、2055、2061、3020 的 Flow1 圖層，
+ * 其中 2061、3020 與 2055 的 Fire 是透明混色，畫在粒子後面會把粒子蓋住）。已上站各台的 UI_CommonFlow 圖層全在粒子之後，不受影響。
+ * 夾在兩組粒子之間的圖層引擎排不出來，報 ⚠（61 台只有 1051 的 Image02）。
+ */
+const uiParticleOf = (i) => { for (let x = i; x != null; x = nodes[x].parent) if ((nodes[x].mb ?? []).some((b) => b.script === 'UIParticle')) return x; return i }
+if (systems.length) {
+  const at = sysAt.map(uiParticleOf), lo = Math.min(...at), hi = Math.max(...at)
+  flows.forEach((fl, j) => {
+    if (flowAt[j] < lo) fl.under = true
+    else if (flowAt[j] < hi) warn(`${fl.name}：圖層在階層裡夾在兩組粒子（UIParticle）之間，引擎只能畫在全部粒子之前或之後`)
+  })
 }
 
 const out = { v: 1, prefab: D.prefab, canvas: CANVAS, unit: 100, systems, flows }

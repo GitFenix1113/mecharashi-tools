@@ -83,9 +83,10 @@ export interface FxSystem {
   render: { mode: number; lengthScale: number; velocityScale: number; maxSize: number }
   /**
    * 貼圖（官方檔名，public/images/game/fx/）、顏色強度、主貼圖旋轉（弧度）。
-   * blend：'alpha'＝一般透明（Unity 材質 _Dst3＝10 → SrcAlpha, OneMinusSrcAlpha）；省略＝疊加（SrcAlpha, One）
+   * blend：'alpha'＝一般透明（Unity 材質 _Dst3＝10 → SrcAlpha, OneMinusSrcAlpha）；省略＝疊加（SrcAlpha, One）。
+   * strengthAlpha：強度也乘 alpha（UI/Flow1 的 _MainValue 乘在最後、四個通道都乘）；省略＝只乘 RGB（UIFx_Alpha、UI_CommonFlow）
    */
-  material: { tex: string; strength: number; texRotate: number; blend?: 'alpha' }
+  material: { tex: string; strength: number; texRotate: number; blend?: 'alpha'; strengthAlpha?: true }
   duration: number
   looping: boolean
   prewarm: boolean
@@ -145,19 +146,26 @@ export interface FxFlowMask {
   repeat: boolean
 }
 
-/**
- * 流動圖層（Image＋UI_CommonFlow）：擾動貼圖捲動推移主貼圖的 UV，疊加在最上層。
- * mainST 之後的欄位是 10-17 照 shader 補的，預設值就省略（芬里厄的 JSON 因此不變）。
- */
-export interface FxFlow {
+/** 流動圖層兩種 shader 共用的版面欄位 */
+interface FxFlowBase {
   name: string
   /** 矩形中心（畫布座標，累積了祖先的變換） */
   pos: [number, number]
-  /** 畫布像素（矩形大小 × localScale × 祖先的縮放） */
+  /** 畫布像素（矩形大小 × localScale × 祖先的縮放）；寬為負＝水平鏡像（自己的 localScale.x < 0，貼圖跟著左右翻） */
   size: [number, number]
   /** 畫布平面上的旋轉（弧度，逆時針，含祖先）；省略＝不轉 */
   rot?: number
   clip?: FxClip
+  /** 遊戲裡階層在所有 UIParticle 之前：先畫這層、再畫粒子；省略＝粒子都畫完才畫 */
+  under?: true
+}
+
+/**
+ * 流動圖層（Image＋UI_CommonFlow）：擾動貼圖捲動推移主貼圖的 UV，疊加在最上層。
+ * mainST 之後的欄位是 10-17 照 shader 補的，預設值就省略（芬里厄的 JSON 因此不變）。
+ */
+export interface FxCommonFlow extends FxFlowBase {
+  shader?: undefined
   /** Image 顏色 × 材質 _Color */
   color: RGBA
   mainTex: string
@@ -182,6 +190,67 @@ export interface FxFlow {
   /** 省略＝材質沒指定 _Mask1，用 shader 預設的 white（不遮） */
   mask?: FxFlowMask
 }
+
+/** UI/Flow1 用到的一張貼圖：官方檔名＋wrap（Repeat，否則夾邊；匯出的貼圖兩軸 wrap 都相同） */
+export interface FxFlow1Tex { tex: string; repeat?: true }
+
+/**
+ * 流動圖層（Image／RawImage＋UI/Flow1）。公式照 shader 反組譯（_local-notes/2026-10/2026-10-17_卡池動態_Flow1/）：
+ *   out＝主貼圖（旋轉→捲動→擾動→TO）× 遮罩 1、2 × 溶解 × 顏色貼圖 × 頂點色 × mainValue，四個通道都乘。
+ * 所有貼圖都選填：省略＝shader 預設的 white。旋轉是弧度，方向照 shader（UV 乘 [[c, s], [−s, c]]）。
+ */
+export interface FxFlow1 extends FxFlowBase {
+  shader: 'flow1'
+  /** 頂點色（Image／RawImage 的 color）× 材質 _Color */
+  color: RGBA
+  /** 'alpha'＝_Dst 10（一般透明）；省略＝疊加（_Dst 1） */
+  blend?: 'alpha'
+  /** _MainValue */
+  mainValue: number
+  /** _MainTex1（主貼圖；沒有 TRANSFORM_TEX，材質貼圖槽的 tiling 對它沒作用） */
+  main?: FxFlow1Tex
+  /** _MainTexRotate（擾動圖的 UV 也跟著轉）；省略＝0 */
+  mainRotate?: number
+  /** _Tex1Flow（每秒 UV，擾動圖也跟著捲）；省略＝不捲動 */
+  mainFlow?: [number, number]
+  /** _MainTex1TO：位移加在擾動之前、tiling 在擾動之後（都以 0.5 為中心）；省略＝[1,1,0,0] */
+  mainTO?: FxTO
+  /** _VRepeatSwitch＝0：主貼圖的 v 夾在 0–1（預設 1＝交給貼圖 wrap）；u 一律交給 wrap */
+  vClamp?: true
+  /** _ChannelChoose＝1：主貼圖四個通道（含 alpha）都取 R */
+  channelR?: true
+  /** _MainTex（顏色貼圖；RawImage 指定的 texture 優先）＋貼圖槽的 tiling／offset 與 _ColorRotate */
+  colorTex?: FxFlow1Tex & { st?: FxTO; rotate?: number }
+  /** 擾動：D＝_DisturbTex 的 r（省略貼圖＝white，D＝1）；uv 往 D 內插 0.1×value。value 是 0 就整個省略 */
+  disturb?: {
+    tex?: FxFlow1Tex
+    value: number
+    /** _DisturbFlow（另外再加 mainFlow） */
+    flow: [number, number]
+    /** _DisturbTO */
+    to: FxTO
+    /** 單軸擾動（_ModeCtrl1＝1）時推哪一軸（_ModeCtrl2）；省略＝兩軸。溶解的單軸固定推 V */
+    axis?: 'u' | 'v'
+  }
+  /** 溶解：t＝smoothstep((遮罩×n＋1.1−2.1×value−softness)/(1−2×softness))，n＝溶解貼圖的 r×a（revert 時 1−n） */
+  dissolve?: {
+    tex?: FxFlow1Tex
+    st: FxTO
+    /** _DisFlowU／_DisFlowV */
+    flow: [number, number]
+    mask?: FxFlow1Tex
+    maskST: FxTO
+    value: number
+    softness: number
+    revert?: true
+  }
+  /** _Mask1：r×a 經 softness 的 smoothstep（revert 反轉）；UV＝uv×st 以 0.5 為中心轉 rotate */
+  mask1?: { tex: FxFlow1Tex; st: FxTO; rotate: number; softness: number; revert?: true }
+  /** _Mask2：同上，不轉 */
+  mask2?: { tex: FxFlow1Tex; st: FxTO; softness: number; revert?: true }
+}
+
+export type FxFlow = FxCommonFlow | FxFlow1
 
 export interface GachaFxData {
   v: 1
