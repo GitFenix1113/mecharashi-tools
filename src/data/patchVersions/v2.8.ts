@@ -43,7 +43,7 @@ const v2_8: PatchVersion = {
       { name: '角雕輪盤', startDate: '2026/05/28', weeks: 1, type: 'roulette' },
     ],
   },
-  crisisShop: ['亞瑟', '梅利莎'],
+  crisisShop: ['亞瑟', '梅莉莎'],
   isTwCurrent: true,
 }
 
