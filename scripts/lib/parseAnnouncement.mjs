@@ -34,7 +34,7 @@
  * AnnouncementDraft.parserVersion 靠它挑出「該重跑的舊公告」，
  * 沒有它就只能全量重跑或憑印象。
  */
-export const PARSER_VERSION = 9
+export const PARSER_VERSION = 10
 
 const DAY_MS = 86_400_000
 
@@ -319,6 +319,48 @@ export function parseHeadingLine(line) {
 const ONLY_ROLE_WORDS = /^(?:S級|A級|B級|SSR|SR|新|輕型|中型|重型|機甲|機師|守護者|格鬥家|狙擊手|支援者|突擊兵|機械師|調構師|戰術家|\s)*$/
 
 /**
+ * 公告的機甲譯名 → 資料庫用字。
+ *
+ * 台版公告換過譯者、也有筆誤，同一台機甲在不同年份寫法不同。照抄進時間線的後果是
+ * **對不到機甲**：PLAN-063 的「這台現在抽得到嗎」、推估規則判斷「是不是本版本新機甲」
+ * （announcementMerge.ts 拿 mechs 比對 PatchHalf.mechs）都是用名字比對，差一個字就當成另一台。
+ *
+ * 只收語料上實際出現過的（266 篇歸檔＋資料庫草稿，2026-10-18 盤點），每筆註明出處。
+ * 2026 年起的公告已與資料庫同字，這張表主要接住舊公告與跨域海運的長名單。
+ * 新增時先確認右邊確實是資料庫的 name —— 寫錯等於把對的名字改壞。
+ */
+const MECH_NAME_ALIASES = {
+  塔納托斯: '塔納託斯',   // 卡池 686／1026；海運名單 1506／1589／1694／1751
+  光輝: '光暉',           // 卡池 736
+  芬裡厄: '芬里厄',       // 卡池 1329
+  巨象: '巨像',           // 海運名單 1589／1694
+  奥德修斯: '奧德修斯',   // 海運名單 1589／1694（「奥」是日文新字體）
+  吉雨萊斯: '吉爾萊斯',   // 海運名單 1589／1694（筆誤）
+  恐領: '恐頜',           // 海運名單 1751（筆誤）
+  格莱楊: '格萊楊',       // 自選池名單 642（簡體「莱」）
+  吉爾莱斯: '吉爾萊斯',   // 自選池名單 642（簡體「莱」）
+}
+
+/**
+ * 機甲名正規化：剝掉 `｜輕型機甲` 這種機種後綴（642 的名單寫成「恐爪｜輕型機甲」），再查譯名表。
+ * 只用在機甲（mechs、跨域海運與自選池的名單）—— 機師名另有一套異體字，不混在這裡。
+ */
+export function normalizeMechName(raw) {
+  const s = String(raw).replace(/\s*[｜|]\s*(?:輕型|中型|重型)?機甲\s*$/, '').trim()
+  return MECH_NAME_ALIASES[s] ?? s
+}
+
+/**
+ * 「活動內容」行是不是**自選池**的名單（「可自選購置概率提升之S級機甲對象包括「A」、「B」…」）。
+ *
+ * 自選池沒有 UP 對象，名單上每一台都只是「可以選」。先前退路規則取這行的**第一個**「」
+ * 當 UP 機甲，實測 642【特選】獵豹特別訂單 16 台任選，產出 mechs: ['恐爪｜輕型機甲'] ——
+ * 推估規則再據此算成「恐爪復刻池 2 週」，是會一路自動放行進時間線的那種錯。
+ * 認出來之後名單改進 selection，mechs 留空交給人。
+ */
+const RE_SELF_PICK = /任選|自選/
+
+/**
  * 這一行有沒有資格當活動標題。
  *
  * 沒有這道閘的後果實測過：`凡於活動期間內透過官網儲值管道，指定使用支付
@@ -494,10 +536,16 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     if (!heading.name) flags.push('missingName')
 
     // 標題行沒帶實體名時，退而求其次讀 `➤活動內容：S級機師「科林」招募概率提升`
+    // 自選池的名單行不取 UP 對象，整份名單另存（見 RE_SELF_PICK）
+    let selfPick
     if (heading.entities.length === 0) {
       for (let i = Math.max(headIdx, prevTimeLine) + 1; i < hit.line; i++) {
         const m = /(?:活動內容|概率提升|招募|購置)[^\n]*?[「『]([^」』]{1,20})[」』]/.exec(lines[i])
-        if (m) { heading.entities = [m[1].trim()]; break }
+        if (!m) continue
+        const all = [...lines[i].matchAll(/[「『]([^」』]{1,20})[」』]/g)].map(x => x[1].trim())
+        if (RE_SELF_PICK.test(lines[i]) && all.length >= 2) selfPick = all
+        else heading.entities = [m[1].trim()]
+        break
       }
     }
 
@@ -657,9 +705,10 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     const rewards = parseRewards(blockText)
 
     // 實體名：卡池段落才填，一般活動的 「」 多半是獎勵不是機師
+    // 自選池本來就沒有 UP 對象，同 crossShipping 的理由不列入下面的告警分母
     let pilots, mechs
     if (type === 'specificPilotBanner') {
-      pilotBanners++
+      if (!selfPick) pilotBanners++
       if (heading.entities.length) {
         pilots = heading.entities
         pilotNamed++
@@ -670,14 +719,14 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
     // 標題本來就抓不到 —— 把它算進「卡池句型是否漂移」的分母是類別錯誤，
     // 實測會製造 6 次常態誤報。那份長名單由下面的 selection 規則接手。
     if (type === 'specificMechBanner') {
-      mechBanners++
+      if (!selfPick) mechBanners++
       if (heading.entities.length) {
-        mechs = heading.entities
+        mechs = heading.entities.map(normalizeMechName)
         mechNamed++
       }
     } else if (type === 'crossShipping' && heading.entities.length) {
       // 標題偶爾仍帶實體名，帶了就收（不影響告警分母）
-      mechs = heading.entities
+      mechs = heading.entities.map(normalizeMechName)
     }
 
     // 自選池「這一期可以選誰」的名單。寫在活動內容行的括號裡：
@@ -700,9 +749,13 @@ export function parseAnnouncement({ title = '', text = '', sourceUrl = '' } = {}
         if (!m) continue
         // 官方名單實測有重複項與空項（1589：「夜天光、夜天光」「疾嘯、、影武者」）。
         // 去重保序 —— 這是抄錄官方筆誤，不是解析錯誤，但照抄進資料只會讓前台顯示兩次。
-        selection = [...new Set(m[1].split(/[、,，]+/).map(s => s.trim()).filter(Boolean))]
+        // 機甲名先正規化再去重：「塔納托斯」與「塔納託斯」是同一台。
+        const names = m[1].split(/[、,，]+/).map(s => s.trim()).filter(Boolean)
+        selection = [...new Set(type === 'crossShipping' ? names.map(normalizeMechName) : names)]
         break
       }
+    } else if (selfPick && (type === 'specificMechBanner' || type === 'specificPilotBanner')) {
+      selection = [...new Set(type === 'specificMechBanner' ? selfPick.map(normalizeMechName) : selfPick)]
     }
 
     const excerptStart = offsets[headIdx >= 0 ? headIdx : hit.line]

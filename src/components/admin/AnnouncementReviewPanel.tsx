@@ -377,8 +377,8 @@ export default function AnnouncementReviewPanel({
               <p className="mt-0.5 text-[10px] text-text-dim">
                 解析器從「活動內容」的括號抓（`本次指定兌換機師為:…`）。
                 <strong className="text-text-secondary">官方名單本身會有錯字與譯名不一致</strong>
-                （實測有「恐領／恐頜」「吉雨萊斯／吉爾萊斯」「凱瑟琳／凱薩琳」），
-                放行前請對一下站上的實體名 —— 這裡改的是要顯示給讀者看的字。
+                ——機甲名的已知寫法（「恐領／恐頜」「吉雨萊斯／吉爾萊斯」等）解析器已自動改成站上用字，
+                機師名（如「凱瑟琳／凱薩琳」）與沒見過的新寫法仍要人工對一下 —— 這裡改的是要顯示給讀者看的字。
               </p>
             </div>
           )}

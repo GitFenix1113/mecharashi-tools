@@ -9,6 +9,7 @@ import {
   titleAsName,
   spanToWeeks,
   decodeEntities,
+  normalizeMechName,
   PARSER_VERSION,
 } from './parseAnnouncement.mjs'
 
@@ -340,6 +341,88 @@ test('自選池名單：非自選池的活動不去抓這個句型', () => {
 ➤活動時間：2026/07/09 10:00 - 2026/07/30 10:00`,
   })
   assert.equal(r.activities[0].extracted.type, 'limitedEvent')
+  assert.equal(r.activities[0].extracted.selection, undefined)
+})
+
+test('normalizeMechName：公告譯名改成資料庫用字，並剝掉機種後綴', () => {
+  assert.equal(normalizeMechName('塔納托斯'), '塔納託斯')
+  assert.equal(normalizeMechName('光輝'), '光暉')
+  assert.equal(normalizeMechName('巨象'), '巨像')
+  assert.equal(normalizeMechName('奥德修斯'), '奧德修斯')
+  assert.equal(normalizeMechName('吉雨萊斯'), '吉爾萊斯')
+  assert.equal(normalizeMechName('芬裡厄'), '芬里厄')
+  assert.equal(normalizeMechName('恐爪｜輕型機甲'), '恐爪')
+  assert.equal(normalizeMechName('格莱楊｜輕型機甲'), '格萊楊', '先剝後綴再查表')
+  assert.equal(normalizeMechName('螢石'), '螢石', '不在表上的原樣保留')
+})
+
+test('回歸：舊公告的機甲池用舊譯名，mechs 要寫成資料庫用字', () => {
+  // 錯的時候（實測 736 / 686 / 1329）：mechs 照抄「光輝」「塔納托斯」「芬裡厄」，
+  // 時間線上的卡池對不到機甲 —— PLAN-063 的卡池條與「是不是本版本新機甲」的推估都靠名字比對。
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `本週推出內容
+機甲獲取海運活動
+【特選】希望如爍 – S級中型機甲「光輝」
+➤活動時間：2024/09/05 10:00:00 起`,
+  })
+  assert.equal(r.activities[0].extracted.type, 'specificMechBanner')
+  assert.equal(r.activities[0].extracted.name, '希望如爍')
+  assert.deepEqual(r.activities[0].extracted.mechs, ['光暉'])
+  assert.ok(r.activities[0].flags.includes('openEnded'))
+})
+
+test('回歸：跨域海運名單的機甲名先正規化再去重', () => {
+  // 實測 1589／1694 的名單混著「巨象」「奥德修斯」「吉雨萊斯」，1751 有「恐領」。
+  // 先去重再正規化的話，同一台的兩種寫法會各留一筆。
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `本週推出內容
+【跨域海運】
+➤活動內容：指定S級機甲即刻入列！(本次指定兌換機甲為:塔納托斯、恐領、巨象、塔納託斯)
+➤活動時間：2026/07/09 10:00:00 起`,
+  })
+  assert.equal(r.activities[0].extracted.type, 'crossShipping')
+  assert.deepEqual(r.activities[0].extracted.selection, ['塔納託斯', '恐頜', '巨像'])
+})
+
+test('回歸（642 獵豹特別訂單）：自選池的名單沒有 UP 對象，不能取第一個當實體名', () => {
+  // 錯的時候：mechs: ['恐爪｜輕型機甲']、pilots: ['虹'] —— 名單上 16 台／15 位都只是「可以選」，
+  // 推估規則再把它算成「恐爪復刻池 2 週」，一路自動放行進時間線。
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `本週推出內容
+機師征招招募活動
+【自選】命定的相逢
+➤活動內容：任選機師招募概率提升，可自選招募概率提升之S級機師對象包括「虹」、「賽」、「肖妮」
+➤活動時間：2024/06/20 10:00:00 起
+機甲獲取海運活動
+【特選】獵豹特別訂單
+➤活動內容：任選機甲購置概率提升，可自選購置概率提升之S級機甲對象包括「恐爪｜輕型機甲」、「格莱楊｜輕型機甲」、「XR｜中型機甲」
+➤活動時間：2024/06/20 10:00:00 起`,
+  })
+  const [pilot, mech] = r.activities
+  assert.equal(pilot.extracted.type, 'specificPilotBanner')
+  assert.equal(pilot.extracted.pilots, undefined)
+  assert.deepEqual(pilot.extracted.selection, ['虹', '賽', '肖妮'])
+  assert.equal(mech.extracted.type, 'specificMechBanner')
+  assert.equal(mech.extracted.mechs, undefined)
+  assert.deepEqual(mech.extracted.selection, ['恐爪', '格萊楊', 'XR'])
+  // 自選池本來就沒有 UP 對象，不是「卡池句型漂移、抓不到名字」
+  assert.ok(!r.warnings.includes('pilotSectionNoName'))
+  assert.ok(!r.warnings.includes('mechSectionNoName'))
+})
+
+test('單一 UP 的活動內容行即使提到「自選」也照取實體名（名單要兩個以上才算自選池）', () => {
+  const r = parseAnnouncement({
+    title: '【版本前瞻】x',
+    text: `本週推出內容
+機甲獲取海運活動
+【特選】某主題
+➤活動內容：S級機甲「螢石」購置概率提升，保底可自選
+➤活動時間：2026/07/30 10:00 起`,
+  })
+  assert.deepEqual(r.activities[0].extracted.mechs, ['螢石'])
   assert.equal(r.activities[0].extracted.selection, undefined)
 })
 
