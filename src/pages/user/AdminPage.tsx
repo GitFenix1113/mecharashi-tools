@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import type { GrayOpsRoster } from '../../types'
 import { updateGrayOpsRoster } from '../../lib/firestoreApi'
 import { useAuth } from '../../contexts/AuthContext'
+import { canEditLore, isAdminRole } from '../../utils/userRole'
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { TabButton, AdminLoadGate, ADMIN_WIDE_MAX_W } from './admin/shared'
 import ModuleAdmin from './admin/ModuleAdmin'
@@ -111,7 +112,12 @@ export default function AdminPage() {
     )
   }
 
-  if (!user || (userProfile?.role !== 'ADMIN' && userProfile?.role !== 'OWNER')) {
+  // 故事館協作編輯（PLAN-042-H）在後台只有編輯台一頁能用：直接送過去，別讓他對著「無存取權限」猜路。
+  if (user && !isAdminRole(userProfile?.role) && canEditLore(userProfile?.role)) {
+    return <Navigate to="/admin/lore" replace />
+  }
+
+  if (!user || !isAdminRole(userProfile?.role)) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="bg-bg-card border border-border rounded-xl p-10 text-center">

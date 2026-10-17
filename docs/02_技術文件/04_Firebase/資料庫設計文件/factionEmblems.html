@@ -99,7 +99,9 @@
 
   <div class="info-block" style="margin-top:12px;">
     <strong>🔒 安全規則與讀取路徑</strong><br>
-    <code>match /factionEmblems/{docId}</code>：<code>read</code> / <code>write</code> 皆 <code>isAdmin()</code>。
+    <code>match /factionEmblems/{docId}</code>：<code>read</code> / <code>create</code> / <code>update</code> 皆 <code>canEditLore()</code>
+    （<code>LORE_EDITOR</code> / <code>ADMIN</code> / <code>OWNER</code>），<code>delete</code> 只給 <code>isAdmin()</code>（PLAN-042-H，2026-10-17；理由同 pilotLore）。
+    寫入走 <code>writeDoc</code>＋<code>bumpDataVersion</code>，<strong>不留 <code>changeHistory</code></strong>；協作編輯的 bump 由 <code>meta/gameData</code> 的 <code>isLoreVersionBump()</code> 放行。
     前台經 Cloudflare Worker 代理（<code>/api/data/factionEmblems</code>）。前台只把它當滑鼠提示用：讀不到不擋頁面、不顯示錯誤。
   </div>
 
@@ -114,7 +116,7 @@
 </main>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-10-14 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 
 </body>

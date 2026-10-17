@@ -150,7 +150,9 @@
 
   <div class="info-block" style="margin-top:12px;">
     <strong>🔒 安全規則與讀取路徑</strong><br>
-    <code>match /mechLore/{docId}</code>：<code>read</code> / <code>write</code> 皆 <code>isAdmin()</code>。
+    <code>match /mechLore/{docId}</code>：<code>read</code> / <code>create</code> / <code>update</code> 皆 <code>canEditLore()</code>
+    （<code>LORE_EDITOR</code> / <code>ADMIN</code> / <code>OWNER</code>），<code>delete</code> 只給 <code>isAdmin()</code>（PLAN-042-H，2026-10-17；理由同 pilotLore：
+    read 是給 <code>saveWithHistory</code> 讀 pre-image，delete 不開是因為編輯台沒有刪除路徑）。
     前台不直讀，走 Cloudflare Worker 代理（<code>/api/data/mechLore</code>）。
   </div>
 
@@ -165,7 +167,7 @@
 </main>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-10-16 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

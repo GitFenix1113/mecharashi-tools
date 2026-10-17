@@ -388,10 +388,11 @@ export const DataManaged = {
 export type DataManaged = typeof DataManaged[keyof typeof DataManaged];
 
 export const UserRole = {
-  GUEST: 'GUEST',  // 訪客（未登入，不儲存於 Firestore）
-  USER:  'USER',   // 一般註冊用戶
-  ADMIN: 'ADMIN',  // 管理者（可寫遊戲資料）
-  OWNER: 'OWNER',  // 網站擁有者（最高權限）
+  GUEST:       'GUEST',        // 訪客（未登入，不儲存於 Firestore）
+  USER:        'USER',         // 一般註冊用戶
+  LORE_EDITOR: 'LORE_EDITOR',  // 故事館協作編輯（只能寫故事館四個集合，碰不到遊戲資料；PLAN-042-H）
+  ADMIN:       'ADMIN',        // 管理者（可寫遊戲資料）
+  OWNER:       'OWNER',        // 網站擁有者（最高權限）
 } as const;
 export type UserRole = typeof UserRole[keyof typeof UserRole];
 

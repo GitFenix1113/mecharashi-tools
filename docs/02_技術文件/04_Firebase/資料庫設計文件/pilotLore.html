@@ -254,7 +254,10 @@
 
   <div class="info-block" style="margin-top:12px;">
     <strong>🔒 安全規則</strong><br>
-    <code>match /pilotLore/{docId}</code>：<code>read</code> / <code>write</code> 皆 <code>isAdmin()</code>。
+    <code>match /pilotLore/{docId}</code>：<code>read</code> / <code>create</code> / <code>update</code> 皆 <code>canEditLore()</code>
+    （<code>LORE_EDITOR</code> / <code>ADMIN</code> / <code>OWNER</code>），<code>delete</code> 只給 <code>isAdmin()</code>（PLAN-042-H，2026-10-17；以前是 read/write 皆 <code>isAdmin()</code>）。
+    read 要開給協作編輯，是因為 <code>saveWithHistory</code> 存檔前會直讀 pre-image 判斷 create／update；delete 不開，是因為編輯台本來就沒有刪除路徑，
+    協作者用 client SDK 直接刪掉一整份人工長文的那條路也一併關掉。<br>
     前台不直讀，改走 Cloudflare Worker 代理（<code>/api/data/pilotLore</code>，service account 代讀）。
   </div>
 
@@ -278,7 +281,7 @@
 </main>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-10-13 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

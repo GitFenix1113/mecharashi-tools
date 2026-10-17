@@ -87,7 +87,9 @@
 
   <div class="info-block" style="margin-top:12px;">
     <strong>🔒 安全規則與讀取路徑</strong><br>
-    <code>match /mechMakers/{docId}</code>：<code>read</code> / <code>write</code> 皆 <code>isAdmin()</code>。
+    <code>match /mechMakers/{docId}</code>：<code>read</code> / <code>create</code> / <code>update</code> 皆 <code>canEditLore()</code>
+    （<code>LORE_EDITOR</code> / <code>ADMIN</code> / <code>OWNER</code>），<code>delete</code> 只給 <code>isAdmin()</code>（PLAN-042-H，2026-10-17；理由同 pilotLore）。
+    寫入走 <code>writeDoc</code>＋<code>bumpDataVersion</code>，<strong>不留 <code>changeHistory</code></strong>；協作編輯的 bump 由 <code>meta/gameData</code> 的 <code>isLoreVersionBump()</code> 放行。
     前台經 Cloudflare Worker 代理（<code>/api/data/mechMakers</code>）。讀不到時前台照樣能畫（廠商顯示「廠商未載」、名冊不分組），不擋頁面。
     只有十幾筆短欄位，照常落 localStorage。
   </div>
@@ -101,7 +103,7 @@
 </main>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-10-16 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 
 </body>

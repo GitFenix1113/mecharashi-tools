@@ -80,9 +80,9 @@ function CommunityCard({ link }: { link: CommunityLink }) {
 }
 
 export default function SiteTeamSection() {
-  const { owners, admins, loading } = useSiteTeam()
+  const { owners, admins, loreEditors, loading } = useSiteTeam()
 
-  if (loading || (owners.length === 0 && admins.length === 0)) return null
+  if (loading || (owners.length === 0 && admins.length === 0 && loreEditors.length === 0)) return null
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -99,6 +99,15 @@ export default function SiteTeamSection() {
           <span className="text-text-dim text-xs shrink-0">攻略作者/資料彙整者：</span>
           <div className="flex gap-2">
             {admins.map(p => <TeamCard key={p.uid} profile={p} />)}
+          </div>
+        </div>
+      )}
+      {/* PLAN-042-H：故事館協作編輯。人數可能比上面兩列多，頭像列允許換行 */}
+      {loreEditors.length > 0 && (
+        <div className="flex items-center gap-3">
+          <span className="text-text-dim text-xs shrink-0">故事館協作編輯：</span>
+          <div className="flex flex-wrap gap-2">
+            {loreEditors.map(p => <TeamCard key={p.uid} profile={p} />)}
           </div>
         </div>
       )}

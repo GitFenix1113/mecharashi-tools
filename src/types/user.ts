@@ -1,7 +1,10 @@
 // ─── 用戶系統（Phase 5）────────────────────────────────────────────────────────
 
-import type { GameServer } from './enums'
+import type { GameServer, UserRole } from './enums'
 import type { UserResearchLevels } from './research'
+
+/** 存在 profile 文件裡的角色。GUEST 只描述「未登入」，從不落地。 */
+export type ProfileRole = Exclude<UserRole, 'GUEST'>
 
 // ─── 圖鑑列表檢視偏好 ─────────────────────────────────────────────────────────
 // compact = 極簡（頭像+名），detailed = 詳細卡片。分頁各自記憶。
@@ -14,7 +17,7 @@ export interface UserProfile {
   displayName: string
   email: string
   photoURL?: string
-  role: 'USER' | 'ADMIN' | 'OWNER'
+  role: ProfileRole
   researchLevels: UserResearchLevels
   createdAt: string
   updatedAt: string

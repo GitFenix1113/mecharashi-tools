@@ -19,6 +19,23 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/main)
           .data.role == 'OWNER';
     }
+    // PLAN-042-H 故事館協作編輯：LORE_EDITOR 只拿得到故事館四個集合（pilotLore／mechLore／
+    // factionEmblems／mechMakers）＋這兩件附帶寫入：存檔稽核（changeHistory，限 lore 兩類）與
+    // 版本號 bump（meta/gameData，限那四個鍵）。遊戲資料一律還是 isAdmin()。
+    // ⚠ 角色清單對應 src/utils/userRole.ts 的 canEditLore()，兩邊要一起改。
+    function canEditLore() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/main)
+          .data.role in ['LORE_EDITOR', 'ADMIN', 'OWNER'];
+    }
+    // bumpDataVersion 的寫入形狀是 merge `{ versions: { <key>: 時間戳 }, updatedAt }`。
+    // 兩層都用 affectedKeys().hasOnly() 鎖死：協作編輯只能讓故事館那四個集合的快取失效，
+    // 動不到其他集合的版本號與全域 fallback（否則等於能讓全站所有 client 重抓整包資料）。
+    function isLoreVersionBump() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['versions', 'updatedAt'])
+        && request.resource.data.versions.diff(resource.data.versions).affectedKeys()
+             .hasOnly(['pilotLore', 'mechLore', 'factionEmblems', 'mechMakers']);
+    }
 
     // ── 遊戲資料（PLAN-029 Phase 3-2：讀取收緊為 isAdmin，寫入維持 isAdmin）──────
     // 原本 read: if true（任何人可直打 Firestore REST 白嫖／被爬）。改為 isAdmin() 後：
@@ -84,25 +101,30 @@ service cloud.firestore {
     }
     // PLAN-042-A 機師故事館：逸聞章節。全站唯一「人工逐字輸入、重跑爬蟲也生不回來」
     // 的集合，寫入一律經 saveWithHistory 留稽核（見 lib/api/pilotLore.ts）。
+    //
+    // 故事館四個集合（本條與下面三條）都開給 canEditLore()（PLAN-042-H），但 **delete 只留給管理者**：
+    // 編輯台本來就沒有刪除路徑（lib/api/pilotLore.ts 檔尾），協作者用 client SDK 直接刪
+    // 一整份人工長文的那條路也一併關掉。read 要開，是因為 saveWithHistory 存檔前會直讀
+    // pre-image 判斷 create／update——前台列表本身走 Worker，不靠這條。
     match /pilotLore/{docId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      allow read, create, update: if canEditLore();
+      allow delete: if isAdmin();
     }
     // PLAN-042-F 陣營徽章註記：徽章的名稱與圖上字樣（文件 ID＝4 碼編號）。前台經 Worker 讀。
     match /factionEmblems/{docId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      allow read, create, update: if canEditLore();
+      allow delete: if isAdmin();
     }
     // PLAN-042-B 機甲故事館：介紹、型號、廠商、系譜與逸聞章節。理由同 pilotLore，
     // 寫入一律經 saveWithHistory 留稽核（見 lib/api/mechLore.ts）。
     match /mechLore/{docId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      allow read, create, update: if canEditLore();
+      allow delete: if isAdmin();
     }
     // PLAN-042-B 機甲廠商（文件 ID＝官方舞台背景鍵，如 Doll）。前台經 Worker 讀。
     match /mechMakers/{docId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      allow read, create, update: if canEditLore();
+      allow delete: if isAdmin();
     }
     match /buffs/{docId} {
       allow read: if isAdmin();
@@ -132,6 +154,9 @@ service cloud.firestore {
     match /meta/{docId} {
       allow read: if isAdmin();
       allow write: if isAdmin();
+      // PLAN-042-H：故事館協作編輯存檔後 bump 自己那幾個集合的版本號（形狀見 isLoreVersionBump）。
+      // 只開 update、只開 gameData 這一份；多條 allow 是 OR，不影響上面管理者那條。
+      allow update: if docId == 'gameData' && canEditLore() && isLoreVersionBump();
     }
 
     // ── PLAN-030 資料變更歷史：append-only 稽核 log ──────────────────────────
@@ -149,9 +174,16 @@ service cloud.firestore {
     // 連本人也刪不掉、永久化（PLAN-030 Phase C 破壞性測試發現③）。append-only 防的
     // 是「竄改既有記錄」，這條防的是「偽造新記錄」，同屬稽核完整性。
     // 與程式相容：buildEntry 走管理員路徑時 actorUid 恆為 auth.currentUser.uid。
+    //
+    // PLAN-042-H：故事館協作編輯也要能寫自己的存檔記錄，但 target 限 pilotLore／mechLore 兩類
+    // （saveWithHistory 只有這兩館會走到；徽章與廠商是 writeDoc＋bump、不留稽核）。
+    // 讀取仍只給管理者：歷史檢視頁屬於後台，協作者不需要互看彼此的記錄。
     match /changeHistory/{docId} {
       allow read:   if isAdmin();
-      allow create: if isAdmin() && request.resource.data.actorUid == request.auth.uid;
+      allow create: if request.resource.data.actorUid == request.auth.uid && (
+        isAdmin() ||
+        (canEditLore() && request.resource.data.target in ['pilotLore', 'mechLore'])
+      );
       allow update, delete: if false;
     }
 
@@ -187,14 +219,16 @@ service cloud.firestore {
     // 記錄內含 UA、儲存用量、螢幕尺寸等裝置指紋，屬維護者個人的環境資訊，
     // 不該讓其他 ADMIN 互看。
     //
-    // create 維持 isAdmin() 而非 isAuthenticated()：本計畫只追蹤維護者，
+    // create 維持「維護者」而非 isAuthenticated()：本計畫只追蹤維護者，
     // 放寬到一般登入使用者只會擴大寫入面並帶來限流需求（PLAN-045 決策四）。
+    // PLAN-042-H 起故事館協作編輯也算維護者（canEditLore() 涵蓋 ADMIN／OWNER）：
+    // 他們正是最可能撞上「存檔被拒」的人，沒有這條，那份證據只會永遠卡在他們的 localStorage。
     //
     // ⚠ 登出當下寫不進來是**預期行為**，不是規則沒設好——此時 request.auth 已為 null。
     //   那條路徑刻意改走 localStorage 佇列、等下次登入再補送（決策一）。
     match /systemLog/{docId} {
       allow read:   if isOwnerRole();
-      allow create: if isAdmin() && request.resource.data.uid == request.auth.uid;
+      allow create: if canEditLore() && request.resource.data.uid == request.auth.uid;
       allow update, delete: if false;
     }
 

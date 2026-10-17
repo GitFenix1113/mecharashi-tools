@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { WORKER_ENABLED, fetchWorkerSiteTeam } from './api/workerData'
-import type { UserProfile, UserResearchLevels, SiteTeamMember } from '../types'
+import type { ProfileRole, UserProfile, UserResearchLevels, SiteTeamMember } from '../types'
 
 const profileDoc = (uid: string) => doc(db, 'users', uid, 'profile', 'main')
 
@@ -83,16 +83,21 @@ function toSiteTeamMember(p: UserProfile): SiteTeamMember {
  *
  * Worker 未設定時（純本機直連）退回直查：收緊後只有管理者讀得到，一般訪客會拿到
  * permission denied，由 useSiteTeam 的降級處理（首頁少一塊而不是壞掉）。
+ *
+ * PLAN-042-H 起名單多了故事館協作編輯（LORE_EDITOR）。
+ * ⚠ 角色清單對應 workers/src/index.ts 的 SITE_TEAM_ROLES，兩邊要一起改。
  */
+export const SITE_TEAM_ROLES: readonly ProfileRole[] = ['OWNER', 'ADMIN', 'LORE_EDITOR']
+
 export async function getSiteTeamProfiles(): Promise<SiteTeamMember[]> {
   if (WORKER_ENABLED) return fetchWorkerSiteTeam()
   const snap = await getDocs(
-    query(collectionGroup(db, 'profile'), where('role', 'in', ['ADMIN', 'OWNER']))
+    query(collectionGroup(db, 'profile'), where('role', 'in', [...SITE_TEAM_ROLES]))
   )
   return snap.docs.map(d => toSiteTeamMember(d.data() as UserProfile))
 }
 
-export async function updateUserRole(uid: string, role: 'USER' | 'ADMIN' | 'OWNER'): Promise<void> {
+export async function updateUserRole(uid: string, role: ProfileRole): Promise<void> {
   await setDoc(profileDoc(uid), { role, updatedAt: new Date().toISOString() }, { merge: true })
 }
 

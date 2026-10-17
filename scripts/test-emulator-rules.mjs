@@ -19,6 +19,11 @@
  *     一條永遠為假的規則也會讓測試變綠）
  *   · 外加：doc id 正規式、空字串格位、局部合併不會洗掉其他格
  *
+ * 驗證故事館協作編輯 LORE_EDITOR 的授權邊界（PLAN-042-H）：
+ *   · 故事館四個集合可讀寫、不可刪；遊戲資料一律碰不到
+ *   · changeHistory 只能寫 lore 兩類、只能署自己的名；meta/gameData 只能 bump 故事館四個鍵
+ *   · 不能自己提權；systemLog 寫得進去（維護者）
+ *
  * 前置：`npm run emu:fresh`（或 `npm run emu`）要先跑起來，然後
  *   npm run emu:test-rules
  */
@@ -29,6 +34,14 @@ const AUTH = 'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts'
 
 const ADMIN = { email: 'dev-admin@local.test', password: 'devadmin' }
 const PLAIN = { email: 'dev-plain@local.test', password: 'devplain' }
+const LORE  = { email: 'dev-lore@local.test',  password: 'devlore' }
+
+/**
+ * 模擬器專用的「繞過規則」憑證：Firestore 模擬器把 `Bearer owner` 當成 Admin。
+ * 只用來**佈置前置狀態**（給協作編輯帳號設 role、確保 meta/gameData 存在），
+ * 被測的請求一律用真實 ID token —— 用這個測規則永遠是綠的（見檔頭）。
+ */
+const BYPASS = { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }
 
 let pass = 0
 let fail = 0
@@ -101,6 +114,114 @@ const buildBody = (slots, over = {}) => ({
     ...over,
   },
 })
+
+// ── 故事館協作編輯 LORE_EDITOR（PLAN-042-H）────────────────────────────────────
+//
+// 每一條「應放行」都配一條相鄰的「應被擋」：只驗被擋那側的話，canEditLore() 寫成永遠為假
+// 也會全綠；只驗放行那側的話，把整個集合開成 isAuthenticated() 也會全綠。
+
+const str = (v) => ({ stringValue: v })
+const fieldsOf = (obj) => ({ fields: Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, str(v)])) })
+const mask = (...paths) => paths.map((p) => `updateMask.fieldPaths=${encodeURIComponent(p)}`).join('&')
+
+/** bumpDataVersion 的 REST 等價形狀：merge 寫 versions.<key> 與 updatedAt */
+const bump = (tok, key) => fetch(`${FS}/meta/gameData?${mask(`versions.${key}`, 'updatedAt')}`, {
+  method: 'PATCH',
+  headers: authed(tok),
+  body: JSON.stringify({
+    fields: {
+      versions: { mapValue: { fields: { [key]: str(new Date().toISOString()) } } },
+      updatedAt: str(new Date().toISOString()),
+    },
+  }),
+})
+
+async function loreEditorSuite(adminTok, plainTok) {
+  console.log('\n故事館協作編輯 role: LORE_EDITOR（PLAN-042-H）')
+
+  const editor = await account(LORE)
+  const tok = editor.idToken
+
+  // 前置：role 只能由 OWNER 指派，這裡用繞過規則的憑證直接佈置；meta/gameData 也要先存在
+  //（isLoreVersionBump 比對的是 resource.data，文件不存在時規則會評估失敗＝被擋，測不到放行那側）。
+  await fetch(`${FS}/users/${editor.uid}/profile/main`, {
+    method: 'PATCH', headers: BYPASS,
+    body: JSON.stringify(fieldsOf({ uid: editor.uid, displayName: '故事館測試', email: LORE.email, role: 'LORE_EDITOR' })),
+  })
+  await fetch(`${FS}/meta/gameData?${mask('versions.pilotLore')}`, {
+    method: 'PATCH', headers: BYPASS,
+    body: JSON.stringify({ fields: { versions: { mapValue: { fields: { pilotLore: str('seed') } } } } }),
+  })
+
+  const put = (t, path, obj) => fetch(`${FS}/${path}`, { method: 'PATCH', headers: authed(t), body: JSON.stringify(fieldsOf(obj)) })
+  const get = (t, path) => fetch(`${FS}/${path}`, { headers: authed(t) })
+  const del = (t, path) => fetch(`${FS}/${path}`, { method: 'DELETE', headers: authed(t) })
+  const st = async (p) => (await p).status
+
+  // ① 故事館四個集合：可讀可寫、不可刪 ──────────────────────────────────────
+  check('寫 pilotLore', await st(put(tok, 'pilotLore/rules_test', { name: '規則測試' })), 200)
+  check('讀 pilotLore（saveWithHistory 的 pre-image）', await st(get(tok, 'pilotLore/rules_test')), 200)
+  check('刪 pilotLore（應被擋）', await st(del(tok, 'pilotLore/rules_test')), 403)
+  check('寫 mechLore', await st(put(tok, 'mechLore/rules_test', { name: '規則測試' })), 200)
+  check('寫 factionEmblems', await st(put(tok, 'factionEmblems/rules_test', { name: '規則測試' })), 200)
+  check('寫 mechMakers', await st(put(tok, 'mechMakers/rules_test', { name: '規則測試' })), 200)
+  check('管理者刪 pilotLore（對照：應可刪）', await st(del(adminTok, 'pilotLore/rules_test')), 200)
+  check('一般使用者寫 pilotLore（應被擋）', await st(put(plainTok, 'pilotLore/rules_test', { name: '越權' })), 403)
+
+  // ② 遊戲資料：一律碰不到 ────────────────────────────────────────────────
+  check('寫 pilots（應被擋）', await st(put(tok, 'pilots/rules_test', { name: '越權' })), 403)
+  check('讀 pilots（應被擋，前台走 Worker）', await st(get(tok, 'pilots/rules_test')), 403)
+  check('寫 buffs（應被擋）', await st(put(tok, 'buffs/rules_test', { name: '越權' })), 403)
+
+  // ③ 稽核記錄：只能寫 lore 兩類、只能署自己的名、不能讀 ─────────────────────
+  const log = (target, actorUid) => fetch(`${FS}/changeHistory`, {
+    method: 'POST', headers: authed(tok),
+    body: JSON.stringify({ fields: { ...logBody(actorUid).fields, target: str(target) } }),
+  })
+  const ok = await log('pilotLore', editor.uid)
+  check('寫 changeHistory（target=pilotLore）', ok.status, 200)
+  check('寫 changeHistory（target=mechLore）', await st(log('mechLore', editor.uid)), 200)
+  check('寫 changeHistory（target=buff，應被擋）', await st(log('buff', editor.uid)), 403)
+  check('冒名寫 changeHistory（應被擋）', await st(log('pilotLore', 'someone-else')), 403)
+  if (ok.ok) {
+    const id = (await ok.json()).name.split('/').pop()
+    check('讀 changeHistory（應被擋）', await st(get(tok, `changeHistory/${id}`)), 403)
+  }
+
+  // ④ 版本號：只能 bump 故事館那四個鍵 ───────────────────────────────────────
+  check('bump versions.pilotLore', await st(bump(tok, 'pilotLore')), 200)
+  check('bump versions.mechMakers', await st(bump(tok, 'mechMakers')), 200)
+  check('bump versions.pilots（應被擋）', await st(bump(tok, 'pilots')), 403)
+  check('改 meta/gameData 全域欄位（應被擋）',
+    await st(fetch(`${FS}/meta/gameData?${mask('version')}`, {
+      method: 'PATCH', headers: authed(tok), body: JSON.stringify(fieldsOf({ version: '越權' })),
+    })), 403)
+  check('寫 meta 其他文件（應被擋）', await st(put(tok, 'meta/rules_test', { versions: '越權' })), 403)
+  check('管理者 bump versions.pilots（對照：應可寫）', await st(bump(adminTok, 'pilots')), 200)
+
+  // ⑤ 提權與診斷日誌 ─────────────────────────────────────────────────────
+  check('自己把 role 改成 ADMIN（應被擋）',
+    await st(fetch(`${FS}/users/${editor.uid}/profile/main?${mask('role')}`, {
+      method: 'PATCH', headers: authed(tok), body: JSON.stringify(fieldsOf({ role: 'ADMIN' })),
+    })), 403)
+  check('改自己的暱稱（對照：應可寫）',
+    await st(fetch(`${FS}/users/${editor.uid}/profile/main?${mask('gameNickname')}`, {
+      method: 'PATCH', headers: authed(tok), body: JSON.stringify(fieldsOf({ gameNickname: '測試' })),
+    })), 200)
+  check('寫 systemLog（本人 uid）',
+    await st(fetch(`${FS}/systemLog`, {
+      method: 'POST', headers: authed(tok), body: JSON.stringify(fieldsOf({ uid: editor.uid, kind: 'rules_test' })),
+    })), 200)
+  check('寫 systemLog（一般使用者，應被擋）',
+    await st(fetch(`${FS}/systemLog`, {
+      method: 'POST', headers: authed(plainTok), body: JSON.stringify(fieldsOf({ uid: 'x', kind: 'rules_test' })),
+    })), 403)
+
+  // 清理：用繞過規則的憑證收掉測試文件（changeHistory／systemLog 是 append-only，留著無妨）
+  await Promise.all(
+    ['mechLore', 'factionEmblems', 'mechMakers'].map((c) => fetch(`${FS}/${c}/rules_test`, { method: 'DELETE', headers: BYPASS })),
+  )
+}
 
 async function cloudBuildsSuite() {
   console.log('\n雲端書架 users/{uid}/builds/{pilotId}（PLAN-052-E）')
@@ -249,6 +370,7 @@ async function main() {
       body: JSON.stringify({ fields: { name: { stringValue: '越權' } } }),
     })).status, 403)
 
+  await loreEditorSuite(adminTok, plainTok)
   await cloudBuildsSuite()
 
   // 清理：測試留下的 log 只能用 Admin SDK 繞過規則刪（這正是 append-only 生效的證明）

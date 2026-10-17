@@ -64,6 +64,19 @@
     該端點在 Cloudflare 邊緣快取 <strong>1 小時</strong>（名單幾乎不變）——維護者改暱稱或頭像後，
     首頁最多一小時才會反映。
   </div>
+
+  <div class="changed-block">
+    <strong>✅ 2026-10-17：新增角色 <code>LORE_EDITOR</code>（故事館協作編輯，PLAN-042-H）</strong>
+    首頁團隊名單收的角色由 OWNER / ADMIN 擴為 <strong>OWNER / ADMIN / LORE_EDITOR</strong>（依此順序排序），
+    兩處角色清單要一起改：Worker <code>workers/src/index.ts</code> 的 <code>SITE_TEAM_ROLES</code>，
+    與 Worker 未設定時直連回退用的 <code>src/lib/userApi.ts</code> <code>SITE_TEAM_ROLES</code>
+    （<code>getSiteTeamProfiles</code> 的 <code>where('role', 'in', …)</code>）。<br>
+    Worker 的邊緣快取鍵同步由 <code>site-team</code> 換成 <code>site-team-v2</code>：角色範圍一變，
+    舊鍵底下那份最多一小時的舊名單就不該再被讀到，否則部署後當下驗收會看到「名單沒變」而誤判部署失敗。<br>
+    profile 的安全規則<strong>沒有改</strong>：仍只有 OWNER（<code>isOwnerRole()</code>）能改別人的 <code>role</code>，
+    本人不能改自己的 <code>role</code>。指派由 OWNER 在後台「用戶管理」分頁的下拉選單進行（一般用戶／故事館協作編輯／管理者；
+    UI 不提供指派 OWNER），寫入走 <code>updateUserRole(uid, role: ProfileRole)</code>。
+  </div>
 </section>
 
 <section class="section">
@@ -76,7 +89,7 @@
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>displayName</td><td>string</td><td>顯示名稱</td></tr>
       <tr><td>email</td><td>string</td><td>電子郵件。<strong>僅本人與管理員讀得到</strong>——後台使用者管理用，不在首頁團隊名單的公開白名單內（PLAN-051）</td></tr>
-      <tr><td>role</td><td>UserRole</td><td>角色 Enum：USER / ADMIN / OWNER（GUEST 不存於 DB）</td></tr>
+      <tr><td>role</td><td>ProfileRole</td><td>角色 Enum：USER / LORE_EDITOR / ADMIN / OWNER（GUEST 不存於 DB）。型別 <code>ProfileRole = Exclude&lt;UserRole, 'GUEST'&gt;</code>（<code>src/types/user.ts</code>）；LORE_EDITOR＝故事館協作編輯（PLAN-042-H），只能寫故事館四個集合</td></tr>
       <tr><td>globalResearch</td><td>object</td><td>玩家的全域科研等級設定</td></tr>
       <tr><td>pilotResearchSelections</td><td>object</td><td>各機師的個別科研選擇（{ pilotId: { slot1: optionIdx, ... } }）</td></tr>
       <tr><td>createdAt</td><td>timestamp</td><td>帳號建立時間</td></tr>
@@ -167,7 +180,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

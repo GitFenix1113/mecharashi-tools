@@ -60,7 +60,7 @@
     <table class="data-table green-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>Firestore 自動 ID（<code>addDoc</code> 產生）</td></tr>
-      <tr><td>target</td><td>ChangeTargetKind</td><td><strong>分類軸一</strong>：<code>'buff' | 'pilotSkill' | 'glossaryTerm' | 'backpack' | 'backpackSkill' | 'form'</code>（可擴充）</td></tr>
+      <tr><td>target</td><td>ChangeTargetKind</td><td><strong>分類軸一</strong>：<code>'buff' | 'pilotSkill' | 'glossaryTerm' | 'backpack' | 'backpackSkill' | 'form' | 'pilotLore' | 'mechLore'</code>（可擴充；安全規則只讓故事館協作編輯寫最後兩種）</td></tr>
       <tr><td>action</td><td>ChangeAction</td><td><strong>分類軸二</strong>：<code>'create' | 'update' | 'delete' | 'restore'</code></td></tr>
       <tr><td>targetId</td><td>string</td><td>被異動的文件 ID，如 <code>buff_過熱</code></td></tr>
       <tr><td>targetName</td><td>string</td><td>當下顯示名稱。<strong>刻意去正規化</strong>：查 log 免 join，且目標被刪後仍看得懂是什麼</td></tr>
@@ -183,16 +183,29 @@
   <div class="code-block">
 <span class="fn">match</span> /changeHistory/{docId} {
   <span class="kw">allow</span> read:   <span class="kw">if</span> <span class="fn">isAdmin</span>();
-  <span class="kw">allow</span> create: <span class="kw">if</span> <span class="fn">isAdmin</span>() && request.resource.data.actorUid == request.auth.uid;
+  <span class="kw">allow</span> create: <span class="kw">if</span> request.resource.data.actorUid == request.auth.uid && (
+    <span class="fn">isAdmin</span>() ||
+    (<span class="fn">canEditLore</span>() && request.resource.data.target <span class="kw">in</span> ['pilotLore', 'mechLore'])
+  );
   <span class="kw">allow</span> update, delete: <span class="kw">if</span> <span class="kw">false</span>;
 }</div>
+
+  <div class="info-block">
+    <strong>✍️ 故事館協作編輯的 create 分支（PLAN-042-H，2026-10-17）</strong><br>
+    新角色 <code>LORE_EDITOR</code> 在故事館編輯台存檔時，<code>saveWithHistory</code> 會替他寫一筆自己的存檔記錄，所以 create 多一條
+    <code>canEditLore()</code> 分支，但 <strong><code>target</code> 只限 <code>pilotLore</code>／<code>mechLore</code></strong>——
+    <code>saveWithHistory</code> 只有這兩館會走到；陣營徽章與機甲廠商是 <code>writeDoc</code>＋bump、不留稽核，
+    其餘 target（<code>buff</code>、<code>pilotSkill</code>…）協作編輯一律寫不進來。<br>
+    <code>actorUid == request.auth.uid</code> 綁在兩條分支外層，<strong>協作編輯一樣不能冒名</strong>。
+    <strong>讀取仍只給 <code>isAdmin()</code></strong>：歷史檢視頁屬於後台，協作者不需要互看彼此的記錄；update／delete 仍為 <code>false</code>。
+  </div>
 
   <div class="warning-block">
     <strong>🔏 create 為何要綁定 <code>actorUid</code></strong><br>
     只驗身分不驗內容的話，管理員可用 client SDK 直接寫入 <code>actorUid</code> 冒名的偽造記錄<strong>嫁禍他人</strong>，
     且因下方 append-only，連本人也刪不掉、永久化（PLAN-030 Phase C 破壞性測試發現③）。<br>
     append-only 防的是「竄改既有記錄」，這條防的是「偽造新記錄」，同屬稽核完整性。
-    與程式相容：<code>buildEntry</code> 走管理員路徑時 <code>actorUid</code> 恆為 <code>auth.currentUser.uid</code>。
+    與程式相容：<code>buildEntry</code> 走管理員路徑（以及 PLAN-042-H 起的協作編輯路徑）時 <code>actorUid</code> 恆為 <code>auth.currentUser.uid</code>。
   </div>
 
   <div class="warning-block">
@@ -235,6 +248,8 @@
       <tr><td><code>backpack</code></td><td>backpacks</td><td>✅ 已接線（PLAN-043，含級聯刪除）</td></tr>
       <tr><td><code>backpackSkill</code></td><td>backpackSkills</td><td>✅ 已接線（PLAN-043，含級聯刪除）</td></tr>
       <tr><td><code>form</code></td><td>forms</td><td>✅ 已接線（PLAN-041，含級聯刪除）</td></tr>
+      <tr><td><code>pilotLore</code></td><td>pilotLore</td><td>✅ 已接線（PLAN-042-A，create / update；刻意沒有刪除路徑）。PLAN-042-H 起故事館協作編輯也寫得進來</td></tr>
+      <tr><td><code>mechLore</code></td><td>mechLore</td><td>✅ 已接線（PLAN-042-B，create / update；刻意沒有刪除路徑）。PLAN-042-H 起故事館協作編輯也寫得進來</td></tr>
     </table>
   </div>
 
@@ -260,7 +275,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

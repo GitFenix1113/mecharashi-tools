@@ -37,9 +37,26 @@
   <div class="section-label blue">01 — Security Rules</div>
   <div class="section-title">Firestore 安全規則</div>
   <div class="section-desc">
-    現行授權模型三句話：<strong>遊戲資料一律 <code>read/write: if isAdmin()</code></strong>（前台改由 Cloudflare
-    Worker 以 service account 代讀）；<strong>用戶資料本人可讀寫，但不能自行提權</strong>；
+    現行授權模型四句話：<strong>遊戲資料一律 <code>read/write: if isAdmin()</code></strong>（前台改由 Cloudflare
+    Worker 以 service account 代讀）；<strong>故事館四個集合另開給 <code>canEditLore()</code></strong>
+    （ADMIN／OWNER 之外再加故事館協作編輯 <code>LORE_EDITOR</code>，可讀、建、改但不能刪，且碰不到遊戲資料）；
+    <strong>用戶資料本人可讀寫，但不能自行提權</strong>，角色只有 OWNER 能授予；
     <strong>稽核類集合 append-only</strong>，寫下去連管理員也改不掉。
+  </div>
+
+  <div class="sub-h">角色與輔助函數</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th>輔助函數</th><th>放行的 <code>role</code></th><th>用在哪</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>isOwner(userId)</code></td><td>（不看角色，<code>request.auth.uid == userId</code>）</td><td>用戶自己的資料</td></tr>
+        <tr><td><code>canEditLore()</code></td><td><code>LORE_EDITOR</code> / <code>ADMIN</code> / <code>OWNER</code></td><td>故事館四個集合的讀／建／改、<code>meta/gameData</code> 的故事館版本號 bump、<code>changeHistory</code>（限 lore 兩類）與 <code>systemLog</code> 的 create</td></tr>
+        <tr><td><code>isAdmin()</code></td><td><code>ADMIN</code> / <code>OWNER</code></td><td>遊戲資料與 <code>meta</code>、公告 staging、使用統計的讀取、故事館的 delete、<code>changeHistory</code> 的讀取、使用者 profile 的讀取</td></tr>
+        <tr><td><code>isOwnerRole()</code></td><td><code>OWNER</code></td><td>改任何人的 profile（授予角色）、<code>systemLog</code> 的讀取</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="changed-block">
@@ -59,22 +76,34 @@
       </thead>
       <tbody>
         <tr>
-          <td>遊戲資料<br><span style="color:var(--text-dim);font-size:12px;">pilots / mechs / weapons / backpacks / backpackSkills / components / modules / skills / pilotSkills / neuralDriveAbilities / glossaryTerms / forms / pilotLore / buffs / research / enemies / patchVersions / grayOps / meta</span></td>
+          <td>遊戲資料<br><span style="color:var(--text-dim);font-size:12px;">pilots / mechs / weapons / backpacks / backpackSkills / components / modules / skills / pilotSkills / neuralDriveAbilities / glossaryTerms / forms / buffs / research / enemies / patchVersions / grayOps</span></td>
           <td><code>isAdmin()</code></td>
           <td><code>isAdmin()</code></td>
           <td>PLAN-029 Phase 3-2。原本是 <code>read: if true</code>，等於任何人都能直打 Firestore REST 白嫖／整包爬走。收緊後 client 直讀一律 permission-denied，前台改走 Worker <code>/api/data/:collection</code>（service account 本就繞過規則）；管理員後台仍以 client SDK 直讀，故後台零改動。<strong>這取代了退場的 App Check</strong>——票可以被繞，規則不行。</td>
         </tr>
         <tr>
+          <td>故事館<br><span style="color:var(--text-dim);font-size:12px;">pilotLore / mechLore / factionEmblems / mechMakers</span></td>
+          <td><code>canEditLore()</code></td>
+          <td><code>create, update</code>：<code>canEditLore()</code>；<br><code>delete</code>：<code>isAdmin()</code></td>
+          <td>PLAN-042-H（2026-10-17）。以前同遊戲資料是 read/write 皆 <code>isAdmin()</code>；現在多開給故事館協作編輯 <code>LORE_EDITOR</code>。<strong>delete 只留給管理者</strong>：編輯台本來就沒有刪除路徑，協作者用 client SDK 直接刪掉一整份人工長文的那條路也一併關掉。<strong>read 要開</strong>，是因為 <code>saveWithHistory</code> 存檔前會直讀 pre-image 判斷 create／update——前台列表本身走 Worker，不靠這條。</td>
+        </tr>
+        <tr>
+          <td>系統 meta<br><code>meta/{docId}</code></td>
+          <td><code>isAdmin()</code></td>
+          <td><code>isAdmin()</code>；<br>另加 <code>update</code>：<code>docId == 'gameData' &amp;&amp; canEditLore() &amp;&amp; isLoreVersionBump()</code></td>
+          <td>PLAN-017 版本號（Worker 走 <code>/api/versions</code> 代讀）。PLAN-042-H 起協作編輯存檔後要 bump 自己那幾個集合的版本號，所以<strong>只開 <code>gameData</code> 一份、只開 update</strong>，且 <code>isLoreVersionBump()</code> 兩層鎖死：頂層只能動 <code>versions</code>／<code>updatedAt</code>，<code>versions</code> 裡只能動故事館四個鍵——否則等於能讓全站所有 client 的其他集合快取失效、重抓整包資料。多條 <code>allow</code> 是 OR，不影響管理者那條。</td>
+        </tr>
+        <tr>
           <td>稽核紀錄<br><code>changeHistory</code></td>
           <td><code>isAdmin()</code></td>
-          <td>僅 <code>create</code>，且須 <code>actorUid == request.auth.uid</code>；<br><code>update, delete: if false</code></td>
-          <td>全站唯一不用 <code>write: if isAdmin()</code> 的寫法。<code>write</code> 涵蓋 update/delete，沿用那套的話管理員能竄改或抹除自己的操作記錄，稽核價值歸零。額外綁 <code>actorUid</code> 是第二層：append-only 防「竄改既有記錄」，綁 uid 防「偽造新記錄嫁禍他人」（後者因 append-only 還永久刪不掉）。過期交給 Firestore 原生 TTL，TTL 是後端程序、不受規則約束。</td>
+          <td>僅 <code>create</code>，且須 <code>actorUid == request.auth.uid &amp;&amp; (isAdmin() || (canEditLore() &amp;&amp; target in ['pilotLore', 'mechLore']))</code>；<br><code>update, delete: if false</code></td>
+          <td>全站唯一不用 <code>write: if isAdmin()</code> 的寫法。<code>write</code> 涵蓋 update/delete，沿用那套的話管理員能竄改或抹除自己的操作記錄，稽核價值歸零。額外綁 <code>actorUid</code> 是第二層：append-only 防「竄改既有記錄」，綁 uid 防「偽造新記錄嫁禍他人」（後者因 append-only 還永久刪不掉）。過期交給 Firestore 原生 TTL，TTL 是後端程序、不受規則約束。<br>PLAN-042-H：協作編輯也要能寫自己的存檔記錄，但 <code>target</code> 限 <code>pilotLore</code>／<code>mechLore</code>（<code>saveWithHistory</code> 只有這兩館會走到；徽章與廠商是 <code>writeDoc</code>＋bump、不留稽核）。讀取仍只給管理者。</td>
         </tr>
         <tr>
           <td>系統日誌<br><code>systemLog</code></td>
           <td><code>isOwnerRole()</code></td>
-          <td>同上（create 綁 <code>uid</code>）</td>
-          <td>結構比照 changeHistory，差在<strong>讀取只給 OWNER</strong>：內容含 UA、儲存用量、螢幕尺寸等裝置指紋，屬維護者個人的環境資訊，不該讓其他 ADMIN 互看。</td>
+          <td>僅 <code>create</code>：<code>canEditLore()</code> 且 <code>uid == request.auth.uid</code>；<br><code>update, delete: if false</code></td>
+          <td>結構比照 changeHistory，差在<strong>讀取只給 OWNER</strong>：內容含 UA、儲存用量、螢幕尺寸等裝置指紋，屬維護者個人的環境資訊，不該讓其他 ADMIN 互看。<br>create 的對象是「維護者」：PLAN-042-H 起由 <code>isAdmin()</code> 改為 <code>canEditLore()</code>，協作編輯也算維護者——他們正是最可能撞上「存檔被拒」的人。</td>
         </tr>
         <tr>
           <td>公告 staging<br><code>announcementDrafts</code><br><code>pendingActivities</code></td>
@@ -103,7 +132,7 @@
           <td>用戶檔案<br><code>users/{uid}/profile/main</code></td>
           <td>本人 ／ <code>isAdmin()</code></td>
           <td><code>create</code> 限 <code>role == 'USER'</code>；<br><code>update</code> 本人不得改 <code>role</code>，<code>isOwnerRole()</code> 可改任何人</td>
-          <td><strong>提權防護</strong>：建立時強制 <code>role='USER'</code>，更新時用 <code>diff().affectedKeys().hasAny(['role'])</code> 擋自改角色，只有 OWNER 能授予角色。<br>2026-08-23 起<strong>沒有任何匿名讀取分支</strong>，見下方。</td>
+          <td><strong>提權防護</strong>：建立時強制 <code>role='USER'</code>，更新時用 <code>diff().affectedKeys().hasAny(['role'])</code> 擋自改角色，只有 OWNER 能授予角色（含 PLAN-042-H 的 <code>LORE_EDITOR</code>；這條規則本身未因此改動）。<br>2026-08-23 起<strong>沒有任何匿名讀取分支</strong>，見下方。</td>
         </tr>
       </tbody>
     </table>
@@ -127,6 +156,19 @@
     <a href="../../../05_階段性開發計畫/歷史記錄/PLAN-051_管理員profile讀取收斂/計畫書.html" style="color:var(--accent-green);">→ PLAN-051</a>
   </div>
 
+  <div class="changed-block">
+    <strong>✅ 2026-10-17：新增故事館協作編輯角色 <code>LORE_EDITOR</code>（PLAN-042-H）</strong>
+    在 USER 與 ADMIN 之間多一個角色：只拿得到故事館四個集合（<code>pilotLore</code>／<code>mechLore</code>／
+    <code>factionEmblems</code>／<code>mechMakers</code>），外加兩件存檔的附帶寫入——稽核
+    （<code>changeHistory</code>，限 lore 兩類 target）與版本號 bump（<code>meta/gameData</code>，限那四個鍵）。
+    遊戲資料一律仍是 <code>isAdmin()</code>；<code>systemLog</code> 的 create 一併改為 <code>canEditLore()</code>。<br>
+    規則側的角色清單 <code>['LORE_EDITOR', 'ADMIN', 'OWNER']</code> 對應前端 <code>src/utils/userRole.ts</code> 的
+    <code>canEditLore()</code>，<strong>兩邊要一起改</strong>（規則語言讀不到 TS 常數）。<br>
+    驗證：<code>npm run emu:test-rules</code> 的 <code>loreEditorSuite</code>（26 項）每一條「應放行」都配一條相鄰的「應被擋」——
+    只驗被擋那側的話 <code>canEditLore()</code> 寫成永遠為假也會全綠，只驗放行那側的話把集合開成
+    <code>isAuthenticated()</code> 也會全綠。
+  </div>
+
   <div class="sub-h">關鍵片段</div>
   <div class="code-block"><span class="label">firestore.rules（輔助函數與提權防護，節錄）</span><span class="comment">// role 存在子文件 users/{uid}/profile/main，不是 users/{uid}/profile</span>
 function isAdmin() {
@@ -138,6 +180,28 @@ function isOwnerRole() {
   return isAuthenticated() &amp;&amp;
     get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/main)
       .data.role == <span class="string">'OWNER'</span>;
+}
+<span class="comment">// PLAN-042-H：故事館協作編輯。⚠ 角色清單對應 src/utils/userRole.ts 的 canEditLore()</span>
+function canEditLore() {
+  return isAuthenticated() &amp;&amp;
+    get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/main)
+      .data.role in [<span class="string">'LORE_EDITOR'</span>, <span class="string">'ADMIN'</span>, <span class="string">'OWNER'</span>];
+}
+<span class="comment">// bumpDataVersion 的寫入形狀是 merge { versions: { &lt;key&gt;: 時間戳 }, updatedAt }，兩層都用 hasOnly() 鎖死</span>
+function isLoreVersionBump() {
+  return request.resource.data.diff(resource.data).affectedKeys().hasOnly([<span class="string">'versions'</span>, <span class="string">'updatedAt'</span>])
+    &amp;&amp; request.resource.data.versions.diff(resource.data.versions).affectedKeys()
+         .hasOnly([<span class="string">'pilotLore'</span>, <span class="string">'mechLore'</span>, <span class="string">'factionEmblems'</span>, <span class="string">'mechMakers'</span>]);
+}
+
+match /pilotLore/{docId} {   <span class="comment">// mechLore / factionEmblems / mechMakers 同形</span>
+  allow read, create, update: if canEditLore();
+  allow delete: if isAdmin();
+}
+match /meta/{docId} {
+  allow read: if isAdmin();
+  allow write: if isAdmin();
+  allow update: if docId == <span class="string">'gameData'</span> &amp;&amp; canEditLore() &amp;&amp; isLoreVersionBump();
 }
 
 match /users/{userId}/profile/{docId} {
@@ -152,8 +216,9 @@ match /users/{userId}/profile/{docId} {
   <div class="note-block">
     <strong>⚠️ 管理員設定與讀取成本</strong>
     初始管理員需透過 Firebase Console 或 Admin SDK 手動把 <code>users/{uid}/profile/main</code> 的
-    <code>role</code> 設為 <code>'OWNER'</code>；之後 OWNER 可在後台授予他人 ADMIN。<br>
-    <code>isAdmin()</code> 每次驗證都會 <code>get()</code> 一次 profile 文件，<strong>計入 Firestore 讀取次數</strong>。
+    <code>role</code> 設為 <code>'OWNER'</code>；之後 OWNER 可在後台「用戶管理」分頁的下拉選單授予他人
+    <code>LORE_EDITOR</code>（故事館協作編輯）或 <code>ADMIN</code>（UI 不提供指派 OWNER）。<br>
+    <code>isAdmin()</code>／<code>canEditLore()</code>／<code>isOwnerRole()</code> 每次驗證都會 <code>get()</code> 一次 profile 文件，<strong>計入 Firestore 讀取次數</strong>。
     這是把角色存在 Firestore 而非 custom claims 的代價——換來的是不必重新簽發 token 就能即時改角色。
   </div>
 </section>
@@ -363,7 +428,7 @@ service firebase.storage {
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

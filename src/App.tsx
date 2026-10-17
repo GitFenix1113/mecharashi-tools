@@ -150,12 +150,14 @@ function App() {
               path="admin/analytics"
               element={<AdminRoute><Suspense fallback={null}><AdminAnalyticsPage /></Suspense></AdminRoute>}
             />
-            {/* 機師故事館編輯台（PLAN-042-A E-1）。ADMIN 即可用——它只寫 pilotLore。
+            {/* 機師故事館編輯台（PLAN-042-A E-1）。ADMIN 即可用——它只寫故事館的集合。
+                PLAN-042-H 起另外放行故事館協作編輯（LORE_EDITOR）：路徑刻意留在 /admin 底下，
+                不另開 /lore-editor —— 新的頂層路徑要補 Cloudflare 白名單（CLAUDE.md §3）。
                 AdminRoute 在外、Suspense 在內（與上面五條後台路由一致）：反過來的話
                 未授權者會先付一次 chunk 下載才被導走。 */}
             <Route
               path="admin/lore"
-              element={<AdminRoute><Suspense fallback={null}><AdminLorePage /></Suspense></AdminRoute>}
+              element={<AdminRoute lore><Suspense fallback={null}><AdminLorePage /></Suspense></AdminRoute>}
             />
             {/* catch-all：未匹配路徑顯示 404 引導頁（放最後，只在所有 route 都沒中時生效）。
                 置於 Layout 之下，故仍有導覽列可用；先前缺此條時只會渲染空白內容區。 */}

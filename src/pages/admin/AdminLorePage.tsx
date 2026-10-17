@@ -5,6 +5,8 @@ import { DraftRestoreBar, LoadMoreButton, useClientPaged } from '../user/admin/s
 import { useDraftRestore } from '../../hooks/useDraftAutosave'
 import { updatePilotLore } from '../../lib/firestoreApi'
 import { useGameData } from '../../contexts/GameDataContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { isAdminRole } from '../../utils/userRole'
 import { pilotSkinCatalog } from '../../utils/gameArt'
 import {
   LORE_GAP_LABEL, hasLoreGap, loreProgressOf, summarizeLoreProgress, type LoreGap, type LoreProgress,
@@ -53,6 +55,7 @@ const GAP_OPTIONS: { value: LoreFilters['gap']; label: string }[] = [
 
 export default function AdminLorePage() {
   const gd = useGameData()
+  const isAdmin = isAdminRole(useAuth().userProfile?.role)
 
   // ⚠ 必須解構出 ensureLoaded 當依賴。寫成 [gd] 的話：Provider 的 value 是每次 render
   //   新建的物件字面量（未 memo），而抓取失敗的 catch 會 setErrorMap → re-render →
@@ -143,7 +146,12 @@ export default function AdminLorePage() {
 
       {/* 麵包屑 */}
       <div className="flex items-center gap-2 text-xs text-text-dim mb-4">
-        <Link to="/admin" className="hover:text-text-secondary transition-colors no-underline">後台管理</Link>
+        {/* 故事館協作編輯（PLAN-042-H）進不了後台首頁，麵包屑就不給他一個會被導走的連結 */}
+        {isAdmin ? (
+          <Link to="/admin" className="hover:text-text-secondary transition-colors no-underline">後台管理</Link>
+        ) : (
+          <span>故事館協作</span>
+        )}
         <span>›</span>
         <span className="text-accent-cyan">故事館</span>
       </div>

@@ -11,6 +11,7 @@ import NavIcon from '../icons/NavIcon'
 import EmulatorBadge from './EmulatorBadge'
 import { VERSION_VIEWS } from '../versions/VersionViewTabs'
 import { SITE_NAME, SITE_TITLE } from '../../lib/siteMeta'
+import { canEditLore, isAdminRole } from '../../utils/userRole'
 // 故事館 header 的 BGM 開關（PLAN-042-C E-2）。很小，且 <audio preload="none"> 關著時不下載任何東西。
 import LoreBgmToggle from '../lore/LoreBgmToggle'
 // 「離館」走出館過場（PLAN-042-G）。同樣很小：一個 <Link> 包裝＋一支不帶依賴的過場函式。
@@ -158,6 +159,13 @@ export default function Layout() {
   )
   const { user, userProfile, loading, signOut, openAuthModal } = useAuth()
   const navigate = useNavigate()
+  // 導覽列的後台入口（桌面與手機 More 面板共用）。故事館協作編輯（PLAN-042-H）進不了後台首頁，
+  // 入口直接指向他唯一能用的那一頁；兩種角色共用同一顆紫色按鈕，只換目的地與字。
+  const backstageEntry = isAdminRole(userProfile?.role)
+    ? { to: '/admin', label: '後台管理' }
+    : canEditLore(userProfile?.role)
+      ? { to: '/admin/lore', label: '故事館編輯台' }
+      : null
   // 配裝模擬器內部測試期間，四處入口（桌面導覽／More 面板／個人頁／404 頁）一起收
   const simulatorEntryVisible = useSimulatorEntryVisible()
   const moreNavItems = useMemo(
@@ -385,9 +393,9 @@ export default function Layout() {
                 onOpen={() => openNavGroup(guidesGroup.key)}
                 onToggle={() => (openGroup === guidesGroup.key ? closeNavGroup() : openNavGroup(guidesGroup.key))}
               />
-              {(userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER') && (
+              {backstageEntry && (
                 <NavLink
-                  to="/admin"
+                  to={backstageEntry.to}
                   className={({ isActive }) =>
                     `px-3 py-2 rounded-lg text-sm no-underline transition-colors whitespace-nowrap ${
                       isActive
@@ -396,7 +404,7 @@ export default function Layout() {
                     }`
                   }
                 >
-                  後台管理
+                  {backstageEntry.label}
                 </NavLink>
               )}
             </nav>
@@ -591,10 +599,10 @@ export default function Layout() {
           </div>
 
           {/* Admin 入口（手機版 More Panel） */}
-          {(userProfile?.role === 'ADMIN' || userProfile?.role === 'OWNER') && (
+          {backstageEntry && (
             <div className="border-t border-border px-4 py-2">
               <NavLink
-                to="/admin"
+                to={backstageEntry.to}
                 onClick={() => setMoreOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center justify-center gap-2 w-full py-2 text-sm text-center rounded-lg transition-colors no-underline ${
@@ -605,7 +613,7 @@ export default function Layout() {
                 }
               >
                 <NavIcon name="admin" className="w-4 h-4" />
-                後台管理
+                {backstageEntry.label}
               </NavLink>
             </div>
           )}

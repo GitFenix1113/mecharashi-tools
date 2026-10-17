@@ -501,7 +501,12 @@ function uidFromProfileName(name: string): string {
   return name.match(/\/users\/([^/]+)\/profile\//)?.[1] ?? ''
 }
 
-const ROLE_ORDER: Record<string, number> = { OWNER: 0, ADMIN: 1 }
+/**
+ * 首頁名單收哪些角色、依序怎麼排。PLAN-042-H 加了故事館協作編輯（LORE_EDITOR）。
+ * ⚠ 對應前端 `src/lib/userApi.ts` 的 SITE_TEAM_ROLES（Worker 未設定時的直連回退），兩邊要一起改。
+ */
+const SITE_TEAM_ROLES = ['OWNER', 'ADMIN', 'LORE_EDITOR'] as const
+const ROLE_ORDER: Record<string, number> = Object.fromEntries(SITE_TEAM_ROLES.map((r, i) => [r, i]))
 
 /**
  * 讀團隊名單（含邊緣快取）。
@@ -516,7 +521,9 @@ async function loadSiteTeam(
   origin: string,
 ): Promise<Array<Record<string, unknown>>> {
   const cache = caches.default
-  const cacheKey = new Request(`${origin}/__cache/site-team`)
+  // 鍵帶版本：名單的角色範圍一變（PLAN-042-H 加 LORE_EDITOR），舊鍵底下那份最多一小時的舊名單
+  // 就不該再被讀到——不換鍵的話，部署完當下驗收會看到「名單沒變」而誤以為部署失敗。
+  const cacheKey = new Request(`${origin}/__cache/site-team-v2`)
   const hit = await cache.match(cacheKey)
   if (hit) return (await hit.json()) as Array<Record<string, unknown>>
 
@@ -525,7 +532,7 @@ async function loadSiteTeam(
   const docs = await runQuery(sa, token, {
     collectionId: 'profile',
     allDescendants: true, // ＝ collectionGroup('profile')
-    where: { field: 'role', op: 'IN', value: ['ADMIN', 'OWNER'] },
+    where: { field: 'role', op: 'IN', value: [...SITE_TEAM_ROLES] },
   })
 
   const members = docs

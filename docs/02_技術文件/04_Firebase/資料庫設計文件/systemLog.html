@@ -50,7 +50,7 @@
   <div class="warning-block" style="margin-top:12px;">
     <strong>⚠ 為什麼登出當下寫不進這個集合</strong><br>
     這是整套設計的形狀來源。被動登出時，<code>onAuthStateChanged</code> 拿到 <code>null</code> 的那一刻
-    <code>auth.currentUser</code> 已經是 null，而寫入規則要求 <code>isAdmin()</code>
+    <code>auth.currentUser</code> 已經是 null，而寫入規則要求 <code>canEditLore()</code>（維護者，PLAN-042-H 前是 <code>isAdmin()</code>）
     —— 此時寫入<strong>必定 permission-denied</strong>。<br>
     因此登出證據改為<strong>兩段式上報</strong>：登出瞬間寫進 localStorage 佇列
     （<code>mecharashi_diag_queue</code>，上限 20 筆），下次登入成功後 flush 到 Firestore。
@@ -383,7 +383,7 @@
   <div class="code-block">
 <span class="fn">match</span> /systemLog/{docId} {
   <span class="kw">allow</span> read:   <span class="kw">if</span> <span class="fn">isOwnerRole</span>();
-  <span class="kw">allow</span> create: <span class="kw">if</span> <span class="fn">isAdmin</span>() && request.resource.data.uid == request.auth.uid;
+  <span class="kw">allow</span> create: <span class="kw">if</span> <span class="fn">canEditLore</span>() && request.resource.data.uid == request.auth.uid;
   <span class="kw">allow</span> update, delete: <span class="kw">if</span> <span class="kw">false</span>;
 }</div>
 
@@ -394,13 +394,18 @@
     正因為這個不對稱在本專案裡是獨一無二的，特別容易在日後重構規則時被「順手改成一致」而破功。
     <code>tests/emulator/suites/rules.test.ts</code> 案例 h 已把它釘住
     （ADMIN 寫得進、讀不到、刪不掉；USER 讀寫皆拒）。<br>
-    <code>create</code> 維持 <code>isAdmin()</code> 而非 <code>isAuthenticated()</code>：
-    本設計只追蹤維護者，放寬到一般登入使用者只會擴大寫入面並帶來限流需求。
+    <code>create</code> 限「維護者」而非 <code>isAuthenticated()</code>：
+    本設計只追蹤維護者，放寬到一般登入使用者只會擴大寫入面並帶來限流需求。<br>
+    <strong>2026-10-17（PLAN-042-H）起 create 由 <code>isAdmin()</code> 改為 <code>canEditLore()</code></strong>
+    （<code>LORE_EDITOR</code> / <code>ADMIN</code> / <code>OWNER</code>）：故事館協作編輯也算維護者，
+    而且他們正是最可能撞上「存檔被拒」的人——沒有這條，他們的 <code>writeDenied</code>／<code>logout</code> 證據
+    只會永遠卡在自己的 localStorage 佇列裡送不上來。讀取仍只給 OWNER，協作編輯與 ADMIN 一樣讀不到。
+    <code>scripts/test-emulator-rules.mjs</code> 的 <code>loreEditorSuite</code> 釘住「協作編輯以本人 uid 寫得進、一般使用者被擋」。
   </div>
 
   <div class="warning-block" style="margin-top:12px;">
     <strong>⚠ 登出當下寫不進來是預期行為，不是規則沒設好</strong><br>
-    此時 <code>request.auth</code> 已為 null，<code>isAdmin()</code> 恆為 false。
+    此時 <code>request.auth</code> 已為 null，<code>canEditLore()</code> 恆為 false。
     那條路徑刻意改走 localStorage 佇列、等下次登入再補送。
     排查時若看到「登出事件延遲數小時才出現」，那是設計如此，不是故障。
   </div>
@@ -420,7 +425,7 @@
 </footer>
 
 <!--LAST-UPDATED-->
-<div class="doc-updated">最後更新：2026-08-23 · 依 git 紀錄自動產生</div>
+<div class="doc-updated">最後更新：2026-10-17 · 依 git 紀錄自動產生</div>
 <!--/LAST-UPDATED-->
 </body>
 </html>

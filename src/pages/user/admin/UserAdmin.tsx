@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react'
-import type { UserProfile } from '../../../types'
+import type { ProfileRole, UserProfile } from '../../../types'
 import { getAllUsers, updateUserRole } from '../../../lib/userApi'
+import { ASSIGNABLE_ROLES, ROLE_LABEL } from '../../../utils/userRole'
+
+// 角色徽章配色。故事館協作編輯沿用編輯台的 cyan（後台首頁那張「機師故事館」卡片同色）。
+const ROLE_BADGE: Record<ProfileRole, string> = {
+  OWNER:       'text-amber-400 bg-amber-400/10 border-amber-400/30',
+  ADMIN:       'text-accent-orange bg-accent-orange/10 border-accent-orange/30',
+  LORE_EDITOR: 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/30',
+  USER:        'text-text-dim bg-bg-card border-border',
+}
 
 export default function UserAdmin({ currentUid }: { currentUid: string }) {
   const [users, setUsers]           = useState<UserProfile[]>([])
@@ -22,9 +31,10 @@ export default function UserAdmin({ currentUid }: { currentUid: string }) {
       .finally(() => setUsersLoading(false))
   }, [])
 
-  async function handleToggleRole(uid: string, current: 'USER' | 'ADMIN' | 'OWNER') {
-    if (uid === currentUid || current === 'OWNER') return
-    const next: 'USER' | 'ADMIN' = current === 'ADMIN' ? 'USER' : 'ADMIN'
+  // 原本是 USER ⇄ ADMIN 的切換鈕；PLAN-042-H 多了 LORE_EDITOR，改成下拉選單。
+  // 只有 OWNER 改得動別人的 role（rules 的 isOwnerRole()），OWNER 本身與自己不提供選單。
+  async function handleChangeRole(uid: string, next: ProfileRole) {
+    if (uid === currentUid) return
     setUpdatingUid(uid)
     try {
       await updateUserRole(uid, next)
@@ -68,24 +78,23 @@ export default function UserAdmin({ currentUid }: { currentUid: string }) {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span
-                className={`text-[14px] px-2 py-0.5 rounded border font-medium ${
-                  u.role === 'OWNER'
-                    ? 'text-amber-400 bg-amber-400/10 border-amber-400/30'
-                    : u.role === 'ADMIN'
-                    ? 'text-accent-orange bg-accent-orange/10 border-accent-orange/30'
-                    : 'text-text-dim bg-bg-card border-border'
-                }`}
+                className={`text-[14px] px-2 py-0.5 rounded border font-medium ${ROLE_BADGE[u.role] ?? ROLE_BADGE.USER}`}
+                title={ROLE_LABEL[u.role]}
               >
                 {u.role}
               </span>
               {u.uid !== currentUid && u.role !== 'OWNER' && (
-                <button
-                  onClick={() => handleToggleRole(u.uid, u.role)}
+                <select
+                  value={u.role}
+                  onChange={(e) => void handleChangeRole(u.uid, e.target.value as ProfileRole)}
                   disabled={updatingUid === u.uid}
-                  className="text-xs px-2 py-1 rounded border border-border text-text-secondary hover:border-border-accent hover:text-text-primary transition-colors disabled:opacity-40"
+                  aria-label={`變更 ${u.displayName || u.email} 的角色`}
+                  className="text-xs px-2 py-1 rounded border border-border bg-bg-dark text-text-secondary hover:border-border-accent transition-colors disabled:opacity-40"
                 >
-                  {updatingUid === u.uid ? '...' : u.role === 'ADMIN' ? '降為 USER' : '升為 ADMIN'}
-                </button>
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <option key={r} value={r}>{ROLE_LABEL[r]}</option>
+                  ))}
+                </select>
               )}
             </div>
           </div>
