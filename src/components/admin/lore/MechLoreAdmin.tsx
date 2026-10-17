@@ -86,9 +86,10 @@ export function MechLoreAdmin() {
   })
 
   async function handleSave(next: MechLoreDoc) {
-    const version = await updateMechLore(next)
+    // 衝突（SaveConflictError）原樣拋回面板；快取放 saved（帶新的 rev），理由見 AdminLorePage 的 handleSave
+    const { version, saved } = await updateMechLore(next)
     // version === '' 時 patchCollectionItem 內部改走 removeCache，是安全降級
-    gd.patchCollectionItem('mechLore', next, version)
+    gd.patchCollectionItem('mechLore', saved, version)
     draft.commit()
     closeEditor()
   }

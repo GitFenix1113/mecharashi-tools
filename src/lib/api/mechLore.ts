@@ -10,7 +10,7 @@
 
 import type { MechLoreDoc } from '../../types'
 import { fetchCollection } from './firestoreCore'
-import { saveWithHistory } from './changeHistory'
+import { saveWithRevision, type RevisionedSaveResult } from './changeHistory'
 
 const COLL = 'mechLore'
 
@@ -20,10 +20,10 @@ export const getMechLore = () => fetchCollection<MechLoreDoc>(COLL)
 /**
  * 寫入／更新一份機甲逸聞（整份覆寫）。
  *
- * **一定走 saveWithHistory**，理由同 pilotLore：人工逐字輸入的長文，寫壞一章沒有稽核記錄就永久失去。
- * saveWithHistory 同時負責 bumpDataVersion，呼叫端拿回版本號去 patchCollectionItem。
+ * **一定走 saveWithRevision**，理由同 pilotLore：人工逐字輸入的長文，寫壞一章沒有稽核記錄就永久失去；
+ * 開放協作編輯後還要擋「後存者蓋掉先存者」（PLAN-042-H 後續）。回傳值與用法同 updatePilotLore。
  */
-export const updateMechLore = (doc: MechLoreDoc): Promise<string> =>
-  saveWithHistory('mechLore', doc)
+export const updateMechLore = (doc: MechLoreDoc): Promise<RevisionedSaveResult<MechLoreDoc>> =>
+  saveWithRevision('mechLore', doc)
 
 // ⚠ 刻意**沒有** deleteMechLore，理由同 pilotLore：「刪掉一整份人工長文」不該是一顆按鈕。

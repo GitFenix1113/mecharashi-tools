@@ -141,7 +141,8 @@
     <tr><td><code>users</code> 用戶</td><td>users（伺服器分頁）</td><td>用戶列表、角色指派。PLAN-042-H 起由「升為 ADMIN／降為 USER」切換鈕改為<strong>下拉選單</strong>：一般用戶／故事館協作編輯／管理者（<code>ASSIGNABLE_ROLES</code>；UI 不提供指派 OWNER，自己與 OWNER 那列不顯示選單）。角色徽章 OWNER 琥珀、ADMIN 橘、<code>LORE_EDITOR</code> <strong>cyan</strong>（同編輯台色）、USER 灰。寫入 <code>updateUserRole(uid, role)</code>，規則只放行 OWNER（<code>isOwnerRole()</code>）</td></tr>
     <tr><td><code>grayops</code> 灰燼行動</td><td>grayOpsRoster（+mechs）</td><td>灰燼行動名簿（公司 → 機甲列表）；🆕 每筆可存 <code>icon</code> / <code>mechId</code> 快照，「同步 Icon / 連結」由 mechs 依名稱補齊，首頁名單即以縮圖顯示並可點開引用浮窗</td></tr>
     <tr><td>版本管理</td><td>/admin/versions · /admin/versions/:versionId</td><td>🆕 PatchVersion 時間線編輯（AdminRoute gate，lazy 載入）</td></tr>
-    <tr><td>變更歷史</td><td>/admin/history</td><td>資料異動稽核 log（PLAN-030）；append-only、含刪除快照可還原。2026-09 補齊類型篩選：背包、背包技能、機師形態、機師逸聞</td></tr>
+    <tr><td>變更歷史</td><td>/admin/history</td><td>資料異動稽核 log（PLAN-030）；append-only、含刪除快照可還原。2026-09 補齊類型篩選：背包、背包技能、機師形態、機師逸聞。
+      2026-10-17 起機師／機甲逸聞的「修改」記錄帶前一版整份，展開後可「↺ 還原成這一版」（版本號照常 +1、被蓋掉的現況存進新的還原記錄）</td></tr>
     <tr><td>故事館編輯台</td><td>/admin/lore（<code>?pilot=&lt;id&gt;</code> 直接開該位；<code>?view=mechs&amp;mech=&lt;id&gt;</code> 開機甲、<code>?view=makers</code> 機甲廠商，PLAN-042-B G）</td><td>🆕 <code>pilotLore</code> 編輯（PLAN-042-A E-1；PLAN-042-E 改版）：一位機師的故事資料全部在這裡編。列表列出全部機師＋從資料推導的進度標籤與頁首統計，可依「缺簡介／缺檔案／有草稿章／外觀未命名／缺陣營徽章」篩選；
       編輯面板四個分頁——扉頁（英文名、簡介、署名、陣營徽章）／人物檔案（固定三欄＋有序自訂欄位）／逸聞章節（OCR 貼上區、草稿勾選、單章預覽）／外觀（名稱、隱藏、排序），右欄是渲染前台元件的即時預覽（窄螢幕改為分頁）。
       <strong>ADMIN 即可用</strong>——它只寫故事館的集合；PLAN-042-H 起另外放行<strong>故事館協作編輯 <code>LORE_EDITOR</code></strong>（<code>AdminRoute lore</code>），頂部四個分頁（機師／機甲／陣營徽章／機甲廠商）皆可編、但不能刪除；寫入走 <code>saveWithHistory</code>（整份覆寫），章節錨點 <code>by: 'key'</code>；沒有刪除路徑</td></tr>

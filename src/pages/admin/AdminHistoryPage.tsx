@@ -5,16 +5,22 @@ import {
   getChangeHistoryPage,
   planRestore,
   commitRestore,
+  planRevert,
+  commitRevert,
+  SaveConflictError,
   type RestorePlanResult,
   type RestoreResult,
+  type RevertPlan,
 } from '../../lib/firestoreApi'
 import type { ChangeHistoryEntry } from '../../types/changeHistory'
 import {
   ACTION_LABEL,
   TARGET_LABEL,
+  isRevisionedTarget,
   type ChangeAction,
   type ChangeTargetKind,
 } from '../../types/changeHistory'
+import { revOf, revisionLabel } from '../../utils/docRevision'
 import type { PageCursor } from '../../lib/api/firestoreCore'
 import { LoadMoreButton } from '../user/admin/shared'
 
@@ -131,6 +137,135 @@ function SnapshotView({ entry, onRestore }: { entry: ChangeHistoryEntry; onResto
         </span>
       </div>
     </div>
+  )
+}
+
+/**
+ * 版本快照：故事館兩館（pilotLore／mechLore）的 update／restore 記錄帶著**被這次覆寫掉的前一版**整份
+ * （saveWithRevision，PLAN-042-H 後續）。展開看內容、一鍵寫回那一版。
+ */
+function hasVersionSnapshot(e: ChangeHistoryEntry): boolean {
+  return isRevisionedTarget(e.target) && (e.action === 'update' || e.action === 'restore') && !!e.snapshot?.doc
+}
+
+function VersionSnapshotView({ entry, onRevert }: { entry: ChangeHistoryEntry; onRevert: () => void }) {
+  const snapDoc = entry.snapshot?.doc
+  if (!snapDoc) return <div className="text-xs text-text-dim">此記錄沒有快照。</div>
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="text-[10px] font-[Orbitron,sans-serif] tracking-[2px] text-text-dim uppercase mb-1">
+          Snapshot · 這次{entry.action === 'restore' ? '寫回' : '修改'}之前的版本（{revisionLabel(revOf(snapDoc))}）
+        </div>
+        <pre className="text-[11px] leading-relaxed bg-bg-dark border border-border rounded-lg p-3 overflow-auto max-h-72 text-text-secondary whitespace-pre-wrap break-all">
+          {JSON.stringify(snapDoc, null, 2)}
+        </pre>
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={(e) => { e.stopPropagation(); onRevert() }}
+          className="px-4 py-1.5 rounded-lg text-xs font-bold bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/40 hover:bg-accent-cyan/25 transition-colors shrink-0"
+        >
+          ↺ 還原成這一版
+        </button>
+        <span className="text-[11px] text-text-dim">
+          整份寫回、版本號照常往上加；被蓋掉的現況會留在新的還原記錄裡，隨時可以再還原回去。
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/** 寫回某一版的對話框：預覽 → 確認 → 完成。外殼同 RestoreDialog */
+type RevertFlow =
+  | { phase: 'loading' }
+  | { phase: 'preview'; plan: RevertPlan; error: string | null; busy: boolean }
+  | { phase: 'done'; plan: RevertPlan }
+
+function RevertDialog({
+  flow, onConfirm, onClose,
+}: {
+  flow: RevertFlow
+  onConfirm: () => void
+  onClose: () => void
+}) {
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-bg-card border border-accent-cyan/40 rounded-xl p-6 w-full max-w-lg max-h-[90vh] flex flex-col">
+        {flow.phase === 'loading' && (
+          <p className="text-sm text-text-secondary py-6 text-center">讀取快照與現況中…</p>
+        )}
+
+        {flow.phase === 'preview' && (() => {
+          const { plan } = flow
+          return (
+            <>
+              <div className="shrink-0">
+                <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                  <span className="text-accent-cyan">↺</span>
+                  把「{plan.targetName || plan.targetId}」還原成{revisionLabel(revOf(plan.doc))}？
+                </h3>
+                <p className="text-xs text-text-dim mt-1 font-mono break-all">{plan.coll}/{plan.targetId}</p>
+              </div>
+              <div className="overflow-y-auto flex-1 mt-4 space-y-3 text-sm text-text-secondary">
+                <p>
+                  {plan.currentExists
+                    ? <>會整份蓋掉目前的<b className="text-text-primary">{revisionLabel(plan.currentRev)}</b>，存成新的{revisionLabel(plan.currentRev + 1)}。</>
+                    : <>這份文件目前不存在，還原等於重建。</>}
+                </p>
+                {plan.changedFields.length > 0 ? (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] text-text-dim">會變動的欄位：</span>
+                    {plan.changedFields.map((f) => (
+                      <span key={f} className="px-1.5 py-0.5 text-[11px] font-mono rounded bg-bg-dark border border-border text-text-secondary">{f}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-text-dim">內容與目前版本相同（只會多一筆記錄、版本號 +1）。</p>
+                )}
+                <p className="text-xs text-text-dim">
+                  被蓋掉的目前版本會存進這次的還原記錄；如果還錯了，從那筆記錄再還原回來即可。
+                  開著編輯面板的人會看到「這份在你開啟之後被別人存過」。
+                </p>
+                {flow.error && <p className="text-xs text-accent-red">⚠ {flow.error}</p>}
+              </div>
+              <div className="flex gap-3 mt-4 shrink-0">
+                <button
+                  onClick={onConfirm}
+                  disabled={flow.busy}
+                  className="flex-1 px-4 py-2 bg-accent-cyan text-black font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+                >
+                  {flow.busy ? '還原中…' : '確認還原'}
+                </button>
+                <button
+                  onClick={onClose}
+                  disabled={flow.busy}
+                  className="px-4 py-2 border border-border text-text-secondary rounded-lg hover:bg-bg-dark transition-colors disabled:opacity-50"
+                >
+                  取消
+                </button>
+              </div>
+            </>
+          )
+        })()}
+
+        {flow.phase === 'done' && (
+          <>
+            <h3 className="text-lg font-bold text-accent-cyan shrink-0">✓ 還原完成</h3>
+            <p className="mt-3 text-sm text-text-secondary">
+              「{flow.plan.targetName}」已還原成{revisionLabel(revOf(flow.plan.doc))}的內容，存為{revisionLabel(flow.plan.currentRev + 1)}。
+            </p>
+            <button
+              onClick={onClose}
+              className="mt-4 px-4 py-2 bg-accent-cyan text-black font-bold rounded-lg hover:opacity-90 transition-opacity shrink-0"
+            >
+              關閉
+            </button>
+          </>
+        )}
+      </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -285,6 +420,7 @@ export default function AdminHistoryPage() {
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [restoreFlow, setRestoreFlow] = useState<RestoreFlow | null>(null)
+  const [revertFlow, setRevertFlow] = useState<RevertFlow | null>(null)
 
   // 游標與請求序號放 ref：切換篩選要重置游標重新查詢（進度表 E-2），
   // 序號用來丟棄慢速回應——快速連點篩選時，舊請求的結果不可覆蓋新篩選的列表。
@@ -365,6 +501,43 @@ export default function AdminHistoryPage() {
     if (shouldRefresh) void fetchPage(true)
   }
 
+  // ── 寫回某一版（故事館兩館的 update／restore 記錄）：plan → 確認 → commit ──
+  const startRevert = async (logId: string) => {
+    setRevertFlow({ phase: 'loading' })
+    try {
+      const plan = await planRevert(logId)
+      setRevertFlow({ phase: 'preview', plan, error: null, busy: false })
+    } catch (err) {
+      console.error('[AdminHistoryPage] 還原預檢失敗:', err)
+      setError(err instanceof Error ? err.message : '還原預檢失敗')
+      setRevertFlow(null)
+    }
+  }
+
+  const confirmRevert = async () => {
+    if (revertFlow?.phase !== 'preview') return
+    setRevertFlow({ ...revertFlow, busy: true, error: null })
+    try {
+      await commitRevert(revertFlow.plan)
+      setRevertFlow({ phase: 'done', plan: revertFlow.plan })
+    } catch (err) {
+      console.error('[AdminHistoryPage] 還原失敗:', err)
+      setRevertFlow({
+        ...revertFlow,
+        busy: false,
+        error: err instanceof SaveConflictError
+          ? '預覽之後又有人存檔了，為了不蓋掉那次修改已中止。請關閉後重新按「還原成這一版」看最新的差異。'
+          : err instanceof Error ? err.message : '還原失敗',
+      })
+    }
+  }
+
+  const closeRevert = () => {
+    const shouldRefresh = revertFlow?.phase === 'done'
+    setRevertFlow(null)
+    if (shouldRefresh) void fetchPage(true)
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 bg-bg-dark/10 backdrop-blur-sm rounded-2xl">
 
@@ -425,7 +598,7 @@ export default function AdminHistoryPage() {
         <div className="space-y-2">
           {items.map((e) => {
             const isOpen = expanded.has(e.id)
-            const expandable = e.action === 'delete'
+            const expandable = e.action === 'delete' || hasVersionSnapshot(e)
             return (
               <div key={e.id} className="bg-bg-card border border-border rounded-xl overflow-hidden">
                 <div
@@ -466,10 +639,12 @@ export default function AdminHistoryPage() {
                   </div>
                 )}
 
-                {/* delete：快照展開 */}
+                {/* delete：快照展開；故事館的 update／restore：前一版快照 */}
                 {expandable && isOpen && (
                   <div className="px-4 pb-4 pt-1 border-t border-border">
-                    <SnapshotView entry={e} onRestore={() => void startRestore(e.id)} />
+                    {e.action === 'delete'
+                      ? <SnapshotView entry={e} onRestore={() => void startRestore(e.id)} />
+                      : <VersionSnapshotView entry={e} onRevert={() => void startRevert(e.id)} />}
                   </div>
                 )}
               </div>
@@ -490,6 +665,9 @@ export default function AdminHistoryPage() {
 
       {restoreFlow && (
         <RestoreDialog flow={restoreFlow} onConfirm={() => void confirmRestore()} onClose={closeRestore} />
+      )}
+      {revertFlow && (
+        <RevertDialog flow={revertFlow} onConfirm={() => void confirmRevert()} onClose={closeRevert} />
       )}
     </div>
   )

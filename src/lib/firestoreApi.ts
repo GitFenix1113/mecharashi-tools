@@ -24,7 +24,7 @@ export * from './api/mechLore'        // getMechLore / updateMechLore（PLAN-042
 export * from './api/mechMakers'      // getMechMakers / updateMechMaker（PLAN-042-B 機甲廠商）
 export * from './api/grayOps'         // getGrayOpsRoster / updateGrayOpsRoster
 // PLAN-030 變更歷史：後台專用稽核 log。不進 CollectionKey / GameDataContext（見計畫書決策一）
-export * from './api/changeHistory'   // logChange / logChangeOrThrow / getChangeHistoryPage
+export * from './api/changeHistory'   // logChange / logChangeOrThrow / getChangeHistoryPage / saveWithRevision（故事館的衝突檢查）
 export * from './api/systemLog'       // logSystemEvent / getSystemLogPage / getSystemLogSummary
 // PLAN-048 Phase 2 台版公告 staging：後台專用審核暫存。同樣不進 CollectionKey / GameDataContext
 export * from './api/announcementStaging' // fetchPendingActivities / saveReviewed / rejectPending / mergeIntoVersion

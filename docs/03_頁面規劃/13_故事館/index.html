@@ -159,10 +159,12 @@
     · <strong>新角色 <code>LORE_EDITOR</code></strong>：由 OWNER 在後台「用戶管理」的下拉選單指派。編輯台頂部四個檢視（機師／機甲／陣營徽章／機甲廠商）<strong>皆可編</strong>，
       對應的 <code>pilotLore</code>／<code>mechLore</code>／<code>factionEmblems</code>／<code>mechMakers</code> 規則開 <code>read, create, update: if canEditLore()</code>；
       <strong>不能刪除</strong>（<code>delete: if isAdmin()</code>，編輯台本來也沒有刪除路徑）。遊戲資料（pilots、mechs…）一律碰不到<br>
-    · <strong>存檔的附帶寫入</strong>：機師／機甲兩館走 <code>saveWithHistory</code>，協作編輯也會留自己的 <code>changeHistory</code>（規則限 target 為 <code>pilotLore</code>／<code>mechLore</code>，讀取仍只給管理者）；
+    · <strong>存檔的附帶寫入</strong>：機師／機甲兩館走 <code>saveWithRevision</code>（2026-10-17 前是 <code>saveWithHistory</code>），協作編輯也會留自己的 <code>changeHistory</code>（規則限 target 為 <code>pilotLore</code>／<code>mechLore</code>，讀取仍只給管理者）；
       四個集合存檔後的 <code>bumpDataVersion</code> 由 <code>meta/gameData</code> 的 <code>isLoreVersionBump()</code> 放行——只能動這四個集合的版本號<br>
     · <strong>入口</strong>：導覽列對協作編輯顯示「故事館編輯台」（直達 <code>/admin/lore</code>，管理者仍是「後台管理」）；進 <code>/admin</code> 會被導向 <code>/admin/lore</code>；
       編輯台麵包屑對非管理者不顯示「後台管理」連結。路由刻意留在 <code>/admin</code> 底下、不開新頂層路徑（免改 Cloudflare 白名單）<br>
+    · <strong>存檔衝突檢查（2026-10-17）</strong>：兩人同時編同一位時，面板頂端出現黃色橫條「這份在你開啟之後被別人存過」（開面板、切回分頁、按儲存三個時機都會比對），
+      存檔被擋、按「載入最新版」換成伺服器現況再改；<strong>沒有「仍要覆寫」</strong>。每次修改的稽核記錄帶前一版整份，管理者在變更歷史可「還原成這一版」<br>
     · <strong>首頁</strong>：維護團隊多一列「故事館協作編輯：」顯示其頭像（Worker <code>/api/site-team</code> 納入 <code>LORE_EDITOR</code>）
   </div>
   <div class="info-block" style="margin-top:1rem;">

@@ -8,7 +8,7 @@
 
 import type { LoreDoc } from '../../types'
 import { fetchCollection, fetchDocument } from './firestoreCore'
-import { saveWithHistory } from './changeHistory'
+import { saveWithRevision, type RevisionedSaveResult } from './changeHistory'
 
 const COLL = 'pilotLore'
 
@@ -22,13 +22,16 @@ export const getPilotLoreDoc = (pilotId: string) =>
 /**
  * 寫入 / 更新一份機師逸聞。
  *
- * **一定走 saveWithHistory。** 本集合的內容是人工逐字打進去的長文——它是全站
- * 唯一「一次誤存就再也生不回來」的資料（其餘集合重跑爬蟲就有）。changeHistory 的
- * 底層 helper 是集合無關設計，接上去的成本只有這一行，不接的話寫壞一章無從查起。
- * saveWithHistory 同時負責 bumpDataVersion，呼叫端拿回版本號去 patchCollectionItem。
+ * **一定走 changeHistory 的帶稽核寫入。** 本集合的內容是人工逐字打進去的長文——它是全站
+ * 唯一「一次誤存就再也生不回來」的資料（其餘集合重跑爬蟲就有）。不接的話寫壞一章無從查起。
+ *
+ * PLAN-042-H 開放協作編輯後改走 **saveWithRevision**（2026-10-17）：`doc.rev` 是表單從第幾版改起，
+ * 開啟後有人存過就拋 `SaveConflictError`、不寫入；update 的稽核記錄帶被覆寫的前一版整份。
+ * 呼叫端拿回 `{ version, saved }`，**用 saved 去 patchCollectionItem**——它帶著新的 rev，
+ * 拿傳進來的那份去更新快取，下一次在同一個分頁存檔就會被自己擋下。
  */
-export const updatePilotLore = (doc: LoreDoc): Promise<string> =>
-  saveWithHistory('pilotLore', doc)
+export const updatePilotLore = (doc: LoreDoc): Promise<RevisionedSaveResult<LoreDoc>> =>
+  saveWithRevision('pilotLore', doc)
 
 // ⚠ 刻意**沒有** deletePilotLore：
 //   本集合不是任何 [xxx] 引用的目標（entityRefs 的 REF_TYPE_OF['pilotLore'] 是 null），

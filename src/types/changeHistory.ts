@@ -9,7 +9,7 @@ import type { Timestamp } from 'firebase/firestore'
  * 操作類型（分類軸二）。
  *
  * 注意 create 與 update 在寫入層是同一個 setDoc，靠「寫入前的 pre-image 是否存在」區分；
- * restore 是從刪除快照救回，會以 restoredFrom 指回來源 log 形成可追溯鏈。
+ * restore 是從刪除快照救回（或把版本號 target 寫回某一版），會以 restoredFrom 指回來源 log 形成可追溯鏈。
  */
 export type ChangeAction = 'create' | 'update' | 'delete' | 'restore'
 
@@ -33,6 +33,19 @@ export type ChangeTargetKind =
   // PLAN-042-B：機甲逸聞，理由同 pilotLore。但它**還沒進 entityRefs SPECS**（章節開始有 [xxx] 引用才登記，
   // 042-B H-6），所以 entityRefs 的 SPEC_COLL_OF 對它是 null。
   | 'mechLore'
+
+/**
+ * 有**版本號與存檔衝突檢查**的 target（PLAN-042-H 後續，2026-10-17）。
+ *
+ * 只有故事館兩館：它們開給多位協作者同時編（LORE_EDITOR），而存檔是整份覆寫——
+ * 沒有這層，後存者會靜默蓋掉先存者（2026-10-14 克洛伊的三個欄位就是被舊分頁這樣洗掉的）。
+ * 這兩類走 `saveWithRevision()`：文件內帶 `rev`，交易內比對；update／restore 的 log 帶前一版整份快照。
+ * 其餘 target 只有管理者在編，維持 `saveWithHistory()`（PLAN-030 決策五：update 不存快照）。
+ */
+export const REVISIONED_TARGETS = ['pilotLore', 'mechLore'] as const
+export type RevisionedTargetKind = (typeof REVISIONED_TARGETS)[number]
+export const isRevisionedTarget = (t: ChangeTargetKind): t is RevisionedTargetKind =>
+  (REVISIONED_TARGETS as readonly string[]).includes(t)
 
 /** ChangeTargetKind → Firestore 集合名。級聯清除與還原都需要由 kind 反查集合。 */
 export const TARGET_COLLECTION: Record<ChangeTargetKind, string> = {
@@ -129,6 +142,10 @@ export interface ReversePatch {
 /**
  * 刪除快照：不只被刪的文件本身，還包含「每一處被移除的引用」。
  * 只存被刪文件是不夠的——那樣還原得回文件，卻還原不回引用關係。
+ *
+ * 版本號 target（`REVISIONED_TARGETS`）的 update／restore 也沿用這個形狀存「被覆寫的前一版」：
+ * `doc` ＝前一版整份、`patches` 恆為空陣列（整份覆寫不動任何引用）。不另開型別，
+ * 是為了讓歷史檢視頁與 Firestore 裡的記錄只有一種快照長相。
  */
 export interface DeleteSnapshot {
   /** 被刪文件的完整內容（不含 id，id 記在 entry.targetId） */
@@ -163,9 +180,13 @@ export interface ChangeHistoryEntry {
 
   /** 僅 update：淺層比對出的變動欄位名 */
   changedFields?: string[]
-  /** 僅 delete：文件本體 + 反向修補單 */
+  /**
+   * delete：文件本體 + 反向修補單。
+   * 版本號 target（pilotLore／mechLore）的 update／restore：**被這次覆寫掉的前一版**整份（patches 為空），
+   * 歷史檢視頁憑它「還原成這一版」（`planRevert()`）。其餘 target 的 update 不存快照（PLAN-030 決策五）。
+   */
   snapshot?: DeleteSnapshot
-  /** 僅 restore：來源 delete log 的文件 ID */
+  /** 僅 restore：來源 log 的文件 ID（delete 記錄，或版本號 target 的 update／restore 記錄） */
   restoredFrom?: string
 }
 

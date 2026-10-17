@@ -124,9 +124,11 @@ export default function AdminLorePage() {
   })
 
   async function handleSave(next: LoreDoc) {
-    const version = await updatePilotLore(next)
-    // version === '' 時 patchCollectionItem 內部改走 removeCache，是安全降級
-    gd.patchCollectionItem('pilotLore', next, version)
+    // 衝突（SaveConflictError）不在這裡接：原樣拋回面板，由面板顯示「載入最新版」
+    const { version, saved } = await updatePilotLore(next)
+    // ⚠ 快取要放 saved（帶新的 rev），不是 next：放 next 的話下次在同一個分頁開這位再存，會被自己擋下。
+    //   version === '' 時 patchCollectionItem 內部改走 removeCache，是安全降級
+    gd.patchCollectionItem('pilotLore', saved, version)
     draft.commit()
     closeEditor()
   }

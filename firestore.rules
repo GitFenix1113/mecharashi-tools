@@ -100,12 +100,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     // PLAN-042-A 機師故事館：逸聞章節。全站唯一「人工逐字輸入、重跑爬蟲也生不回來」
-    // 的集合，寫入一律經 saveWithHistory 留稽核（見 lib/api/pilotLore.ts）。
+    // 的集合，寫入一律經 saveWithRevision 留稽核（見 lib/api/pilotLore.ts）。
     //
     // 故事館四個集合（本條與下面三條）都開給 canEditLore()（PLAN-042-H），但 **delete 只留給管理者**：
     // 編輯台本來就沒有刪除路徑（lib/api/pilotLore.ts 檔尾），協作者用 client SDK 直接刪
-    // 一整份人工長文的那條路也一併關掉。read 要開，是因為 saveWithHistory 存檔前會直讀
-    // pre-image 判斷 create／update——前台列表本身走 Worker，不靠這條。
+    // 一整份人工長文的那條路也一併關掉。read 要開，是因為 saveWithRevision 的交易要讀現況比對
+    // 版本號（存檔衝突檢查）、編輯面板開啟時也直讀一次現況——前台列表本身走 Worker，不靠這條。
     match /pilotLore/{docId} {
       allow read, create, update: if canEditLore();
       allow delete: if isAdmin();
@@ -116,7 +116,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     // PLAN-042-B 機甲故事館：介紹、型號、廠商、系譜與逸聞章節。理由同 pilotLore，
-    // 寫入一律經 saveWithHistory 留稽核（見 lib/api/mechLore.ts）。
+    // 寫入一律經 saveWithRevision 留稽核（見 lib/api/mechLore.ts）。
     match /mechLore/{docId} {
       allow read, create, update: if canEditLore();
       allow delete: if isAdmin();
@@ -176,8 +176,10 @@ service cloud.firestore {
     // 與程式相容：buildEntry 走管理員路徑時 actorUid 恆為 auth.currentUser.uid。
     //
     // PLAN-042-H：故事館協作編輯也要能寫自己的存檔記錄，但 target 限 pilotLore／mechLore 兩類
-    // （saveWithHistory 只有這兩館會走到；徽章與廠商是 writeDoc＋bump、不留稽核）。
+    // （saveWithRevision 只有這兩館會走到；徽章與廠商是 writeDoc＋bump、不留稽核）。
     // 讀取仍只給管理者：歷史檢視頁屬於後台，協作者不需要互看彼此的記錄。
+    // 這兩館的存檔是「文件＋帶前一版快照的 log」同一筆交易：log 被這條擋下時整筆存檔一起失敗，
+    // 不會留下沒有快照的覆寫（emu:test-rules 的「存檔交易」那幾項驗這件事）。
     match /changeHistory/{docId} {
       allow read:   if isAdmin();
       allow create: if request.resource.data.actorUid == request.auth.uid && (

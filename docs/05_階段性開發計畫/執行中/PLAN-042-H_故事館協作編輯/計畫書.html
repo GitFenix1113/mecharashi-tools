@@ -203,7 +203,7 @@
   </div>
   <div class="problem-block">
     <strong>存檔不只寫一份文件</strong><br>
-    <code>saveWithHistory</code> 一次存檔會碰四個地方：直讀 pre-image、寫本體、<code>meta/gameData</code> bump 版本號、<code>changeHistory</code> 記一筆。只放行本體的話，協作者的存檔會「本體寫進去、版本號沒 bump」——其他人讀到的永遠是舊快取，而且沒有人會發現（bump 失敗是 <code>.catch(() =&gt; '')</code> 吞掉的）。
+    <code>saveWithHistory</code>（2026-10-17 起故事館改走 <code>saveWithRevision</code>，碰的地方相同、多了交易）一次存檔會碰四個地方：直讀 pre-image、寫本體、<code>meta/gameData</code> bump 版本號、<code>changeHistory</code> 記一筆。只放行本體的話，協作者的存檔會「本體寫進去、版本號沒 bump」——其他人讀到的永遠是舊快取，而且沒有人會發現（bump 失敗是 <code>.catch(() =&gt; '')</code> 吞掉的）。
   </div>
 </section>
 
@@ -222,7 +222,7 @@
     <strong>決策二：授權範圍＝編輯台的四個分頁，且不能刪</strong><br>
     <code>pilotLore</code>／<code>mechLore</code>／<code>factionEmblems</code>／<code>mechMakers</code> 開 <code>read, create, update: if canEditLore()</code>，<code>delete</code> 留 <code>isAdmin()</code>。
     編輯台本來就沒有刪除路徑（<code>lib/api/pilotLore.ts</code> 檔尾），這條把「協作者用 client SDK 直接刪一整份人工長文」也一併關掉。
-    read 要開是因為 <code>saveWithHistory</code> 存檔前直讀 pre-image；編輯台的列表本身走 Worker，不靠這條。遊戲資料一律維持 <code>isAdmin()</code>。
+    read 要開是因為存檔前要直讀現況（<code>saveWithRevision</code> 的交易比對版本號、編輯面板開啟時的提早提示）；編輯台的列表本身走 Worker，不靠這條。遊戲資料一律維持 <code>isAdmin()</code>。
   </div>
 
   <div class="decision-block">
@@ -268,8 +268,17 @@
   <div class="section-label yellow">Risk</div>
   <div class="section-title">已知風險（不在本計畫處理）</div>
 
+  <div class="info-block">
+    <strong>✅ 2026-10-17 已處理（本計畫的後續，獨立一筆改動）：存檔衝突檢查＋update 留前一版快照</strong><br>
+    故事館兩館改走 <code>saveWithRevision()</code>：文件內帶版本號 <code>rev</code>（表單整份複製，所以它就是「從第幾版改起」），存檔時在交易內與現況比對，
+    不一致就擋下、面板出現「這份在你開啟之後被別人存過」與「載入最新版」，不再靜默覆寫；開面板與切回分頁時也先直讀一次現況、提早提示。
+    update／restore 的 <code>changeHistory</code> 記錄帶<strong>被覆寫的前一版整份</strong>，與文件同一個交易原子寫入；管理者可在 <code>/admin/history</code>「還原成這一版」。
+    沒有採用原建議的 <code>updateTime</code>：面板內容來自快取，舊內容配上「開面板當下」讀到的新時間戳會照樣蓋掉別人——基準必須跟著內容走（草稿還原也擋得住）。
+    設計與取捨見 <code>docs/02_技術文件/04_Firebase/資料庫設計文件/changeHistory.html</code> 06。下面原文保留作為紀錄。
+  </div>
+
   <div class="warning-block">
-    <strong>⚠ 多人同時編同一份文件會整份覆寫</strong><br>
+    <strong>⚠ 多人同時編同一份文件會整份覆寫</strong>（已處理，見上）<br>
     <code>saveWithHistory</code> 是整份覆寫、沒有衝突檢查；<code>changeHistory</code> 的 update 也不存前一版快照（PLAN-030 決策五）。
     2026-10-14 已發生過一次：舊分頁存檔洗掉了克洛伊 <code>pilotLore</code> 的三個欄位。單人維護時這是「自己跟自己的舊分頁」，開放協作後變成「兩個人同時開同一位」——後存的人會靜默蓋掉先存的人，且<strong>無法從稽核記錄還原</strong>。
     建議另立案：存檔前比對文件 <code>updateTime</code>（不一致就擋下並提示重新整理），並讓 lore 兩類的 update 留前一版快照。在那之前，靠分工（每人負責不同機師／機甲）與定期備份（<code>backup-firestore.mjs</code>）。

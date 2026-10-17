@@ -1,5 +1,8 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import type { LoreDossierField, Mech, MechLoreDoc, MechMaker } from '../../../types'
+import { SaveConflictError } from '../../../lib/firestoreApi'
+import { useLatestRevision } from '../../../hooks/useLatestRevision'
+import { revOf } from '../../../utils/docRevision'
 import { ADMIN_WIDE_MAX_W, AdminEditTabs, AdminModal, Field, type AdminEditTabDef } from '../../../pages/user/admin/shared'
 import { useDraftWrite } from '../../../hooks/useDraftAutosave'
 import { useLayoutBreakpoint } from '../../../hooks/useLayoutBreakpoint'
@@ -16,6 +19,7 @@ import { LoreSkinsEditor } from './LoreSkinsEditor'
 import { MechLineageEditor } from './MechLineageEditor'
 import { relationIssues } from '../../lore/mechLineage'
 import { MechLorePreview } from './MechLorePreview'
+import { LoreRevisionBanner } from './LoreRevisionBanner'
 import { SMALL_BTN } from './LoreFrontEditor'
 import { cleanOcr, mergeSoftWraps, normalizeCommentary, sectionIssues, type LoreSectionCache } from './loreEditText'
 
@@ -24,13 +28,28 @@ export const MECH_LORE_DRAFT_KIND = 'mechLore.v1'
 
 type MechTab = 'front' | 'specs' | 'lineage' | 'skins' | 'chapters' | 'preview'
 
+/** 逐層複製成表單（含 `rev`：衝突檢查的基準），理由同機師版 LoreEditPanel 的 toForm */
+function toForm(doc: MechLoreDoc): MechLoreDoc {
+  return {
+    ...doc,
+    chapters: (doc.chapters ?? []).map((c) => ({
+      ...c,
+      commentary: c.commentary?.map((x) => ({ ...x, ...(x.speaker && { speaker: { ...x.speaker } }) })),
+    })),
+    ...(doc.specs && { specs: doc.specs.map((f) => ({ ...f })) }),
+    ...(doc.relations && { relations: doc.relations.map((r) => ({ ...r })) }),
+    ...(doc.skins && { skins: doc.skins.map((s) => ({ ...s })) }),
+  }
+}
+
 /**
  * 故事館編輯台「機甲」的編輯面板（PLAN-042-B G-1）：一台機甲的故事資料在同一個面板編完——
  * 扉頁（型號、廠商、英文名、系列、卡池名稱、介紹、來源）／技術檔案（非數值諸元）／系譜／塗裝／逸聞章節，右欄即時預覽。
  * 結構照機師版 LoreEditPanel；章節與塗裝分頁是同一個元件。
  *
  * 名字、類型、品質、登場版本是圖鑑與故事館共用的身分欄位（與數值有關，決策 B-7），在「機甲管理」編。
- * 存檔是**整份覆寫**（saveWithHistory → writeDoc）：表單必須帶著文件的每一個欄位，所以初始化時整份複製。
+ * 存檔是**整份覆寫**（saveWithRevision）：表單必須帶著文件的每一個欄位，所以初始化時整份複製。
+ * 多人協作的衝突檢查同機師版（表單帶 `rev`、LoreRevisionBanner）。
  */
 export function MechLoreEditPanel({
   doc, mech, onSave, onCancel,
@@ -46,17 +65,7 @@ export function MechLoreEditPanel({
   const { mechs, mechLore, mechMakers, pilots } = useGameData()
   const narrow = useLayoutBreakpoint() === 'narrow'
 
-  // 逐層複製：直接沿用 GameDataContext 的物件會讓「取消」之後記憶體快取裡已經是改過的內容
-  const [form, setForm] = useState<MechLoreDoc>(() => ({
-    ...doc,
-    chapters: (doc.chapters ?? []).map((c) => ({
-      ...c,
-      commentary: c.commentary?.map((x) => ({ ...x, ...(x.speaker && { speaker: { ...x.speaker } }) })),
-    })),
-    ...(doc.specs && { specs: doc.specs.map((f) => ({ ...f })) }),
-    ...(doc.relations && { relations: doc.relations.map((r) => ({ ...r })) }),
-    ...(doc.skins && { skins: doc.skins.map((s) => ({ ...s })) }),
-  }))
+  const [form, setForm] = useState<MechLoreDoc>(() => toForm(doc))
   // ⚠ 草稿必須接在編輯器內部、監聽 form（見 useDraftAutosave 檔頭）
   useDraftWrite(MECH_LORE_DRAFT_KIND, form, (d) => d.name ?? d.id)
 
@@ -66,6 +75,19 @@ export function MechLoreEditPanel({
   const [previewSkin, setPreviewSkin] = useState('')
   const [previewChapter, setPreviewChapter] = useState<string | undefined>(undefined)
   const [sectionCache, setSectionCache] = useState<Record<string, LoreSectionCache>>({})
+  // 伺服器現況與「載入最新版」，同機師版
+  const [latest, setLatest] = useLatestRevision('mechLore', doc.id)
+  const [epoch, setEpoch] = useState(0)
+
+  function loadLatest() {
+    if (latest === undefined) return
+    const base: MechLoreDoc = latest ? (latest as unknown as MechLoreDoc) : { id: doc.id, name: doc.name, chapters: [] }
+    setForm(toForm(base))
+    setSectionCache({})
+    setPreviewChapter(undefined)
+    setError(null)
+    setEpoch((n) => n + 1)
+  }
 
   const patch = (p: Partial<MechLoreDoc>) => setForm((f) => ({ ...f, ...p }))
   const skinCatalog = useMemo(() => mechSkinCatalog(mech), [mech])
@@ -133,13 +155,14 @@ export function MechLoreEditPanel({
           : undefined,
       })
     } catch (e) {
+      if (e instanceof SaveConflictError) setLatest(e.latest)
       setError(e instanceof Error ? e.message : '儲存失敗，請重試')
       setSaving(false)
     }
   }
 
   const editor = (
-    <>
+    <Fragment key={epoch}>
       {activeTab === 'front' && <MechFrontEditor form={form} mech={mech} makers={makers} onChange={patch} />}
       {activeTab === 'specs' && (
         <div className="space-y-3">
@@ -184,7 +207,7 @@ export function MechLoreEditPanel({
           onSectionCache={(key, entry) => setSectionCache((m) => ({ ...m, [key]: entry }))}
         />
       )}
-    </>
+    </Fragment>
   )
 
   const previewChapterObj = previewChapter ? form.chapters.find((c) => c.key === previewChapter) : undefined
@@ -215,6 +238,8 @@ export function MechLoreEditPanel({
         <span className="text-text-dim text-sm font-normal">{form.id}</span>
         {!mech && <span className="text-xs font-normal text-accent-yellow">⚠ 找不到這台機甲（沒有預覽）</span>}
       </h3>
+
+      <LoreRevisionBanner baseRev={revOf(form)} latest={latest} onReload={loadLatest} />
 
       <AdminEditTabs tabs={tabs} active={activeTab} onChange={setTab} />
 

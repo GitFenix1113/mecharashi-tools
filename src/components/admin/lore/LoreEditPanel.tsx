@@ -1,5 +1,8 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import type { LoreDoc, Pilot } from '../../../types'
+import { SaveConflictError } from '../../../lib/firestoreApi'
+import { useLatestRevision } from '../../../hooks/useLatestRevision'
+import { revOf } from '../../../utils/docRevision'
 import { ADMIN_WIDE_MAX_W, AdminEditTabs, AdminModal, type AdminEditTabDef } from '../../../pages/user/admin/shared'
 import { useDraftWrite } from '../../../hooks/useDraftAutosave'
 import { useLayoutBreakpoint } from '../../../hooks/useLayoutBreakpoint'
@@ -14,6 +17,7 @@ import { LoreChaptersEditor } from './LoreChaptersEditor'
 import { normalizeCommentary, sectionIssues, type LoreSectionCache } from './loreEditText'
 import { LoreSkinsEditor } from './LoreSkinsEditor'
 import { LorePreview } from './LorePreview'
+import { LoreRevisionBanner } from './LoreRevisionBanner'
 
 /**
  * 草稿暫存的 kind（PLAN-045）。PLAN-042-E 起從 'pilotLore' 換成新的：
@@ -25,12 +29,31 @@ export const LORE_DRAFT_KIND = 'pilotLore.v2'
 type LoreTab = 'front' | 'dossier' | 'chapters' | 'skins' | 'preview'
 
 /**
+ * 逐層複製成表單：直接沿用 GameDataContext 的物件會讓「取消」之後記憶體快取裡已經是改過的內容。
+ * 整份帶過去（含 `rev`）：存檔是整份覆寫，而 `rev` 就是衝突檢查的基準（「我從第幾版改起」）。
+ */
+function toForm(doc: LoreDoc): LoreDoc {
+  return {
+    ...doc,
+    chapters: (doc.chapters ?? []).map((c) => ({
+      ...c,
+      commentary: c.commentary?.map((x) => ({ ...x, ...(x.speaker && { speaker: { ...x.speaker } }) })),
+    })),
+    ...(doc.dossier && { dossier: { ...doc.dossier, extra: doc.dossier.extra?.map((f) => ({ ...f })) } }),
+    ...(doc.skins && { skins: doc.skins.map((s) => ({ ...s })) }),
+  }
+}
+
+/**
  * 故事館編輯台的編輯面板（PLAN-042-E D-2）：一位機師的所有故事資料在同一個面板編完——
  * 扉頁（英文名、簡介、署名、徽章）／人物檔案／逸聞章節／外觀，右欄即時預覽（D-4）。
  * 窄螢幕（< 1024px）預覽改成一個分頁。
  *
- * 存檔是**整份覆寫**（saveWithHistory → writeDoc）：表單必須帶著文件的每一個欄位，
+ * 存檔是**整份覆寫**（saveWithRevision）：表單必須帶著文件的每一個欄位，
  * 所以初始化時整份複製，不要只挑編得到的欄位。
+ *
+ * 多人協作（PLAN-042-H）的防線：表單帶著文件的 `rev`，開啟／切回分頁時直讀伺服器比對（useLatestRevision），
+ * 存檔時交易內再比一次；不一致就出現 LoreRevisionBanner、存檔被擋，不會靜默蓋掉別人。
  */
 export function LoreEditPanel({
   doc, pilot, onSave, onCancel,
@@ -46,16 +69,7 @@ export function LoreEditPanel({
   const { pilots, pilotLore } = useGameData()
   const narrow = useLayoutBreakpoint() === 'narrow'
 
-  // 逐層複製：直接沿用 GameDataContext 的物件會讓「取消」之後記憶體快取裡已經是改過的內容
-  const [form, setForm] = useState<LoreDoc>(() => ({
-    ...doc,
-    chapters: (doc.chapters ?? []).map((c) => ({
-      ...c,
-      commentary: c.commentary?.map((x) => ({ ...x, ...(x.speaker && { speaker: { ...x.speaker } }) })),
-    })),
-    ...(doc.dossier && { dossier: { ...doc.dossier, extra: doc.dossier.extra?.map((f) => ({ ...f })) } }),
-    ...(doc.skins && { skins: doc.skins.map((s) => ({ ...s })) }),
-  }))
+  const [form, setForm] = useState<LoreDoc>(() => toForm(doc))
   // ⚠ 草稿必須接在編輯器內部、監聽 form（見 useDraftAutosave 檔頭）
   useDraftWrite(LORE_DRAFT_KIND, form, (d) => d.name ?? d.id)
 
@@ -66,6 +80,19 @@ export function LoreEditPanel({
   const [previewChapter, setPreviewChapter] = useState<string | undefined>(undefined)
   // 引文段卡片的編輯狀態（見 LoreChaptersEditor）。不進草稿：草稿存的是表單，表單裡已是序列化好的 body／source
   const [sectionCache, setSectionCache] = useState<Record<string, LoreSectionCache>>({})
+  // 伺服器現況（衝突檢查的提早提示）；epoch 在「載入最新版」時 +1，讓各分頁編輯器的內部狀態整個重來
+  const [latest, setLatest] = useLatestRevision('pilotLore', doc.id)
+  const [epoch, setEpoch] = useState(0)
+
+  function loadLatest() {
+    if (latest === undefined) return
+    const base: LoreDoc = latest ? (latest as unknown as LoreDoc) : { id: doc.id, name: doc.name, chapters: [] }
+    setForm(toForm(base))
+    setSectionCache({})
+    setPreviewChapter(undefined)
+    setError(null)
+    setEpoch((n) => n + 1)
+  }
 
   const patch = (p: Partial<LoreDoc>) => setForm((f) => ({ ...f, ...p }))
   const logoSuggestions = useMemo(
@@ -123,13 +150,15 @@ export function LoreEditPanel({
           : undefined,
       })
     } catch (e) {
+      // 衝突：把錯誤帶回來的最新版交給橫條，使用者按「載入最新版」就能接著改
+      if (e instanceof SaveConflictError) setLatest(e.latest)
       setError(e instanceof Error ? e.message : '儲存失敗，請重試')
       setSaving(false)
     }
   }
 
   const editor = (
-    <>
+    <Fragment key={epoch}>
       {activeTab === 'front' && <LoreFrontEditor form={form} pilot={pilot} onChange={patch} logoSuggestions={logoSuggestions} />}
       {activeTab === 'dossier' && (
         <LoreDossierEditor value={form.dossier} faction={pilot?.faction} onChange={(dossier) => patch({ dossier })} />
@@ -157,7 +186,7 @@ export function LoreEditPanel({
           onPreview={(key) => { setPreviewSkin(key); setPreviewChapter(undefined); if (narrow) setTab('preview') }}
         />
       )}
-    </>
+    </Fragment>
   )
 
   const previewChapterObj = previewChapter ? form.chapters.find((c) => c.key === previewChapter) : undefined
@@ -188,6 +217,8 @@ export function LoreEditPanel({
         <span className="text-text-dim text-sm font-normal">{form.id}</span>
         {!pilot && <span className="text-xs font-normal text-accent-yellow">⚠ 找不到這位機師（沒有預覽）</span>}
       </h3>
+
+      <LoreRevisionBanner baseRev={revOf(form)} latest={latest} onReload={loadLatest} />
 
       <AdminEditTabs tabs={tabs} active={activeTab} onChange={setTab} />
 

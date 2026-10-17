@@ -1,4 +1,5 @@
 // 快照還原的 I/O 與原子交易層（PLAN-030 F-1 / F-2 / F-3 的 API 面）
+// 檔尾另有「寫回某一版」（planRevert／commitRevert）：故事館兩館的 update 記錄帶前一版快照（PLAN-042-H 後續）。
 //
 // 純計算在 utils/restorePatch.ts（可單測、無 Firestore 依賴）；本檔只負責
 // 「讀什麼、寫什麼、以什麼順序寫」。結構刻意鏡射 cascadeDelete.ts：
@@ -27,8 +28,9 @@ import type {
   ChangeHistoryEntry,
   ChangeTargetKind,
   DeleteSnapshot,
+  RevisionedTargetKind,
 } from '../../types/changeHistory'
-import { TARGET_COLLECTION } from '../../types/changeHistory'
+import { TARGET_COLLECTION, isRevisionedTarget } from '../../types/changeHistory'
 import {
   buildRestorePlan,
   type RestorePlan,
@@ -38,7 +40,8 @@ import {
 import { FIRESTORE_BATCH_LIMIT, BATCH_OVERHEAD_OPS } from '../../utils/cascadePatch'
 import { freezeNumRefs, type NumRefSource } from '../../utils/numRefs'
 import { stripUndefined } from './firestoreCore'
-import { changeHistoryRef, logChange } from './changeHistory'
+import { changeHistoryRef, diffKeys, logChange, saveWithRevision } from './changeHistory'
+import { revOf, withoutRevisionMeta } from '../../utils/docRevision'
 
 // ─── 錯誤型別 ────────────────────────────────────────────────────────────────
 
@@ -209,4 +212,74 @@ export async function commitRestore(planned: RestorePlanResult): Promise<Restore
     skipped: plan.skipped,
     versions,
   }
+}
+
+// ─── 寫回某一版（版本號 target：pilotLore／mechLore，PLAN-042-H 後續）──────────────
+//
+// 這兩類的 update／restore 記錄帶著「被覆寫掉的前一版」整份（saveWithRevision）。
+// 寫回＝拿那一版再走一次 saveWithRevision：
+//   · 版本號照常 +1（不是退回舊編號）——開著面板的人才偵測得到「有人存過」。
+//   · 這次寫回本身也是一筆 restore 記錄，帶著被它蓋掉的現況 → 寫回也能再寫回去，沒有單行道。
+//   · 基準是**預覽當下的現值**：預覽到確認之間又有人存檔 → SaveConflictError，不會蓋掉那次存檔。
+// 與刪除還原不同，這裡沒有引用要補（整份覆寫不動任何引用），所以不需要 plan 的修補單。
+
+export interface RevertPlan {
+  /** 來源記錄的文件 ID（寫進 restore 記錄的 restoredFrom） */
+  logId: string
+  kind: RevisionedTargetKind
+  coll: string
+  targetId: string
+  targetName: string
+  /** 要寫回的那一版（快照，不含 id） */
+  doc: Record<string, unknown>
+  /** 預覽當下伺服器上的版本號；提交時當衝突檢查的基準 */
+  currentRev: number
+  /** 預覽當下文件是否還在（不在＝寫回等於重建） */
+  currentExists: boolean
+  /** 寫回後會變的欄位（現況 vs 那一版），不含版本號欄位 */
+  changedFields: string[]
+}
+
+/** 讀出某筆 update／restore 記錄的快照與現況，算出「寫回會動到什麼」。**不寫入任何資料。** */
+export async function planRevert(logId: string): Promise<RevertPlan> {
+  const logSnap = await getDocFromServer(changeHistoryRef(logId))
+  const entry = logSnap.exists() ? ({ ...logSnap.data(), id: logSnap.id } as ChangeHistoryEntry) : null
+  if (
+    !entry || !isRevisionedTarget(entry.target)
+    || (entry.action !== 'update' && entry.action !== 'restore')
+    || !entry.snapshot?.doc
+  ) {
+    throw new RestoreBlockedError('badLog', `記錄 ${logId} 不存在、不是故事館的修改記錄、或沒有前一版快照`)
+  }
+
+  const kind = entry.target
+  const coll = TARGET_COLLECTION[kind]
+  const currentSnap = await getDocFromServer(doc(db, coll, entry.targetId))
+  const current = currentSnap.exists() ? (currentSnap.data() as Record<string, unknown>) : null
+
+  return {
+    logId,
+    kind,
+    coll,
+    targetId: entry.targetId,
+    targetName: entry.targetName,
+    doc: entry.snapshot.doc,
+    currentRev: revOf(current),
+    currentExists: !!current,
+    changedFields: diffKeys(withoutRevisionMeta(current ?? {}), withoutRevisionMeta(entry.snapshot.doc)),
+  }
+}
+
+/**
+ * 把那一版寫回去（saveWithRevision：交易內比對版本號＋原子寫 restore 記錄＋bump）。
+ * 預覽之後又有人存檔會拋 SaveConflictError，呼叫端請使用者重新預覽。
+ */
+export async function commitRevert(plan: RevertPlan): Promise<{ version: string }> {
+  const name = typeof plan.doc.name === 'string' ? plan.doc.name : plan.targetName
+  const { version } = await saveWithRevision(
+    plan.kind,
+    { ...plan.doc, id: plan.targetId, name },
+    { baseRev: plan.currentRev, restoredFrom: plan.logId },
+  )
+  return { version }
 }

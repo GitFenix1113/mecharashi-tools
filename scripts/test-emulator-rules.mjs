@@ -23,6 +23,7 @@
  *   · 故事館四個集合可讀寫、不可刪；遊戲資料一律碰不到
  *   · changeHistory 只能寫 lore 兩類、只能署自己的名；meta/gameData 只能 bump 故事館四個鍵
  *   · 不能自己提權；systemLog 寫得進去（維護者）
+ *   · 存檔交易（文件＋帶前一版快照的 log 同一筆 commit）：log 被擋時整筆失敗、文件不變
  *
  * 前置：`npm run emu:fresh`（或 `npm run emu`）要先跑起來，然後
  *   npm run emu:test-rules
@@ -30,6 +31,8 @@
 
 const PROJECT = 'mecharashi-tools'
 const FS = `http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/(default)/documents`
+/** `:commit` 的 writes 要完整資源名（不是 URL） */
+const DOC_ROOT = `projects/${PROJECT}/databases/(default)/documents`
 const AUTH = 'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts'
 
 const ADMIN = { email: 'dev-admin@local.test', password: 'devadmin' }
@@ -160,7 +163,7 @@ async function loreEditorSuite(adminTok, plainTok) {
 
   // ① 故事館四個集合：可讀可寫、不可刪 ──────────────────────────────────────
   check('寫 pilotLore', await st(put(tok, 'pilotLore/rules_test', { name: '規則測試' })), 200)
-  check('讀 pilotLore（saveWithHistory 的 pre-image）', await st(get(tok, 'pilotLore/rules_test')), 200)
+  check('讀 pilotLore（存檔交易比對版本號）', await st(get(tok, 'pilotLore/rules_test')), 200)
   check('刪 pilotLore（應被擋）', await st(del(tok, 'pilotLore/rules_test')), 403)
   check('寫 mechLore', await st(put(tok, 'mechLore/rules_test', { name: '規則測試' })), 200)
   check('寫 factionEmblems', await st(put(tok, 'factionEmblems/rules_test', { name: '規則測試' })), 200)
@@ -187,6 +190,46 @@ async function loreEditorSuite(adminTok, plainTok) {
     const id = (await ok.json()).name.split('/').pop()
     check('讀 changeHistory（應被擋）', await st(get(tok, `changeHistory/${id}`)), 403)
   }
+
+  // ③-b 存檔交易：資料＋帶前一版快照的稽核記錄，同一筆 commit（saveWithRevision）──────
+  // 故事館存檔改成交易內「寫文件＋寫 log」原子提交：log 承載唯一的前一版內容，
+  // 所以 log 被規則擋下時，整筆存檔必須一起失敗——不能留下一次「沒有快照的覆寫」。
+  const save = (t, actorUid, target, name, rev) => fetch(`${FS}:commit`, {
+    method: 'POST', headers: authed(t),
+    body: JSON.stringify({
+      writes: [
+        {
+          update: {
+            name: `${DOC_ROOT}/pilotLore/rules_tx`,
+            fields: { name: str(name), rev: { integerValue: String(rev) }, chapters: { arrayValue: {} } },
+          },
+        },
+        {
+          update: {
+            name: `${DOC_ROOT}/changeHistory/rules_tx_${rev}_${Math.random().toString(36).slice(2, 8)}`,
+            fields: {
+              ...logBody(actorUid).fields,
+              target: str(target),
+              action: str('update'),
+              targetId: str('rules_tx'),
+              snapshot: { mapValue: { fields: {
+                doc: { mapValue: { fields: { name: str('前一版'), rev: { integerValue: String(rev - 1) } } } },
+                patches: { arrayValue: {} },
+              } } },
+            },
+          },
+          currentDocument: { exists: false },
+        },
+      ],
+    }),
+  })
+  await fetch(`${FS}/pilotLore/rules_tx`, { method: 'PATCH', headers: BYPASS, body: JSON.stringify(fieldsOf({ name: '前一版' })) })
+  check('存檔交易：文件＋帶快照的 log', await st(save(tok, editor.uid, 'pilotLore', '第 1 版', 1)), 200)
+  check('存檔交易：log 冒名（整筆應被擋）', await st(save(tok, 'someone-else', 'pilotLore', '不該寫進去', 2)), 403)
+  check('存檔交易：log target=buff（整筆應被擋）', await st(save(tok, editor.uid, 'buff', '不該寫進去', 2)), 403)
+  const after = await (await fetch(`${FS}/pilotLore/rules_tx`, { headers: BYPASS })).json()
+  check('被擋的存檔沒有寫進文件（原子性）', after.fields?.name?.stringValue, '第 1 版')
+  check('一般使用者的存檔交易（應被擋）', await st(save(plainTok, 'x', 'pilotLore', '越權', 2)), 403)
 
   // ④ 版本號：只能 bump 故事館那四個鍵 ───────────────────────────────────────
   check('bump versions.pilotLore', await st(bump(tok, 'pilotLore')), 200)
@@ -218,9 +261,10 @@ async function loreEditorSuite(adminTok, plainTok) {
     })), 403)
 
   // 清理：用繞過規則的憑證收掉測試文件（changeHistory／systemLog 是 append-only，留著無妨）
-  await Promise.all(
-    ['mechLore', 'factionEmblems', 'mechMakers'].map((c) => fetch(`${FS}/${c}/rules_test`, { method: 'DELETE', headers: BYPASS })),
-  )
+  await Promise.all([
+    ...['mechLore', 'factionEmblems', 'mechMakers'].map((c) => fetch(`${FS}/${c}/rules_test`, { method: 'DELETE', headers: BYPASS })),
+    fetch(`${FS}/pilotLore/rules_tx`, { method: 'DELETE', headers: BYPASS }),
+  ])
 }
 
 async function cloudBuildsSuite() {

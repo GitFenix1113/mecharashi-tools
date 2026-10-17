@@ -2,10 +2,12 @@ import {
   addDoc,
   collection,
   doc,
+  getDocFromServer,
   getDocs,
   limit,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   startAfter,
   where,
@@ -17,10 +19,13 @@ import type {
   ChangeAction,
   ChangeHistoryEntry,
   ChangeTargetKind,
+  RevisionedTargetKind,
 } from '../../types/changeHistory'
 import { CHANGE_HISTORY_TTL_YEARS, TARGET_COLLECTION } from '../../types/changeHistory'
-import { fetchDocument, writeDoc, type PageCursor } from './firestoreCore'
+import { fetchDocument, stripUndefined, writeDoc, type PageCursor } from './firestoreCore'
 import { bumpDataVersion } from './versions'
+import { reportWriteDenied } from '../diag/writeGuard'
+import { checkRevision, revOf, withoutRevisionMeta } from '../../utils/docRevision'
 
 const COLL = 'changeHistory'
 
@@ -171,6 +176,9 @@ export function diffKeys(
  * 順序固定：讀 pre-image → setDoc → bumpDataVersion → logChange（不 await）。
  * log 排在最後且不 await，失敗只警告不擋主流程（決策十）。
  *
+ * ⚠ **沒有衝突檢查、update 不存快照**：後存者整份蓋掉先存者，而且記錄裡沒有被蓋掉的內容。
+ *   只有管理者在編的集合可以接受這個；開給協作者同時編的故事館改走下面的 `saveWithRevision()`。
+ *
  * @returns bumpDataVersion 的版本字串，供呼叫端餵給 patchCollectionItem
  */
 export async function saveWithHistory<T extends { id: string; name?: string }>(
@@ -200,4 +208,106 @@ export async function saveWithHistory<T extends { id: string; name?: string }>(
   })
 
   return version
+}
+
+// ─── 有版本號的寫入：衝突檢查 ＋ 前一版快照（PLAN-042-H 後續）────────────────────
+
+/**
+ * 存檔被擋：表單是從舊版改起的（開啟之後有人存過）。**在任何寫入之前拋出**，資料庫毫髮無傷。
+ * 編輯面板拿 `latest` 給使用者「載入最新版」；`latest === null` ＝文件已被刪除。
+ */
+export class SaveConflictError extends Error {
+  readonly baseRev: number
+  readonly currentRev: number
+  /** 伺服器上的最新版（含 id）；文件已不存在時是 null */
+  readonly latest: (Record<string, unknown> & { id: string }) | null
+
+  constructor(baseRev: number, currentRev: number, latest: SaveConflictError['latest']) {
+    super('這份在你開啟之後被別人存過，為了不蓋掉對方的修改，這次存檔已擋下。')
+    this.name = 'SaveConflictError'
+    this.baseRev = baseRev
+    this.currentRev = currentRev
+    this.latest = latest
+  }
+}
+
+export interface RevisionedSaveResult<T> {
+  /** bumpDataVersion 的版本字串（失敗時是 ''），餵給 patchCollectionItem */
+  version: string
+  /** 實際寫進去的那一份（帶新的 rev／updatedAt）。**快取要用這份**，不是呼叫端傳進來的那份 */
+  saved: T
+}
+
+/**
+ * 有存檔衝突檢查的「寫入 + 稽核」（`REVISIONED_TARGETS`：pilotLore／mechLore）。
+ *
+ * 與 saveWithHistory 的三個差別：
+ *   ① **衝突檢查**：`item.rev`（表單從第幾版改起）在交易內和伺服器現值比對，不一致就拋
+ *      `SaveConflictError`、什麼都不寫。比對與寫入在同一個交易，兩人同一瞬間存檔也只會過一個
+ *      （交易提交時文件已被別人改過 → SDK 重跑 → 重讀到新版本號 → 擋下）。
+ *   ② **update／restore 的 log 帶前一版整份快照**（snapshot.doc），歷史檢視頁可以還原回去。
+ *      故事館文件實測最大 7.1 KB（2026-10-17，pilotLore 92 份／mechLore 93 份），離單文件 1 MiB 很遠。
+ *   ③ **log 與資料同一個交易原子寫入**，不是 fire-and-forget。PLAN-030 決策十讓一般 log「失敗只警告」，
+ *      是因為那時的 log 只是追溯資訊；這裡的 log 承載唯一的前一版內容，漏記＝覆寫後救不回來，
+ *      地位等同刪除快照（決策十的例外），所以寧可整筆存不進去。
+ *
+ * `opts.baseRev` 給「寫回某一版」用（planRevert：基準是預覽當下的現值，不是快照裡的舊 rev）；
+ * 一般存檔不傳，取 `item.rev`。
+ */
+export async function saveWithRevision<T extends { id: string; name?: string; rev?: number; updatedAt?: string }>(
+  target: RevisionedTargetKind,
+  item: T,
+  opts: { baseRev?: number; restoredFrom?: string } = {},
+): Promise<RevisionedSaveResult<T>> {
+  const coll = TARGET_COLLECTION[target]
+  const { id, ...data } = item
+  const ref = doc(db, coll, id)
+  const logRef = doc(collection(db, COLL))
+  const baseRev = opts.baseRev ?? revOf(item)
+
+  let saved: T
+  try {
+    saved = await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref)
+      const prev = snap.exists() ? (snap.data() as Record<string, unknown>) : null
+
+      const check = checkRevision(baseRev, prev)
+      if (!check.ok) {
+        throw new SaveConflictError(check.baseRev, check.currentRev, prev ? { ...prev, id } : null)
+      }
+
+      const next = stripUndefined({ ...data, rev: check.nextRev, updatedAt: new Date().toISOString() })
+      tx.set(ref, next)
+      tx.set(logRef, buildEntry({
+        target,
+        action: opts.restoredFrom ? 'restore' : prev ? 'update' : 'create',
+        targetId: id,
+        targetName: item.name ?? id,
+        changedFields: prev ? diffKeys(withoutRevisionMeta(prev), withoutRevisionMeta(next)) : undefined,
+        // 快照存「被這次覆寫掉的那一版」：讀自同一個交易，保證就是被蓋掉的內容
+        snapshot: prev ? { doc: prev, patches: [] } : undefined,
+        restoredFrom: opts.restoredFrom,
+      }))
+      return { ...next, id } as T
+    })
+  } catch (err) {
+    // 衝突不是權限問題；其餘照 writeDoc 的慣例過一次診斷攔截（PLAN-045），錯誤原樣重拋
+    if (!(err instanceof SaveConflictError)) reportWriteDenied(coll, id, err)
+    throw err
+  }
+
+  const version = await bumpDataVersion(coll).catch(() => '')
+  return { version, saved }
+}
+
+/**
+ * 直讀伺服器上的現況（不吃本機快取）。編輯面板開啟時拿它和表單的 rev 比，
+ * 快取過期（別人存檔後這個分頁還沒重整）就先提示，不必等到存檔才被擋。查無 → null。
+ */
+export async function getRevisionedDoc(
+  target: RevisionedTargetKind,
+  id: string,
+): Promise<(Record<string, unknown> & { id: string }) | null> {
+  const snap = await getDocFromServer(doc(db, TARGET_COLLECTION[target], id))
+  return snap.exists() ? { ...(snap.data() as Record<string, unknown>), id } : null
 }

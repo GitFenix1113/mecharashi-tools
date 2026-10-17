@@ -68,9 +68,10 @@
       <tr><td>actorName</td><td>string</td><td>操作者 displayName 快照（改名後仍看得出是誰）</td></tr>
       <tr><td>at</td><td>Timestamp</td><td><code>serverTimestamp()</code>。排序與範圍查詢鍵</td></tr>
       <tr><td>expireAt</td><td>Timestamp</td><td><code>at + 2 年</code>。由原生 TTL 政策讀取後自動清除文件</td></tr>
-      <tr><td>changedFields</td><td>string[]?</td><td><strong>僅 update</strong>：淺層比對出的變動欄位名（不存新舊值）</td></tr>
-      <tr><td>snapshot</td><td>DeleteSnapshot?</td><td><strong>僅 delete</strong>：文件本體 + 反向修補單，見下方 02</td></tr>
-      <tr><td>restoredFrom</td><td>string?</td><td><strong>僅 restore</strong>：來源 delete log 的文件 ID，形成可追溯鏈</td></tr>
+      <tr><td>changedFields</td><td>string[]?</td><td><strong>僅 update</strong>（故事館兩館的 restore 也有）：淺層比對出的變動欄位名（不存新舊值；不含版本號欄位 <code>rev</code>／<code>updatedAt</code>）</td></tr>
+      <tr><td>snapshot</td><td>DeleteSnapshot?</td><td><strong>delete</strong>：文件本體 + 反向修補單，見下方 02。<br>
+        <strong>pilotLore／mechLore 的 update／restore</strong>（2026-10-17 起）：<strong>被這次覆寫掉的前一版整份</strong>，<code>patches</code> 恆為空陣列，見下方 06</td></tr>
+      <tr><td>restoredFrom</td><td>string?</td><td><strong>僅 restore</strong>：來源 log 的文件 ID（delete 記錄，或故事館兩館的 update／restore 記錄），形成可追溯鏈</td></tr>
     </table>
   </div>
 
@@ -78,7 +79,9 @@
     <strong>💡 為何 update 不存 before/after 快照</strong><br>
     BUFF / 技能含 <code>levels[]</code> 等巢狀結構，每筆修改存完整前後快照會讓單筆 log 迅速膨脹到數 KB；
     而修改的追溯需求通常「知道誰動了哪些欄位」就足以定位。刪除則是<strong>不可逆</strong>操作，必須留完整後路。<br>
-    若日後發現不夠用，加一個選填 <code>before</code> 欄位即可，不影響已寫入的舊 log。
+    若日後發現不夠用，加一個選填 <code>before</code> 欄位即可，不影響已寫入的舊 log。<br>
+    <strong>例外：故事館兩館（pilotLore／mechLore，2026-10-17 起）的 update 存前一版整份</strong>——它們開給多位協作者同時編（PLAN-042-H），
+    整份覆寫的「修改」對人工長文來說跟刪除一樣不可逆；而文件實測最大才 7.1 KB，膨脹不是問題。沿用 <code>snapshot</code> 欄位、不另開 <code>before</code>，見下方 06。
   </div>
 </section>
 
@@ -166,7 +169,11 @@
     · <code>logChangeOrThrow(input)</code> — 失敗拋錯（<strong>刪除路徑專用</strong>：刪除的 log 承載還原快照，漏記等於永久失去救回能力，
       因此刪除必須「先寫 log 成功、再執行刪除」）<br>
     · <code>getChangeHistoryPage({ target?, action?, cursor?, pageSize })</code> — 雙軸篩選分頁查詢<br>
-    · <code>saveWithHistory(target, item)</code> — 集合無關的「寫入 + 稽核」helper，三個 <code>update*</code> 都走它
+    · <code>saveWithHistory(target, item)</code> — 集合無關的「寫入 + 稽核」helper，管理者專用集合的 <code>update*</code> 都走它（沒有衝突檢查、update 不存快照）<br>
+    · <code>saveWithRevision(target, item, opts?)</code> — 故事館兩館專用：交易內比對版本號（不一致拋 <code>SaveConflictError</code>、不寫入），
+      文件與帶前一版快照的 log <strong>同一個交易原子寫入</strong>，回傳 <code>{ version, saved }</code>（見 06）<br>
+    · <code>getRevisionedDoc(target, id)</code> — 直讀伺服器現況（編輯面板開啟／切回分頁時的提早提示）<br>
+    <code>src/lib/api/restore.ts</code>：<code>planRestore</code>／<code>commitRestore</code>（還原刪除）、<code>planRevert</code>／<code>commitRevert</code>（故事館寫回某一版）
   </div>
 
   <div class="warning-block" style="margin-top:12px;">
@@ -192,12 +199,14 @@
 
   <div class="info-block">
     <strong>✍️ 故事館協作編輯的 create 分支（PLAN-042-H，2026-10-17）</strong><br>
-    新角色 <code>LORE_EDITOR</code> 在故事館編輯台存檔時，<code>saveWithHistory</code> 會替他寫一筆自己的存檔記錄，所以 create 多一條
+    新角色 <code>LORE_EDITOR</code> 在故事館編輯台存檔時，<code>saveWithRevision</code> 會替他寫一筆自己的存檔記錄，所以 create 多一條
     <code>canEditLore()</code> 分支，但 <strong><code>target</code> 只限 <code>pilotLore</code>／<code>mechLore</code></strong>——
-    <code>saveWithHistory</code> 只有這兩館會走到；陣營徽章與機甲廠商是 <code>writeDoc</code>＋bump、不留稽核，
+    <code>saveWithRevision</code> 只有這兩館會走到；陣營徽章與機甲廠商是 <code>writeDoc</code>＋bump、不留稽核，
     其餘 target（<code>buff</code>、<code>pilotSkill</code>…）協作編輯一律寫不進來。<br>
     <code>actorUid == request.auth.uid</code> 綁在兩條分支外層，<strong>協作編輯一樣不能冒名</strong>。
-    <strong>讀取仍只給 <code>isAdmin()</code></strong>：歷史檢視頁屬於後台，協作者不需要互看彼此的記錄；update／delete 仍為 <code>false</code>。
+    <strong>讀取仍只給 <code>isAdmin()</code></strong>：歷史檢視頁屬於後台，協作者不需要互看彼此的記錄；update／delete 仍為 <code>false</code>。<br>
+    存檔是「文件＋log」<strong>同一筆交易</strong>：log 被這條規則擋下時，整筆存檔一起失敗、文件不變——不會留下沒有快照的覆寫
+    （<code>npm run emu:test-rules</code> 的「存檔交易」五項驗這件事，含冒名與 <code>target=buff</code> 兩種被擋情形）。
   </div>
 
   <div class="warning-block">
@@ -248,8 +257,10 @@
       <tr><td><code>backpack</code></td><td>backpacks</td><td>✅ 已接線（PLAN-043，含級聯刪除）</td></tr>
       <tr><td><code>backpackSkill</code></td><td>backpackSkills</td><td>✅ 已接線（PLAN-043，含級聯刪除）</td></tr>
       <tr><td><code>form</code></td><td>forms</td><td>✅ 已接線（PLAN-041，含級聯刪除）</td></tr>
-      <tr><td><code>pilotLore</code></td><td>pilotLore</td><td>✅ 已接線（PLAN-042-A，create / update；刻意沒有刪除路徑）。PLAN-042-H 起故事館協作編輯也寫得進來</td></tr>
-      <tr><td><code>mechLore</code></td><td>mechLore</td><td>✅ 已接線（PLAN-042-B，create / update；刻意沒有刪除路徑）。PLAN-042-H 起故事館協作編輯也寫得進來</td></tr>
+      <tr><td><code>pilotLore</code></td><td>pilotLore</td><td>✅ 已接線（PLAN-042-A，create / update；刻意沒有刪除路徑）。PLAN-042-H 起故事館協作編輯也寫得進來；
+        2026-10-17 起走 <code>saveWithRevision</code>：衝突檢查＋update 存前一版、可寫回（見 06）</td></tr>
+      <tr><td><code>mechLore</code></td><td>mechLore</td><td>✅ 已接線（PLAN-042-B，create / update；刻意沒有刪除路徑）。PLAN-042-H 起故事館協作編輯也寫得進來；
+        同上走 <code>saveWithRevision</code></td></tr>
     </table>
   </div>
 
@@ -265,6 +276,51 @@
     <strong>📄 相關文件</strong><br>
     完整設計論證與取捨見 <code>docs/05_階段性開發計畫/執行中/PLAN-030_資料變更歷史/計畫書.html</code>；
     安全規則全貌見 <a href="security-rules.html">security-rules</a>。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label green">06 — 故事館的存檔衝突檢查（2026-10-17）</div>
+  <div class="section-title">版本號 rev ＋ 前一版快照</div>
+
+  <div class="info-block">
+    <strong>📌 起因</strong><br>
+    故事館開給多位協作者同時編（PLAN-042-H），而編輯台的存檔是<strong>整份覆寫</strong>：兩人同時編同一位，後存者會靜默蓋掉先存者；
+    舊的 update 記錄只有 <code>changedFields</code>，被蓋掉的內容救不回來。2026-10-14 克洛伊的 intro／nameEn／dossier 就是被搬遷前開著的舊分頁這樣洗掉的。
+  </div>
+
+  <div class="code-block">
+<span class="comment">// 表單整份複製文件 → 表單裡的 rev ＝「我從第幾版改起」</span>
+編輯面板開啟 ──▶ <span class="fn">getRevisionedDoc</span>() 直讀現況 ──▶ rev 不同？顯示「這份在你開啟之後被別人存過」
+切回分頁     ──▶ 再讀一次（另一個分頁剛存完，正是兩分頁撞車的路徑）
+
+按下儲存 ──▶ <span class="fn">runTransaction</span>
+              ├ tx.get(文件) ── 現值 rev ≠ 表單 rev ──▶ 拋 <span class="fn">SaveConflictError</span>，<span class="kw">什麼都不寫</span>
+              └ 相等 ──▶ tx.set(文件, { ...表單, rev: 現值+1, updatedAt })
+                        tx.set(changeHistory/新 ID, { action: 'update', snapshot: { doc: 前一版整份, patches: [] } })
+         ──▶ <span class="fn">bumpDataVersion</span>()  ──▶ 呼叫端用回傳的 saved（帶新 rev）更新快取</div>
+
+  <div class="data-table-wrap">
+    <table class="data-table green-head">
+      <tr><th>設計</th><th>理由</th></tr>
+      <tr><td>基準住在<strong>文件內</strong>（<code>rev</code>），不是開面板時讀的時間戳</td><td>面板內容來自 GameDataContext 快取，別人存檔後這個分頁照樣拿舊內容開面板；
+        若基準是開面板當下讀到的新時間戳，舊內容配新基準會照樣蓋掉別人。基準跟著內容走，<strong>草稿還原</strong>也擋得住</td></tr>
+      <tr><td>比對與寫入在<strong>同一個交易</strong></td><td>兩人同一瞬間存檔也只會過一個：交易提交時文件已被改過 → SDK 重跑 → 重讀到新 rev → 擋下</td></tr>
+      <tr><td>log 與文件<strong>原子寫入</strong>（不是 fire-and-forget）</td><td>PLAN-030 決策十讓一般 log「失敗只警告」，因為那時 log 只是追溯資訊；這裡的 log 承載唯一的前一版內容，地位等同刪除快照</td></tr>
+      <tr><td>只給「載入最新版」，<strong>不給「仍要覆寫」</strong></td><td>協作者讀不到 changeHistory，一顆覆寫鍵等於讓人在不知道蓋掉什麼的情況下按下去</td></tr>
+      <tr><td>寫回某一版時 rev <strong>照常 +1</strong>，不退回舊編號</td><td>開著面板的人才偵測得到「有人存過」；寫回本身也是一筆帶快照的 restore 記錄，可以再寫回去</td></tr>
+    </table>
+  </div>
+
+  <div class="info-block" style="margin-top:12px;">
+    <strong>📏 大小</strong><br>
+    2026-10-17 實測：pilotLore 92 份共 266 KB、最大 7.1 KB；mechLore 93 份共 61 KB、最大 1.4 KB。快照＝前一版整份，離 Firestore 單文件 1 MiB 上限百倍以上，不另做截斷。
+  </div>
+
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 用腳本（Admin SDK）改這兩個集合時要順手把 <code>rev</code> +1</strong><br>
+    腳本不經過 <code>saveWithRevision</code>：不加 rev 的話，開著的編輯面板偵測不到，存檔會把腳本的修改整份蓋回去。
+    沒有 <code>rev</code> 的舊文件視為第 0 版，第一次經編輯台存檔變第 1 版。
   </div>
 </section>
 

@@ -65,7 +65,7 @@
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);"><strong>共同底座（LoreDocBase）</strong></td></tr>
       <tr><td>id</td><td>string</td><td>文件 ID <strong>＝ 機甲的文件 ID</strong>（<code>mech_001_都卜勒</code>）。故事與機甲一對一，不另造 slug</td></tr>
-      <tr><td>name</td><td>string?</td><td>機甲名快照（去正規化），供 <code>saveWithHistory</code> 的 <code>targetName</code> 與後台列表使用</td></tr>
+      <tr><td>name</td><td>string?</td><td>機甲名快照（去正規化），供稽核記錄的 <code>targetName</code> 與後台列表使用</td></tr>
       <tr><td>intro</td><td>string?</td><td><strong>介紹</strong>（原 <code>mechs.lore</code>，Q2）。純文字、換行即分段。首行型號已切到 <code>modelNo</code>。
         <br><small style="color:var(--text-dim)">有台版公告譯文的 49 台改用台版（用「機甲」），其餘 43 台照陸版原文（簡轉繁、用「機兵」），<strong>不自行改字</strong>（決策 B-9）。
         <code>mechs.lore</code> 在 B-3 只「複製」過來，H-7 觀察一週後才刪。</small></td></tr>
@@ -73,6 +73,7 @@
       <tr><td>nameEn</td><td>string?</td><td>英文名：卷宗標題副標、名冊搜尋。初值取 v3 mapping 的 <code>mechEnKeys</code>（62／92），排除聯動與雙機池鍵（GlaDre／MalAgl／Nvidia／ROG），「有全名就用全名」</td></tr>
       <tr><td>skins</td><td>LoreSkinSetting[]?</td><td><strong>塗裝顯示設定</strong>：<code>key</code> 為塗裝圖檔鍵（<code>Img_Skin_wap*</code>，34 台 38 張），名稱、隱藏、順序同機師外觀。圖檔上站見 042-B F-1</td></tr>
       <tr><td>chapters</td><td>LoreChapter[]</td><td>逸聞章節（PART 1..N），結構與 pilotLore 完全相同（必填穩定鍵 <code>key</code>、<code>bodyRefs</code>、<code>draft</code>…）。型別上必填，讀取端一律 <code>?.chapters</code> 防禦</td></tr>
+      <tr><td>rev／updatedAt</td><td>number?／string?</td><td>🆕 2026-10-17 存檔衝突檢查的版本號與最後存檔時間，與 <a href="pilotLore.html" style="color:var(--accent-orange);">pilotLore</a> 同一個底座欄位、規則相同（只由 <code>saveWithRevision()</code> 寫；腳本改資料要順手把 rev +1）</td></tr>
       <tr><td>gachaTitle</td><td>string?</td><td>🆕 2026-10-17 移到底座（機師 PLAN-042-A Phase J 同義共用，見 <a href="pilotLore.html" style="color:var(--accent-orange);">pilotLore</a>）。<strong>卡池名稱</strong>，如「可能性的彼端」（莫比烏斯X）：卷宗最後招募插畫卡的標題（英文固定 KEY ART）與鑑賞時的圖名；空＝顯示「卡池」。
         台版公告「【特選】&lt;卡池名&gt; – S級…機甲「&lt;機甲&gt;」」那一段，照錄不改字。
         <br><small style="color:var(--text-dim)">初值由一次性腳本 <code>scripts/temp_scripts/fill-mech-gacha-titles.mjs</code>（不進版控）從公告封存（2024-03～2026-08）＋公告草稿帶入：有公告可查的 54 台，只填空欄位；
@@ -121,7 +122,7 @@
     章節正文開始出現 <code>[xxx]</code> 引用時才登記 <code>MECH_LORE</code>。一登記就連動級聯刪除與「影響 N 處引用」的<strong>全集合掃描</strong>：
     rules 晚一步部署的話，全站既有的後台刪除會 permission-denied（PLAN-042-A 踩過）。<br>
     在那之前 <code>entityRefs.ts</code> 的 <code>SPEC_COLL_OF['mechLore']</code> 是 <code>null</code>（042-B 起這張表允許 null＝「有稽核記錄、但不被掃」），
-    所以 <code>saveWithHistory('mechLore', …)</code> 照樣能寫稽核記錄。登記時要回來把 null 改成 <code>'mechLore'</code>。<br>
+    所以 <code>saveWithRevision('mechLore', …)</code> 照樣能寫稽核記錄。登記時要回來把 null 改成 <code>'mechLore'</code>。<br>
     <small style="color:var(--text-dim)">系譜的 <code>mechId</code> 與廠商的 <code>maker</code> 指向 mechs／mechMakers，但不會有級聯刪除替本集合清掉懸空的指向——前台（042-B D-3）查不到對象時要略過那一條，廠商則退回「廠商未載」。</small>
   </div>
 </section>
@@ -138,7 +139,9 @@
 
   <div class="info-block" style="margin-top:12px;">
     <strong>🛠️ 寫入路徑</strong><br>
-    <code>updateMechLore()</code> → <code>saveWithHistory('mechLore', …)</code>：<strong>整份覆寫</strong>，自動寫入 <code>changeHistory</code>（篩選器標籤「機甲逸聞」）並 <code>bumpDataVersion('mechLore')</code>。
+    <code>updateMechLore()</code> → <code>saveWithRevision('mechLore', …)</code>（2026-10-17 前是 <code>saveWithHistory</code>）：<strong>整份覆寫</strong>，
+    交易內比對 <code>rev</code> 擋下過期表單，文件與帶前一版整份快照的 <code>changeHistory</code> 記錄（篩選器標籤「機甲逸聞」）原子寫入，再 <code>bumpDataVersion('mechLore')</code>。
+    設計見 <a href="changeHistory.html" style="color:var(--accent-orange);">changeHistory</a> 06。
     <code>src/lib/api/mechLore.ts</code> <strong>刻意沒有 <code>deleteMechLore</code></strong>，理由同 pilotLore。
   </div>
 
@@ -152,7 +155,7 @@
     <strong>🔒 安全規則與讀取路徑</strong><br>
     <code>match /mechLore/{docId}</code>：<code>read</code> / <code>create</code> / <code>update</code> 皆 <code>canEditLore()</code>
     （<code>LORE_EDITOR</code> / <code>ADMIN</code> / <code>OWNER</code>），<code>delete</code> 只給 <code>isAdmin()</code>（PLAN-042-H，2026-10-17；理由同 pilotLore：
-    read 是給 <code>saveWithHistory</code> 讀 pre-image，delete 不開是因為編輯台沒有刪除路徑）。
+    read 是給 <code>saveWithRevision</code> 的交易與編輯面板讀現況比對版本號，delete 不開是因為編輯台沒有刪除路徑）。
     前台不直讀，走 Cloudflare Worker 代理（<code>/api/data/mechLore</code>）。
   </div>
 
