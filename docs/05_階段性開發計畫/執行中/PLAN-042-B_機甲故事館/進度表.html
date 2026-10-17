@@ -925,8 +925,26 @@
           <code>2054.json</code> 不變、芬里厄流動圖層改前改後逐像素相同。0 ⚠ 從 11 台變 <b>14 台</b>（＋1027 Ouroboros、1040 TengShe、1301 REV-02），都還沒上站；
           1040 的溶解值比芬里厄高、1027 有一條素材本來就有的橫邊，上站前對遊戲畫面看一次。粒子誤用帶遮罩／捲動的流動材質（7 台）改報 ⚠。
           反組譯檔、預覽頁、對照圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_流動圖層預設貼圖/</code>。
-          <br><b>還沒做</b>：Flow1 20 台、祖先位移 18、Box 18、其他 shader 21（多半連主貼圖都空）、流動材質當粒子 7、startDelay 7；
-          只差一種的：祖先位移 3（1017、2003、2047）、Box 2（2043、2053）。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>不發射的系統略過</b>：<code>EmissionModule</code> 關、又沒有 burst（<code>m_BurstCount</code> 0）的粒子系統比照「官方沒指定材質」不輸出、印「·」提示，
+          不再對它的 shader、主貼圖、形狀、祖先位移報 ⚠（多半是 <code>BlackJackShader/Unlit</code>、主貼圖空的 <code>Particle_All</code>／<code>FU</code>／<code>Centre</code> 容器，或 Glow06 的 <code>Particle</code> 外框）。
+          判斷不看 renderer 的 <code>m_Enabled</code>（UIParticle 代畫，已上站各台幾乎都是關的）；sub-emitter 的目標靠父系統觸發、不靠自己的 emission，
+          但匯出檔沒有元件 pid 對不出是誰，所以 prefab 裡有開著的 <code>SubModule</code> 就一律不略過（60 台盤點：一個都沒有）。60 台共略過 37 個系統（35 台），已上站 14 台的 JSON 重產內容不變。
+          0 ⚠ 從 14 台變 <b>17 台</b>（＋2071、3006、3019），其他 shader 卡住的台數 24 → 12，3010 只剩 <code>UI_General</code> 一項。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>祖先的變換</b>：builder 改成照 Unity 的 RectTransform 算每個節點在畫布上的變換——
+          localPosition＝父矩形裡錨點的參考點（anchorMin～Max 依 pivot 內插）＋<code>anchoredPosition</code>（RectTransform 的 <code>m_LocalPosition</code> 只有 z 有值），
+          再一路乘上祖先的位移、旋轉、縮放，粒子的 <code>pos</code>／<code>rot</code>、流動圖層的 <code>pos</code>／<code>size</code> 都輸出累積後的值（欄位不變，引擎不必改）。
+          根節點的大小照 <code>LayoutElement</code> 的 preferred（60 台都是 2500×1080，有的 sizeDelta 是 0）；祖先縮放離 1 不到 0.1% 當 1（編輯器殘值，螣蛇的 1.00026，差不到 0.3 px）。
+          順帶補 <b>RectMask2D 裁切</b>：60 台有 28 台的粒子在 RectMask2D 底下，多半就是根節點大小——只有切進根節點矩形（遊戲畫面）的邊才裁，
+          輸出選填的 <code>clip</code>、引擎用 scissor（目前只有 2052 裁決者的 <code>Particle_Wind</code> 裁在左半邊）；站上插畫左右多露的 50 px 照沒遮罩的台處理，免得切出直線。
+          已上站 17 台的 JSON 重產內容逐位元相同。0 ⚠ 從 17 台變 <b>23 台</b>（＋1017、1034、2003、2047、2050、2052）；落點疊在插畫上檢查合理
+          （銀閃的 <code>Particle_Glow1</code> 從胸口移到頭部發光處、XR 的光移到槍口電光、光暉的煙移到槍口），疊圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>流動圖層的平面旋轉</b>（另一個 commit，可單獨拿掉）：做上一項時發現已上站的 1027 銜尾蛇、1301 破曉者-02 的流動圖層節點<b>自己</b>就轉了
+          （刀光 −46°／+153°、煙流 −121°～−128°／+45°），舊 builder 不看自己的旋轉、引擎一直畫成水平矩形。builder 改輸出選填的 <code>rot</code>（變換後 x 軸在畫布上的角度，含祖先；不轉的不輸出），
+          引擎把四角對中心轉過去、UV 跟著走；繞 x／y 軸轉、鏡像、非均勻縮放疊旋轉的歪斜報 ⚠（只有 3027 巨像）。
+          這兩台的 JSON 只多了 <code>rot</code>（去掉後逐位元相同），其餘 21 台不變；疊圖與前後對照在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/流動圖層旋轉/</code>。
+          <br><b>還沒做</b>（剩 37 台）：Flow1 20 台、Box 18、其他 shader 12、流動材質當粒子 7、startDelay 7、Image 掛 <code>UIFx_Alpha</code> 3、拖尾 2、Circle 1、流動圖層傾斜 1（3027）、RotationBySpeed 1；
+          只差一種的 14 台：Box 4（1052、2040、2043、2053）、Flow1 4（1028、1035、2027、2055）、startDelay 2（2056、3032）、
+          拖尾 1（1018）、流動材質當粒子 1（1038）、其他 shader 1（3010 的 <code>UI_General</code>）、Image 掛 <code>UIFx_Alpha</code> 1（2013）。<b>下一步最划算的是 Box 形狀</b>（解開 4 台、另外共卡 18 台）。</div>
         <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -940,7 +958,26 @@
           <code>gachaFxEngine</code>（WebGL2，校準值寫死：不溶解、擾動 ×0.1、亮度 ×0.85）、<code>gachaFxRegistry</code>（<code>import.meta.glob</code>：有 JSON 就有動態，新增一台不必改程式）、<code>GachaFxLive</code>。
           <code>LoreViewer</code> 新增 <code>live</code> 疊層：開場飛行落地才掛、關閉即卸載；canvas 套主圖同一套尺寸規則，放大一起放大。背景直接用 F 段的招募插畫（與試作拼圖逐像素平均差 3／255），不另外上傳。
           鑑賞工具列加「卡池 動態／靜態」，卷宗卡池卡提示改「點一下看動態全景」；減少動態或省流量預設靜態。驗收：headless 與試作頁分區比對平均色差 ≤3、每格變化量相當；引擎與資料各自延遲載入（gzip 5.6＋4.4 KB）。
-          手機降級目前只有解析度上限（DPR ≤2），沒有另做簡化版。<code>wapgachaskin</code> 還沒查。<b>剩</b>：其他台逐台加資料——匯出已解卡（上一列），目前能直接上的只有都卜勒，其餘要等引擎補功能。</div>
+          手機降級目前只有解析度上限（DPR ≤2），沒有另做簡化版。<code>wapgachaskin</code> 還沒查。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>第一批 0 ⚠ 全數上站：芬里厄之外再加 13 台</b>——1011 都卜勒、1012 雷克斯、1014 格萊楊、1027 銜尾蛇、1040 螣蛇、1301 破曉者-02、2017 馬爾薩斯、2019 朝陽、2022 青鳥、2042 伊格尼特、2302 影子兔、3005 恐頜、3017 金剛。
+          60 台重新匯出＋<code>--dry-run</code>，0 ⚠ 仍是這 14 台（兩次匯出逐位元組相同；被略過的元件只有巨像的 Animator，這 14 台都沒有）；<code>2054.json</code> 重產內容不變。
+          新增 13 個 JSON（12.6–25.0 KB）＋29 張貼圖（<code>game/fx/</code> 合計 1.1 MB，共用的煙霧、火花只放一份）。
+          驗收：<code>npm test</code> 1585 過（gachaFxSim 每台跑 10 秒無 NaN、貼圖都在）、<code>npm run build</code> 過；production build＋<code>vite preview</code>（埠 4173，Worker 白名單內）用 headless Chromium（swiftshader）逐台開 <code>/lore/mechs/&lt;id&gt;</code> 點卷宗卡池卡，
+          14／14 出現 <code>.lore-viewer__live.is-ready</code>、貼圖請求數＝JSON 貼圖數且全 200、console 零錯誤；截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_批次上站/</code>（破曉者-02 左緣的暗線是插畫本身，靜態也有）。
+          ⚠ 9 台混用透明與疊加混色（1012、1014、1027、1040、1301、2017、2019、2022、2302），繪製順序沿用芬里厄時期的規則、還沒對遊戲畫面看過——併入下一列「抽樣校準」。
+          <br><b>剩 46 台</b>（逐台清單同一個 <code>_local-notes</code> 夾）。缺的引擎功能與卡住台數（一台可能卡多種）：
+          其他 shader 24（多半是 <code>BlackJackShader/Unlit</code> 的容器節點，主貼圖空）、Flow1 20、祖先位移 18、Box 形狀 18、startDelay 7、流動材質當粒子 7、Image 掛 <code>UIFx_Alpha</code> 3、拖尾 2、Circle 形狀 1、RotationBySpeed 1。
+          只差一種的 12 台：祖先位移 3（1017、2003、2047）、Box 2（2043、2053）、其他 shader 4（2071、3006、3010、3019）、Flow1 1（2027）、startDelay 1（3032）、Image 掛 <code>UIFx_Alpha</code> 1（2013）。
+          <b>最便宜的一步</b>：2071、3006、3019 卡的只是一個 emission 關著、沒有 burst 的 <code>Particle_All</code>（不發射任何粒子），builder 比照「沒指定材質」略過就 0 ⚠（3010 也會少到只剩 <code>UI_General</code> 一項）。
+          注意別拿 renderer 的 <code>m_Enabled</code> 判斷：UI 粒子由 UIParticle 代畫，已上站各台的 renderer 幾乎都是關的。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>最便宜的一步做完、再上 3 台</b>：2071 藍色魔鳥、3006 赫拉克勒斯、3019 塔納託斯（builder 略過不發射的系統，見上一列）——共 <b>17 台</b>。
+          60 台重新匯出（與上一批逐位元組相同）＋<code>--dry-run</code>；已上站 14 台重產內容不變。新增 3 個 JSON（10.8–22.8 KB）＋4 張貼圖（88 KB，<code>game/fx/</code> 合計 1.2 MB）。
+          驗收：<code>npm test</code> 1585 過、<code>npm run build</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader）17 台逐台點卷宗卡池卡，17／17 <code>.lore-viewer__live.is-ready</code>、貼圖全 200、console 零錯誤；
+          截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_不發射系統略過/</code>。⚠ 這 3 台也混用透明與疊加混色（各 1–2 個透明系統），併入「抽樣校準」。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>祖先的變換解開 6 台</b>（見上一列）：1017 暮色之牙、1034 盜火者、2003 XR、2047 光暉、2050 銀閃、2052 裁決者——共 <b>23 台</b>。
+          60 台重新匯出＋<code>--dry-run</code>；已上站 17 台重產內容不變。新增 6 個 JSON（11.1–39.4 KB）＋1 張貼圖（<code>Common_Stone_1</code>，12 KB；其餘 27 張共用既有的）。
+          驗收：<code>npm test</code> 1585 過、<code>npm run build</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader）23 台逐台點卷宗卡池卡，23／23 <code>.lore-viewer__live.is-ready</code>、貼圖全 200、console 零錯誤。
+          scissor 另做對照：攔截裁決者的資料把所有系統裁在左半，右半逐格變化 0.000（原資料 2.6）。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_祖先位移/</code>。</div>
         <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
