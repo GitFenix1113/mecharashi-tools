@@ -34,17 +34,19 @@
  * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）、
  * 序列幀（UVModule 的 Grid 模式、依壽命／依 fps）、流動圖層照 shader 規格的選填貼圖、主貼圖 tiling／旋轉／捲動與遮罩（見 UI_CommonFlow 的規格），
  * 以及祖先的位移／旋轉／縮放、錨點與 RectMask2D 裁切（見「版面」）、流動圖層的平面旋轉、方塊發射形狀（Box，見 SUPPORTED_SHAPES）、
- * 第二支流動 shader UI/Flow1（圖層照反組譯全做、粒子取單張貼圖，見「UI/Flow1 的規格」）、流動圖層的自身鏡像與繪製順序（under）。
+ * 第二支流動 shader UI/Flow1（圖層照反組譯全做、粒子取單張貼圖，見「UI/Flow1 的規格」）、流動圖層的自身鏡像與繪製順序（under）、
+ * 粒子系統的延遲啟動（startDelay，只在播放開始時等一次，見 startDelay()）。
  * 下一台若用到拖尾、序列幀的其他模式等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
  * 10-17 對 61 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run；2060 彌造者的 prefab 官方拼成 …PoollItemPrefab，後來才補進來）：
- * 0 ⚠ 有 31 台＝2054、1011、1012、2017、2019、2022、3005、3017
+ * 0 ⚠ 有 35 台＝2054、1011、1012、2017、2019、2022、3005、3017
  * （以上透明混色就解開）＋1014、2042、2302（序列幀解開）＋1027、1040、1301（流動圖層缺擾動貼圖、遮罩、捲動解開）
  * ＋2071、3006、3019（不發射的系統略過就解開，見 isSilent；60 台共略過 37 個）＋1017、1034、2003、2047、2050、2052（累積祖先的變換解開）
- * ＋2053（方塊形狀解開）＋1028、2027、2055、2060、2061、2070、3014（Flow1 解開）。
- * 剩下 30 台卡最多的是速度模組的 orbital 等 17、startDelay 7、流動材質當粒子 7、Flow1 粒子用到單張貼圖以外的設定 5（2018、2049、2062、3007、3047）；
- * 只差一種的 14 台：orbital 7（1036、1052、1303、2040、2043、3020、3028：1303、3020 是 Flow1 解開後只剩灰燼的 orbitalZ）、startDelay 4、
- * TweenAlpha 1（1035：Flow1 解開後只剩這個，見主迴圈後的 Tween 檢查）、流動材質當粒子 1、Image 用 UIFx_Alpha 1。
- * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_Flow1/（更早的版本在同月的「Box形狀」「祖先位移」「不發射系統略過」「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
+ * ＋2053（方塊形狀解開）＋1028、2027、2055、2060、2061、2070、3014（Flow1 解開）＋2056、3032、3037、3051（startDelay 解開）。
+ * 剩下 26 台卡最多的是速度模組的 orbital 等 17、流動材質當粒子 7、Flow1 粒子用到單張貼圖以外的設定 5（2018、2049、2062、3007、3047）；
+ * 只差一種的 11 台：orbital 7（1036、1052、1303、2040、2043、3020、3028：1303、3020 是 Flow1 解開後只剩灰燼的 orbitalZ）、
+ * TweenAlpha 1（1035：Flow1 解開後只剩這個，見主迴圈後的 Tween 檢查）、流動材質當粒子 1、Image 用 UIFx_Alpha 1、
+ * Flow1 粒子 1（2062：startDelay 解開後只剩這個）。
+ * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_startDelay/（更早的版本在同月的「剩餘30台」「Flow1」「Box形狀」「祖先位移」「不發射系統略過」「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
  * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質、或 emission 關又沒有 burst 的粒子會略過），照常可以上站。
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -408,12 +410,33 @@ const SUPPORTED_SHAPES = new Set([0, 4, 5, 8])
 const hasSubEmitters = nodes.some((n) => n.ps?.SubModule?.enabled && (n.ps.SubModule.subEmitters ?? []).length)
 const isSilent = (p) => !hasSubEmitters && !p.EmissionModule?.enabled && !((p.EmissionModule?.m_BurstCount ?? 0) > 0)
 
+/**
+ * startDelay（MainModule 的 Start Delay，10-17 J-1 補）：開始播放後等幾秒才開始跑。依據（筆記 _local-notes/2026-10/2026-10-17_卡池動態_startDelay/）：
+ *   單位是秒（Scripting API）；編輯器只給選常數與兩個常數之間隨機（InitialModuleUI 設 m_AllowCurves＝false），隨機的每次播放、
+ *   每個系統抽一次（Unity 粒子負責人的論壇回覆）；只在播放開始時等一次——time「不含延遲、在 duration 內循環」、totalTime「含延遲、
+ *   不循環」、Play() 從停止狀態開始時才套用延遲（ParticleSystem.bindings.cs 的註解；Cocos 的 Shuriken 移植也註明「第二輪起不延遲（Unity）」）。
+ * 61 台 1075 個系統有 15 個開了，全是常數 0.1～2 秒、looping、沒有 prewarm、simulationSpeed 1、祖先的粒子系統都沒有延遲。
+ * 沒有依據的組合照舊報 ⚠、不輸出（引擎當成不延遲）：曲線模式；prewarm（編輯器在 prewarm＋looping 時把 Start Delay 反灰，
+ * tooltip 說兩者不能並用）；simulationSpeed 不是 1（延遲算不算進倍速沒寫）；祖先的粒子系統也有延遲（子系統要不要跟著等沒寫）。
+ */
+function startDelay(n) {
+  const p = n.ps, d = p.startDelay
+  if (isZeroCurve(d)) return null
+  const owner = `${n.name}：startDelay ${num(d.minScalar)}～${num(d.scalar)}（模式 ${d.minMaxState}）`
+  if (d.minMaxState !== 0 && d.minMaxState !== 3) warn(`${owner} 是曲線，Unity 編輯器不給選、語意沒有依據，引擎忽略`)
+  else if (p.prewarm) warn(`${owner} 又開了 prewarm，Unity 編輯器不給並用、語意沒有依據，引擎忽略延遲`)
+  else if (num(p.simulationSpeed || 1) !== 1) warn(`${owner} 的 simulationSpeed 是 ${num(p.simulationSpeed)}，延遲要不要跟著倍速沒有依據，引擎忽略延遲`)
+  else if (ancestors(n).some((a) => a.ps && !isZeroCurve(a.ps.startDelay))) warn(`${owner}：祖先的粒子系統也有延遲，子系統要不要跟著等沒有依據，引擎忽略延遲`)
+  else return minMax(d)
+  return null
+}
+
 function particleSystem(n, at) {
   const p = n.ps, r = n.rect, psr = n.psr
   if (isSilent(p)) { note(`${n.name}：emission 關、沒有 burst，不發射粒子，略過`); return null }
   for (const [k, v] of Object.entries(p)) if (v && typeof v === 'object' && v.enabled && k.endsWith('Module') && !SUPPORTED_MODULES.has(k)) warn(`${n.name}：${k} 開著，引擎不支援（會被忽略）`)
   if (psr.m_RenderMode !== 0 && psr.m_RenderMode !== 1) warn(`${n.name}：渲染模式 ${psr.m_RenderMode} 引擎不支援（只有 billboard 0／拉伸 1）`)
-  if (num(p.startDelay?.scalar) !== 0 || p.startDelay?.minMaxState) warn(`${n.name}：有 startDelay，引擎忽略`)
+  const delay = startDelay(n)
   const I = p.InitialModule, E = p.EmissionModule, S = p.ShapeModule
   const material = particleMaterial(psr.materials?.[0], n.name)
   if (!material) return null
@@ -432,6 +455,8 @@ function particleSystem(n, at) {
     duration: num(p.lengthInSec),
     looping: !!p.looping,
     prewarm: !!p.prewarm,
+    // 不延遲的不輸出（已上站其他台的 JSON 不變）
+    ...(delay ? { delay } : {}),
     simSpeed: num(p.simulationSpeed || 1),
     initial: {
       lifetime: minMax(I.startLifetime),

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { evalCurve, evalGradient, evalMinMax, ParticleSim, uvFrame, uvRect } from './gachaFxSim.ts'
+import { evalCurve, evalGradient, evalMinMax, makePerlin, ParticleSim, uvFrame, uvRect } from './gachaFxSim.ts'
 import type { FxSystem, FxUV, GachaFxData } from './gachaFxTypes.ts'
 
 const FX_DIR = new URL('../../../data/gachaFx/', import.meta.url)
@@ -53,6 +53,48 @@ test('先老化移除、再發射：上限 1 顆的光暈死掉的那一格就�
 test('預熱：建構完就已經有粒子（開場不是空的）', () => {
   const s = new ParticleSim(sys({ prewarm: true, initial: { ...sys().initial, maxParticles: 50, lifetime: { mode: 0, scalar: 3 } }, emission: { rate: { mode: 0, scalar: 10 }, bursts: [] } }), seeded())
   assert.ok(s.parts.length >= 25, `${s.parts.length} 顆`)
+})
+
+test('startDelay：等的時候不發射、播放時間不走，也不抽亂數——等完之後跟沒延遲的系統一模一樣', () => {
+  const plain = new ParticleSim(sys(), seeded(3)), late = new ParticleSim(sys({ delay: { mode: 0, scalar: 0.5 } }), seeded(3))
+  late.update(0.25)
+  assert.equal(late.parts.length, 0)
+  assert.equal(late.t, 0)
+  assert.equal(late.wait, 0.25)
+  // 跨過延遲的那一格：剩下的 1 秒照常跑
+  late.update(1.25)
+  plain.update(1)
+  assert.equal(late.t, 1)
+  assert.equal(late.wait, 0)
+  assert.equal(late.parts.length, 1)
+  assert.deepEqual(late.parts, plain.parts)
+})
+
+test('startDelay 只在開始播放時等一次：之後每輪隔 duration、不是 duration＋延遲（2056 君權的 zhen_01：duration 3、延遲 1／2）', () => {
+  // 每輪開頭一發 burst，記下真實時間
+  const fired = (delay: number) => {
+    const s = new ParticleSim(sys({
+      duration: 3, delay: { mode: 0, scalar: delay },
+      initial: { ...sys().initial, maxParticles: 10, lifetime: { mode: 0, scalar: 0.1 } },
+      emission: { rate: { mode: 0, scalar: 0 }, bursts: [{ time: 0, count: { mode: 0, scalar: 1 }, cycles: 1, interval: 0, probability: 1 }] },
+    }), seeded())
+    const times: number[] = []
+    let now = 0
+    s.emit = ((emit) => (n: number) => { times.push(now); emit(n) })(s.emit.bind(s))
+    // 1/8 秒一格：二進位剛好，時間不累積誤差
+    for (let i = 0; i < 84; i++) { now += 1 / 8; s.update(1 / 8) }
+    return times
+  }
+  assert.deepEqual(fired(1), [1, 4, 7, 10])
+  assert.deepEqual(fired(2), [2, 5, 8])
+})
+
+test('startDelay 兩個常數之間隨機：建構時抽一次；常數不抽亂數', () => {
+  assert.equal(new ParticleSim(sys({ delay: { mode: 3, minScalar: 1, scalar: 3 } }), () => 0.25, makePerlin(seeded())).wait, 1.5)
+  let calls = 0
+  const s = new ParticleSim(sys({ delay: { mode: 0, scalar: 2 } }), () => { calls++; return 0.5 }, makePerlin(seeded()))
+  assert.equal(s.wait, 2)
+  assert.equal(calls, 0)
 })
 
 type Shape = NonNullable<FxSystem['shape']>

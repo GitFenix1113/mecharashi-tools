@@ -192,7 +192,10 @@ export interface Particle {
 export class ParticleSim {
   readonly sys: FxSystem
   readonly parts: Particle[] = []
+  /** 播放時間（秒，不含 startDelay，跟 Unity 的 ParticleSystem.time 一樣） */
   t = 0
+  /** startDelay 還剩幾秒：等的時候整個系統停住（t 不走、不發射） */
+  wait: number
   private emitAcc = 0
   private readonly bursts: { time: number; next: number; done: number; burst: FxBurst }[]
   private readonly rand: Rand
@@ -203,7 +206,10 @@ export class ParticleSim {
     this.rand = rand
     this.perlin = perlin
     this.bursts = (sys.emission?.bursts ?? []).map((b) => ({ time: b.time, next: b.time, done: 0, burst: b }))
-    // 預熱：開場就是「已經跑了一輪」的樣子
+    // 兩個常數之間隨機才抽亂數：沒有延遲（或延遲是常數）的系統亂數序列不變
+    const d = sys.delay
+    this.wait = d ? Math.max(0, evalMinMax(d, 0, d.mode === 3 ? rand() : 0)) : 0
+    // 預熱：開場就是「已經跑了一輪」的樣子（預熱＋延遲 Unity 不給並用，builder 不會輸出這種組合）
     if (sys.prewarm) for (let i = 0; i < Math.ceil(sys.duration * 30); i++) this.update(1 / 30)
   }
 
@@ -259,6 +265,12 @@ export class ParticleSim {
   update(dt: number): void {
     const S = this.sys
     dt *= S.simSpeed || 1
+    // startDelay 只在開始播放時等一次，之後每輪不再等；等完那一格剩下的時間照常跑
+    if (this.wait > 0) {
+      if (dt < this.wait) { this.wait -= dt; return }
+      dt -= this.wait
+      this.wait = 0
+    }
     this.t += dt
     const dur = S.duration, tn = (this.t % dur) / dur
     const V = S.velocity, F = S.force, L = S.clamp, N = S.noise, RM = S.rotationOverLife

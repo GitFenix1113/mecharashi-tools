@@ -953,10 +953,15 @@
           orbital 沒實作是因為<b>單位沒有依據</b>：Unity 手冊、Scripting API、UnityCsReference（<code>VelocityModuleUI.cs</code> 沒有 Rad2Deg 換算、<code>ParticleSystemModules.bindings.cs</code> 只寫「around the x-axis」）都沒寫是 rad/s 還是 °/s，也找不到可信的實測。
           若是 rad/s，灰燼在畫面上的飛行距離約剩 80%（模擬：死亡點高度中位數 1062→859 px）——看得出來，不能猜。要解開需要站長在遊戲裡開這 3 台的卡池畫面，拿實機截圖比對（同芬里厄的校準）。
           <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>Flow1</b>（第二支流動 shader，見 J-2）：Box 之後當時剩 37 台，Flow1 卡 21 台、只差 Flow1 的 8 台，這次解開其中 7 台；做法與驗收見 J-2。
-          <br><b>還沒做</b>（61 台剩 30 台）：速度模組 orbital 等 17、startDelay 7、流動材質當粒子 7、Flow1 粒子用到單張貼圖以外的設定 5（2018、2049、2062、3007、3047）、Image 掛 <code>UIFx_Alpha</code> 3、其他 shader 3、拖尾 2、
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>startDelay（延遲啟動）</b>：查官方依據後實作，不必比對遊戲畫面。單位是秒；編輯器只給選常數與兩常數之間隨機（<code>InitialModuleUI.cs</code> 設 <code>m_AllowCurves＝false</code>），隨機的每次播放、每個系統抽一次；
+          <b>只在播放開始時等一次</b>——<code>ParticleSystem.time</code>「不含延遲、在 duration 內循環」、<code>totalTime</code>「含延遲、不循環」、<code>Play()</code> 從停止狀態開始才套用延遲（<code>ParticleSystem.bindings.cs</code> 的註解；Cocos 的 Shuriken 移植也註明「第二輪起不延遲（Unity）」）。
+          4 台全是 looping，這點直接決定節奏：2056 君權的 <code>zhen_01</code>／(1)／(2) 延遲 0／1／2、duration 3，是三份錯開一秒輪流亮。
+          61 台 1075 個系統開了 15 個，全是常數 0.1～2 秒、looping、沒有 prewarm、<code>simulationSpeed</code> 1、祖先延遲 0；沒有依據的組合（曲線、prewarm、倍速、祖先也延遲）照舊報 ⚠，61 台一個都沒碰到。
+          Sim 等的時候整個系統停住（<code>t</code> 不走、不發射、不抽亂數），引擎不用改；測試 3 條。解開 4 台（見下一列）。依據與盤點在 <code>_local-notes/2026-10/2026-10-17_卡池動態_startDelay/</code>。
+          <br><b>還沒做</b>（61 台剩 26 台）：速度模組 orbital 等 17、流動材質當粒子 7、Flow1 粒子用到單張貼圖以外的設定 5（2018、2049、2062、3007、3047）、Image 掛 <code>UIFx_Alpha</code> 3、其他 shader 3、拖尾 2、
           TweenAlpha 1（1035）、Flow1 圖層夾在兩組粒子之間 1（1051）、Circle 1、流動圖層傾斜 1（3027）、RotationBySpeed 1；
-          只差一種的 14 台：<b>orbital 7</b>（1036、1052、1303、2040、2043、3020、3028——1303、3020 是 Flow1 解開後只剩灰燼的 <code>orbitalZ</code>，1036、3028 的 Flow1 粒子也解開了）、startDelay 4（2056、3032、3037、3051）、
-          TweenAlpha 1（1035）、流動材質當粒子 1（2057）、Image 掛 <code>UIFx_Alpha</code> 1（2013）。
+          只差一種的 11 台：<b>orbital 7</b>（1036、1052、1303、2040、2043、3020、3028——1303、3020 是 Flow1 解開後只剩灰燼的 <code>orbitalZ</code>，1036、3028 的 Flow1 粒子也解開了）、
+          TweenAlpha 1（1035）、流動材質當粒子 1（2057）、Image 掛 <code>UIFx_Alpha</code> 1（2013）、Flow1 粒子 1（2062：startDelay 解開後只剩這個）。
           <b>下一步最划算的是 orbital</b>（解開 7 台），但卡在單位沒有依據（見上），要站長拿遊戲畫面比對。</div>
         <div class="task-file">scripts/export-gacha-prefab.py · scripts/build-gacha-fx.mjs · src/components/lore/gacha/</div>
       </div>
@@ -999,7 +1004,11 @@
           已上站 24 台重產去 CR 後 sha1 全同。新增 7 個 JSON（17.8–28.8 KB）＋17 張貼圖。
           驗收：<code>npm test</code>、<code>npm run build</code>、<code>npm run lint</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader），7 台＋芬里厄 8／8 <code>.lore-viewer__live.is-ready</code>、貼圖請求數＝JSON 貼圖數且全 200、console 零錯誤。
           1028、2027、2055、2061 另做「只有背景／背景＋流動圖層」對照（固定亂數、假時鐘）：圖層都落在插畫上對應的光束、槍焰、煙塵上，2055 鏡像的兩層方向與插畫一致，捲動與溶解隔 0.5 秒有在動。
-          截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_Flow1/</code>。</div>
+          截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_Flow1/</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>startDelay 解開 4 台</b>（見上一列）：2056 君權、3032 遊騎兵、3037 惡兆、3051 日蝕——共 <b>35 台</b>。
+          已上站 31 台重產去 CR 後 sha1 全同。新增 4 個 JSON（28.1–34.4 KB），用到的貼圖都已在 <code>game/fx/</code>，<b>沒有新貼圖</b>。
+          驗收：<code>npm test</code> 1598（1597 過、1 skip 既有）、<code>npm run build</code> 過、lint 改到的檔案 0 錯（全 repo 86 個既有錯誤）；production build＋<code>vite preview</code> headless Chromium（swiftshader），4 台＋芬里厄 5／5 <code>.lore-viewer__live.is-ready</code>、貼圖請求全 200、console 零錯誤。
+          ⚠ 「只等一次」沒對遊戲畫面看過，要比的話看 2056：三處光點應該錯開一秒輪流亮、每 3 秒一輪。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_startDelay/</code>。</div>
         <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>

@@ -90,6 +90,11 @@ export interface FxSystem {
   duration: number
   looping: boolean
   prewarm: boolean
+  /**
+   * startDelay（秒）：開始播放後等這麼久才開始跑，只等一次（之後每輪不再等）；省略＝不延遲。
+   * 只會是 mode 0（常數）或 3（兩個常數之間隨機，每次播放抽一次），見 build-gacha-fx.mjs 的 startDelay
+   */
+  delay?: FxMinMax
   simSpeed: number
   initial: {
     lifetime: FxMinMax
