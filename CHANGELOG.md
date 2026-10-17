@@ -12,6 +12,8 @@
 
 ### ✨ 新功能
 
+- **lore**: 卡池動態支援粒子系統的延遲啟動 startDelay——再上 4 台（PLAN-042-B J-1） (`5accc44`)
+- **lore**: 機師招募插畫與卡池動態上站——62 位插畫、12 位會動（PLAN-042-A Phase J） (`b063ffc`)
 - **lore**: 卡池動態支援第二支流動 shader UI/Flow1——再上 7 台（PLAN-042-B J-1／J-2） (`ec3f6f5`)
 - **lore**: 卡池動態支援方塊（Box）發射形狀、補速度模組檢查——獵鬥士上站（PLAN-042-B J-1） (`4fa150b`)
 - **lore**: 卡池動態再上 6 台——builder 累積祖先的變換、引擎支援 RectMask2D 裁切（PLAN-042-B J-1） (`f41d0c7`)
