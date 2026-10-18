@@ -227,6 +227,7 @@
   </div>
 
   <div class="warn-block">
+    <strong style="color:var(--accent-yellow);">◆ 2026-10-19 機師卡池動態 12 → 13 位</strong>：042-B J-2 補的 Flow1 粒子 <code>_Color</code> 色調順帶解開 <b>10103167 黑障</b>（J-4 開工、進度數不變，仍 19／24）。<br><br>
     <strong style="color:var(--accent-yellow);">◆ 2026-10-17 立 Phase J 卡池動態</strong>：站長要機師的招募插畫與官方特效比照機甲（042-B Phase J）。新增 J-1～J-5（開發者 4＋管理員 1），總數 19 → 24。<b>同日 J-1～J-3 完成（19／24）</b>：招募插畫 62 位上站、卷宗卡池卡＋全景鑑賞＋卡池名稱欄位、管線泛化並上 12 位卡池動態。剩 J-4（引擎補功能，與 042-B J 一起排）、J-5（站長填卡池名稱）。<br><br>
     <strong style="color:var(--accent-green);">◆ 2026-10-13 對外開放</strong>：站長宣布公開（PLAN-042-D「舞台＋卷宗」改版完成當天）。
     <code>LORE_INTERNAL_ONLY</code> 改 <code>false</code>；未公開的履歷條目整併成一組開館條目、日期 2026-10-13（舊條目描述的是公開前的狀態，訪客沒看過）。
@@ -1039,18 +1040,24 @@
     <div class="task-group-header">
       <div class="task-group-title">J-4 &nbsp; 引擎補功能（與 042-B J 續作一起排）</div>
       <div class="task-group-meta">src/components/lore/gacha/ · scripts/build-gacha-fx.mjs</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">依序補功能、每補一項重跑全部 dry-run</div>
         <div class="task-desc">評估的累計（機師）：圓形發射／startDelay／靜態發光層 → 16、流動材質當粒子 → 24、速度類模組 → 32、新 shader（<code>UI_General</code>、<code>UI/Common</code>、<code>SpeedLine</code>）→ 41、
           Animator 循環片段 → 49；拖尾 2 位比照機甲維持靜態，零星缺口 11 位逐位判斷。同一批功能也解鎖機甲（startDelay 7、orbital 7、流動材質當粒子 7、Animator 3）。
-          透明混色與繪製順序沒對過遊戲畫面的，上站前拿遊戲視窗並排比。</div>
-        <div class="task-file">_local-notes/2026-10/2026-10-17_機師卡池動態評估/data/classify.json</div>
+          透明混色與繪製順序沒對過遊戲畫面的，上站前拿遊戲視窗並排比。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-19</span> <b>第 13 位：10103167 黑障</b>——042-B J-2 補的 Flow1 粒子 <code>_Color</code> 色調（<code>material.tint</code>）順帶解開：
+          原本 5 個 ⚠ 全是雨絲 RignParticle01–05 的 <code>_Color</code>，材質與 1071 凜騎士同一組（雨絲 0.758 灰）。<code>PilotGachaBlackoutItemPrefab</code> → 20 個粒子系統、8 張貼圖、21.7 KB、0 ⚠；
+          貼圖全是站上既有的（線上已 200，不必等 CF 404 快取）。驗收（production 預覽 4173＋headless Playwright swiftshader）：機師圖鑑卡池橫條「動態全景」與故事館卷宗卡池卡都 <code>is-ready</code>、
+          隔 0.8 秒 24–27% 取樣像素在變動、動態 chunk 與 8 張貼圖全 200、console 0 錯誤。
+          ⚠ 煙霧 2 個系統用透明混色，同 J-3 <b>還沒拿遊戲畫面並排比</b>。
+          其他 6 位（10103133、10103153、10103154、10103172、11021、13037）少了 <code>_Color</code> 那條 ⚠，但還有別的 ⚠。</div>
+        <div class="task-file">_local-notes/2026-10/2026-10-17_機師卡池動態評估/data/classify.json · src/data/gachaFx/pilots/10103167.json</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
   <div class="task-group">

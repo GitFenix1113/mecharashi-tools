@@ -1052,7 +1052,7 @@
           <br><span style="color:var(--accent-green);">✅ 2026-10-19</span> <b>Flow1 粒子的 <code>_Color</code> 色調</b>：反組譯是 <code>tex(_MainTex) × _Color × 頂點色</code>、再乘主貼圖與 <code>_MainValue</code>，四個通道都乘、中間沒有夾值。
           builder 把非白色的 <code>_Color</code> 輸出成 <code>material.tint</code>（白色不輸出，已上站 35 台＋機師 12 位的 JSON 逐位元組不變），引擎粒子 shader 乘 <code>uTint</code>。
           <b>1071 凜騎士</b>（10-19 卡池鍵修正後補匯的 Nivequus）因此 0 ⚠ 上站：雨絲 0.758 灰、Light04 橘光，逐像素比值 0.755–0.759／R 1.000·B 0.42–0.44 對得上；新貼圖 4 張。
-          同類「粒子用到單張貼圖以外設定」的 5 台都不是卡 <code>_Color</code>，<b>一台也沒解開</b>；機師 10103167 黑障（同一組雨絲材質）變成 0 ⚠，未上站。
+          同類「粒子用到單張貼圖以外設定」的 5 台都不是卡 <code>_Color</code>，<b>一台也沒解開</b>；機師 10103167 黑障（同一組雨絲材質）變成 0 ⚠，同日另案上站（042-A J-4）。
           迴歸：同一份 JSON 新舊引擎畫 2060／2070／3014／2054，全畫布逐像素相同（3014、2054 第一次因 swiftshader 時序不同，重跑後相同）。</div>
         <div class="task-file">src/components/lore/gacha/ · scripts/build-gacha-fx.mjs</div>
       </div>
