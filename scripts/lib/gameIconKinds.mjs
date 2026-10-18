@@ -25,6 +25,7 @@
  *   兩份由 scripts/lib/gameIconKinds.test.mjs 交叉比對——改一邊、另一邊的測試會掛。
  */
 import fs from 'node:fs'
+import { parsePilotCard } from './gameAssetKinds.mjs'
 
 /** 相對 public/ 的根目錄 */
 export const ICON_DIR = 'images/game/icons'
@@ -114,12 +115,14 @@ export const OTHER_ICON_FOLDERS = {
   skynetwap: '機甲全身大圖（--wap 不收的部分）',
 }
 const UIICONS_RE = /\/ui\/uiimages\/uiicons\/([^/]+)\//
-/** 機甲 core 三種＋機師卡（Icon_item_<8 碼 gameId>A）：由 --wap／--id／v3 收 */
-const CORE_ENTITY_RE = /^(Icon_mecha_wap\d+(_SN_Raw)?|Icon_wap\d+_[1-4]|Icon_item_\d{8}A)$/
+/** 機甲 core 三種：由 --wap／v3 收 */
+const CORE_MECH_RE = /^(Icon_mecha_wap\d+(_SN_Raw)?|Icon_wap\d+_[1-4])$/
 
 /** 擷取的一列（name／type／asset_path）是不是屬於別的匯入模式 */
 export function iconHandledElsewhere(row) {
-  if (CORE_ENTITY_RE.test(row.name)) return true
+  if (CORE_MECH_RE.test(row.name)) return true
+  // 機師卡（預設造型 A；8 碼或 NPC 轉正的 5 碼卡號，規則見 gameAssetKinds.mjs）由 --id／v3 收
+  if (parsePilotCard(row.name)?.skin === 'A') return true
   if (iconPoolIndex(row.asset_path, row.type, row.name) >= 0) return true
   if (emblemFamilyOf(row)) return true
   return EQUIP_POOLS.some(([family, dir]) => !!row.asset_path?.includes(dir) && isLibraryKey(row.name) && iconFamily(row.name) === family)

@@ -157,7 +157,8 @@ test('其他圖示（--other-icons）：別的模式收的整個名字都不收�
     row('wapparts', 'Icon_wap1071_2'),                        // --wap
     row('mecha', 'Icon_mecha_Cannon02AG'),                    // 敵方車輛 → 收
     row('itemtype', 'Icon_item_10103174A'),                   // 機師卡 → --id
-    row('itemtype', 'Icon_item_13038A'),                      // NPC 的卡（不是 8 碼 gameId）→ 收
+    row('itemtype', 'Icon_item_13038A'),                      // NPC 轉正的機師卡（5 碼卡號）→ --id（10-19 前誤當 NPC 道具封存）
+    row('itemtype', 'Icon_item_13038B'),                      // 造型卡（不是 A）→ 收，同 8 碼
     row('itemtype', 'Icon_wap2049_S1'), row('itemtype', 'Icon_wap2049_S1', 'Sprite'),   // 塗裝小圖 → 收，同路徑兩筆
     row('itemroguelike', 'Icon_roguelike_802481'),            // 圖庫命名但 --icons 不收 → 收
     { name: 'Img_main_bg', type: 'Texture2D', asset_path: 'assets/gameproject/runtimeassets/ui/uiimages/uilobbymain_abs/img_main_bg.png' },
@@ -165,10 +166,11 @@ test('其他圖示（--other-icons）：別的模式收的整個名字都不收�
   const out = otherIconPaths(rows)
   assert.deepEqual([...out.keys()].sort(), [
     'icons/camptype/Icon_logo_0028_01', 'icons/factory/Icon_logo_0024_00',
-    'icons/itemroguelike/Icon_roguelike_802481', 'icons/itemtype/Icon_item_13038A',
+    'icons/itemroguelike/Icon_roguelike_802481', 'icons/itemtype/Icon_item_13038B',
     'icons/itemtype/Icon_wap2049_S1', 'icons/mecha/Icon_mecha_Cannon02AG', 'icons/wapweapons/Icon_Evacuation',
   ])
   assert.equal(out.get('icons/itemtype/Icon_wap2049_S1').length, 2)
   assert.equal(iconHandledElsewhere(row('itemtype', 'Icon_item_10103174A')), true)
+  assert.equal(iconHandledElsewhere(row('itemtype', 'Icon_item_13038A')), true)
   assert.equal(iconHandledElsewhere(row('itemtype', 'Icon_item_1071_1')), false)   // 機甲道具卡不是機師卡
 })

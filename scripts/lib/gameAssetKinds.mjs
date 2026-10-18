@@ -47,6 +47,20 @@ export function pilotFileName(kind, gameId, artKey) {
   return sfx && artKey ? `${artKey}${sfx}` : undefined
 }
 
+/**
+ * 擷取裡的機師卡 `Icon_item_<卡號><造型>`（卡號＝gameId）→ `{ gameId, skin }`；不是機師卡回 null。
+ *
+ * 卡號有兩種：一般機師 8 碼（1010xxxx），**NPC 轉正的沿用 NPC 時期的 5 碼號碼**（珂賽特 11021、阿列娜 13037、摩根娜 13038）。
+ * 2026-10-19 全擷取的 `Icon_item_<數字><字母>` 只有這兩種（89＋3 張）；道具卡是 `Icon_item_<wap>_<n>`，有底線、不會撞到。
+ * 差異報告（新機師卡）與 --other-icons（哪些交給 --id）都吃這一份，別各寫一份——
+ * 兩邊原本各自只認 8 碼，摩根娜 3.7 出卡後差異報告沒列、卡被當成 NPC 道具封存，整條匯入都沒觸發（10-19 才補上）。
+ */
+export const PILOT_CARD_RE = /^Icon_item_(\d{8}|\d{5})([A-Z]{1,2})$/
+export function parsePilotCard(name) {
+  const m = name?.match(PILOT_CARD_RE)
+  return m ? { gameId: m[1], skin: m[2] } : null
+}
+
 /** 機甲某種圖的官方檔名（不含副檔名）；缺參數回 undefined。 */
 export function mechFileName(kind, wap) {
   if (!wap) return undefined

@@ -8,7 +8,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { MECH_KINDS, PILOT_KINDS, SCENE_VIEW_SUFFIX, classifyMechFile, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './gameAssetKinds.mjs'
+import { MECH_KINDS, PILOT_KINDS, SCENE_VIEW_SUFFIX, classifyMechFile, classifyNpcFile, classifyPilotFile, mechFileName, npcDirOf, parsePilotCard, pilotFileName, playableArtDirs } from './gameAssetKinds.mjs'
 import { SCENE_VIEW_SUFFIX as SCENE_VIEW_SUFFIX_TS, mechGameFileName, pilotGameFileName } from '../../src/utils/gameArt.ts'
 
 const PILOTS = [
@@ -27,6 +27,19 @@ test('機師檔名：腳本版與前台版一致，且分類回去得到原本�
       assert.equal(c?.kind, kind)
       if (kind !== 'card') assert.equal(c?.key, key)
     }
+  }
+})
+
+test('擷取裡的機師卡：8 碼與 NPC 轉正的 5 碼卡號都認得，道具卡不算', () => {
+  // 每位測試機師拼出來的機師卡都要認得回同一個 gameId（含阿列娜的 5 碼）
+  for (const [gameId] of PILOTS) assert.deepEqual(parsePilotCard(pilotFileName('card', gameId)), { gameId, skin: 'A' })
+  // 摩根娜 13038：3.7 出卡時兩支腳本都只認 8 碼，差異報告沒列、整條匯入沒觸發（2026-10-19）
+  assert.deepEqual(parsePilotCard('Icon_item_13038A'), { gameId: '13038', skin: 'A' })
+  assert.deepEqual(parsePilotCard('Icon_item_11021A'), { gameId: '11021', skin: 'A' })
+  assert.deepEqual(parsePilotCard('Icon_item_10103174B'), { gameId: '10103174', skin: 'B' })
+  // 道具卡（Icon_item_<wap>_<n>）、沒有造型字母的道具、其他位數、圖框 → 不是機師卡
+  for (const n of ['Icon_item_1071_1', 'Icon_item_10103174', 'Icon_item_1303A', 'Icon_item_130380A', 'Icon_item_frame_001', 'Icon_item_13038A_Raw', undefined]) {
+    assert.equal(parsePilotCard(n), null, String(n))
   }
 })
 

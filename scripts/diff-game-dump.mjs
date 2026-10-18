@@ -27,7 +27,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import { playableArtDirs } from './lib/gameAssetKinds.mjs'
+import { parsePilotCard, playableArtDirs } from './lib/gameAssetKinds.mjs'
 import { ARCHIVE_ROOT, DUMP_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, preferTexture, resolveDump } from './lib/gameDump.mjs'
 import { EQUIP_POOLS, emblemFamilyOf, iconFamily, iconPoolIndex, isLibraryKey, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { UI_GROUPS, isUiArt, uiArchivePath, uiLocation, uiModuleInfo } from './lib/gameUiModules.mjs'
@@ -141,7 +141,9 @@ function classify(r) {
   const n = r.name
   let m
   if ((m = n.match(/^Pilot_(\d+)([A-Z]{0,2})_(half|head|Raw)$/))) return { kind: 'pilot', id: m[1], skin: m[2] || 'A', part: m[3] }
-  if ((m = n.match(/^Icon_item_(1010\d{4})([A-Z]{1,2})$/))) return { kind: 'pilot', id: m[1], skin: m[2], part: 'card' }
+  // 機師卡：8 碼，或 NPC 轉正沿用的 5 碼卡號（摩根娜 13038；規則見 gameAssetKinds.mjs 的 PILOT_CARD_RE）
+  const card = parsePilotCard(n)
+  if (card) return { kind: 'pilot', id: card.gameId, skin: card.skin, part: 'card' }
   // 已登記的兵裝組件（ARMAMENT_SKINS）自己的圖鑑大圖、部件圖示：掛回本體、不上站——不然會被當成「新機甲」（2026-10 的 wap3132 就是這樣被誤認）
   if ((m = n.match(/^Icon_(?:mecha_wap(\d{4})(?:_SN_Raw)?|wap(\d{4})_[1-4])$/)) && ARMAMENT_SKINS[m[1] ?? m[2]]) return { kind: 'mech', wap: ARMAMENT_SKINS[m[1] ?? m[2]], part: 'armament' }
   if ((m = n.match(/^Icon_mecha_wap(\d{4})(_SN_Raw)?$/))) return { kind: 'mech', wap: m[1], part: m[2] ? 'sn' : 'icon' }
@@ -243,7 +245,10 @@ if (cards.length) {
     lines: [`機師卡編號（gameId）：${cards.map((i) => i.id).join('、')}`,
       `立繪主鍵（artKey 候選）：${artKeys.join('、') || '（擷取裡沒有新的；NPC 轉正的話立繪在 NPC 圖庫）'}`,
       ...cards.filter((i) => !site.stems.has(i.name))
-        .map((i) => `node scripts/import-game-assets.mjs ${SRC} --id=${i.id} --art-key=<確認後填，例 ${artKeys[0] ?? `Pilot_${i.id}A`}>`)],
+        .map((i) => site.npcIds.has(i.id)
+          // NPC 轉正（5 碼卡號沿用 NPC 號碼，例：摩根娜 13038）：立繪就是 NPC 圖庫裡同號碼那套，通常是 A；仍請確認
+          ? `node scripts/import-game-assets.mjs ${SRC} --id=${i.id} --art-key=Pilot_${i.id}A   ← NPC 轉正：立繪在 npc/${i.id}/，確認是 A 套`
+          : `node scripts/import-game-assets.mjs ${SRC} --id=${i.id} --art-key=<確認後填，例 ${artKeys[0] ?? `Pilot_${i.id}A`}>`)],
   })
 }
 // 新機甲：立繪／部件／全身大圖。只放圖、不碰資料庫——哪台是哪台由管理者在後台「選取官方立繪」決定
@@ -298,12 +303,14 @@ if (mechCore.length) {
   for (const [gameId, key] of Object.entries(map.cards ?? {})) for (const n of pilotCardTiles(key, map.tiles)) ownerOfTile.set(n.toLowerCase(), [gameId, key])
   const targets = new Map()
   const unmapped = new Set()
+  const noFolder = new Set()   // 對照表有、站上還沒有 pilots/<gameId>/ 的（--pilot-lore 會跳過它們）
   for (const i of addedItems) {
     if (Number(i.w) !== 1024) continue
     const owner = ownerOfTile.get(i.name.toLowerCase())
     if (owner) {
       const out = pilotCardFile(owner[1])
       targets.set(out, { name: out, ok: site.stems.has(out), url: `images/game/pilots/${owner[0]}/card/${out}.webp` })
+      if (!site.pilotIds.has(owner[0])) noFolder.add(`${owner[0]}（${owner[1]}）`)
       continue
     }
     const t = parsePilotCardTile(i.name)
@@ -313,7 +320,9 @@ if (mechCore.length) {
     step({
       kind: 'public', title: '機師招募插畫 → 上站（機師故事館卷宗的卡池卡）',
       targets: [...targets.values()],
-      lines: [`node scripts/import-game-assets.mjs ${SRC} --pilot-lore`,
+      lines: [
+        ...(noFolder.size ? [`⚠ 這幾位站上還沒有機師資料夾，--pilot-lore 會跳過：${[...noFolder].sort().join('、')}——先做上面「新機師卡」那步（--id；NPC 轉正的卡號是 5 碼），再跑下面這行`] : []),
+        `node scripts/import-game-assets.mjs ${SRC} --pilot-lore`,
         ...(unmapped.size ? [`對不到機師的卡池切片：${[...unmapped].sort().join('、')}——新機師的專屬卡池就在 scripts/lib/pilotGachaCards.json 補一行 "<gameId>": "<卡池鍵>"（卡池鍵＝卡池 prefab PilotGacha<鍵>ItemPrefab 的鍵）再跑上面那行；雙人池、常駐／預告／自選池不必補`] : [])],
     })
   }
