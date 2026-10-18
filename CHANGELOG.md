@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-17
+## [Unreleased] - 2026-10-18
 
 ### ⚠ 重大變更
 
@@ -426,6 +426,7 @@
 
 ### 🎨 樣式
 
+- **gacha**: 卡池橫條拿掉「結束日是推估」的補充說明 (`8df4e69`)
 - **lore**: 機師館首頁 hero 改成隨機招募插畫——兩館 hero 共用同一套（PLAN-042-A） (`3719984`)
 - **lore**: 機甲卷宗構造卡先收起四分件圖格 (`c1797c3`)
 - **lore**: 引文開頭的懸掛引號改回正文字色字體，不再是紅字 (`e9056bf`)
