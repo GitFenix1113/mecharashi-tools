@@ -469,6 +469,7 @@
 
 ### 🔧 維護
 
+- **scripts**: 機師卡判定認得 NPC 轉正的 5 碼卡號（差異報告、--other-icons） (`c7202e5`)
 - **scripts**: 卡池 prefab 匯出改用正規式比對——彌造者的官方檔名拼成 Pooll（PLAN-042-B J-1） (`23e5eeb`)
 - **lore**: 卡池動態流動圖層照 shader 規格補預設貼圖、遮罩與捲動（PLAN-042-B J-1） (`b0ffc17`)
 - **lore**: 卡池動態支援序列幀 UVModule（PLAN-042-B J-1） (`ab4bfc5`)
