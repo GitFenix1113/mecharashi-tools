@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-19', type: 'feat', summary: '機師<b>黑障</b>的招募插畫加上<b>卡池動態</b>（夜雨、煙霧與光點）：機師圖鑑卡池橫條的「動態全景」與故事館卷宗的卡池卡都會播放。' },
+
     { date: '2026-10-19', type: 'feat', summary: '<b>凜騎士</b>的招募插畫加上<b>卡池動態</b>（雷雨、落石與電光）：機甲圖鑑卡池橫條的「動態全景」與故事館的招募插畫鑑賞都會播放。' },
 
     { date: '2026-10-19', type: 'feat', summary: '<b>遊騎兵</b>與<b>強電場</b>的招募插畫加上<b>卡池動態</b>：機甲圖鑑卡池橫條的「動態全景」與故事館的招募插畫鑑賞都會播放。' },
