@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-19', type: 'feat', summary: '<b>凜騎士</b>的招募插畫加上<b>卡池動態</b>（雷雨、落石與電光）：機甲圖鑑卡池橫條的「動態全景」與故事館的招募插畫鑑賞都會播放。' },
+
     { date: '2026-10-18', type: 'style', summary: '機甲／機師圖鑑的<b>卡池橫條</b>精簡：結束日是推估的卡池只寫「預計至 ○/○」，不再另附「結束日是推估」的補充說明。' },
 
     { date: '2026-10-18', type: 'fix', summary: '配裝分享碼補上近期新增的 <b>11 個技能</b>（侵徹極意、戮影鴉行、掠食祭禮、歿境命逐、殉厄之約、瀝血為契、無妄無恕與雙槍系列 4 個）：'
