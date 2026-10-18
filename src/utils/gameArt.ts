@@ -189,11 +189,52 @@ export function mechSkins(mech: { gameId?: string } | null | undefined, lore?: P
   return applySkinSettings(mechSkinCatalog(mech), lore?.skins)
 }
 
-/** 機甲的招募插畫（2600×1080 卡池主視覺）；沒開過專屬卡池的機甲回 undefined（多數不是錯誤） */
-export function mechCardArt(mech: { gameId?: string } | null | undefined): string | undefined {
-  const wap = mech?.gameId
-  const key = wap ? GAME_MECH_CARDS.get(wap) : undefined
-  return key ? `${GAME_ROOT}/mechs/${wap}/card/mechcard_illustration_${key}.webp` : undefined
+/** `Mech.cardKey` 的「不顯示招募插畫」 */
+export const MECH_CARD_NONE = 'none'
+
+/** 卡池鍵 → 圖住在哪台的資料夾（GAME_MECH_CARDS 反查；一組卡池只匯進一台） */
+const MECH_CARD_HOME: ReadonlyMap<string, string> = new Map([...GAME_MECH_CARDS].map(([wap, key]) => [key, wap]))
+
+export interface MechCard {
+  /** 卡池鍵（例 'Ranger'） */
+  key: string
+  /** 圖所在的資料夾＝卡池動態的鍵（`src/data/gachaFx/<wap>.json`）；改選別台的卡池時不等於這台的 gameId */
+  wap: string
+  src: string
+}
+
+export type MechCardSubject = { gameId?: string; cardKey?: string } | null | undefined
+
+/** 站上所有機甲招募插畫（後台改選用），依卡池鍵排序 */
+export function mechCardCatalog(): MechCard[] {
+  return [...MECH_CARD_HOME.keys()].sort((a, b) => a.localeCompare(b)).map(mechCardByKey).filter((c): c is MechCard => !!c)
+}
+
+function mechCardByKey(key: string): MechCard | undefined {
+  const wap = MECH_CARD_HOME.get(key)
+  return wap ? { key, wap, src: `${GAME_ROOT}/mechs/${wap}/card/mechcard_illustration_${key}.webp` } : undefined
+}
+
+/** 這台不看改選時、照遊戲對照會用的卡池鍵 */
+export function mechAutoCardKey(mech: MechCardSubject): string | undefined {
+  return mech?.gameId ? GAME_MECH_CARDS.get(mech.gameId) : undefined
+}
+
+/**
+ * 機甲的招募插畫（2600×1080 卡池主視覺）：後台改選的 `cardKey` 優先、否則依 gameId 自動對照。
+ * 回 undefined：沒開過專屬卡池（多數不是錯誤）、改選成「不顯示」，或改選的卡池鍵站上已沒有那張圖（寧可不顯示，不退回自動那張——
+ * 會改選多半就是因為自動那張不對）。
+ */
+export function mechCard(mech: MechCardSubject): MechCard | undefined {
+  const pick = mech?.cardKey
+  if (pick) return pick === MECH_CARD_NONE ? undefined : mechCardByKey(pick)
+  const key = mechAutoCardKey(mech)
+  return key ? mechCardByKey(key) : undefined
+}
+
+/** 招募插畫的路徑（見 `mechCard()`） */
+export function mechCardArt(mech: MechCardSubject): string | undefined {
+  return mechCard(mech)?.src
 }
 
 /**

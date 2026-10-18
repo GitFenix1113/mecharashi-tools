@@ -19,7 +19,7 @@ import { buildMechGroups } from '../../components/lore/mechRoster'
 import { readLoreSort, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 import { publishedChapters } from '../../components/lore/loreText'
 import { mechSkinStageArt, mechStageArt, preloadImages, preloadStageArt, type StageArt } from '../../components/lore/loreStageArt'
-import { makerStageArt, mechCardArt, mechSkins, type PilotSkinArt } from '../../utils/gameArt'
+import { makerStageArt, mechCard, mechSkins, type PilotSkinArt } from '../../utils/gameArt'
 import { assetUrl } from '../../utils/assets'
 import { pairedPilotOf } from '../../utils/officialPairs'
 import { useMechLore, useMechMakers, useMechs, usePilots } from '../../hooks/useFirestore'
@@ -167,14 +167,15 @@ export default function MechLorePage() {
 
   // 回圖鑑：指向「顯示中的那台」（換台時網址先變、畫面落後一拍）
   const codexHref = `/mechs/${encodeURIComponent(shown.id)}`
-  const cardUrl = mechCardArt(shown)
+  const card = mechCard(shown)
+  const cardUrl = card?.src
   const cardSrc = cardUrl ? assetUrl(cardUrl) : undefined
   const stageBgUrl = makerStageArt(maker)
   const stageBg = stageBgUrl ? assetUrl(stageBgUrl) : undefined
   // 招募插畫是整張場景（不透明）：背景切了也看不到，不給切
   const viewingCard = part?.label === CARD_LABEL
-  // 卡池動態：這台有資料（src/data/gachaFx/<wap>.json）才有，且只在看招募插畫時播
-  const fxKey = mechGachaFxKey(shown.gameId)
+  // 卡池動態：這組卡池有資料（src/data/gachaFx/<wap>.json，wap＝圖所在的那台）才有，且只在看招募插畫時播
+  const fxKey = mechGachaFxKey(card?.wap)
   const fxWap = hasGachaFx(fxKey) ? fxKey : undefined
   const fxSrc = viewingCard && fxWap && fxOn ? part?.src : undefined
   const skins = stage?.skins ?? NO_SKINS

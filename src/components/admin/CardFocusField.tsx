@@ -14,7 +14,7 @@ import type { GachaSubjectKind } from '../gacha/gachaBannerStatus'
  */
 export function CardFocusField({ kind, form, onChange }: {
   kind: GachaSubjectKind
-  form: { name: string; gameId?: string; cardFocus?: number }
+  form: { name: string; gameId?: string; cardFocus?: number; cardKey?: string }
   onChange: (v: number | undefined) => void
 }) {
   const { data: versions, loading } = usePatchVersions()

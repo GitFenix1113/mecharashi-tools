@@ -5,7 +5,7 @@
 // 這幾位是刻意挑的：例外 5 位要證明「資料夾用 gameId、檔名用 artKey、兩者不互推」。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotCardArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkinCatalog, pilotSkins } from './gameArt.ts'
+import { MECH_CARD_NONE, mechAutoCardKey, mechCard, mechCardArt, mechCardCatalog, mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotCardArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkinCatalog, pilotSkins } from './gameArt.ts'
 
 const 維娜 = { gameId: '10103144', artKey: 'Pilot_13019A' }
 const 葉夫根尼 = { gameId: '10103123', artKey: 'Pilot_10103123A' }
@@ -173,4 +173,34 @@ test('招募插畫（PLAN-042-A Phase J）：以 gameId 查，檔名是卡池鍵
   assert.equal(pilotCardArt({}), undefined)
   assert.equal(pilotCardArt({ gameId: '10103101' }), undefined)
   assert.equal(pilotCardArt(null), undefined)
+})
+
+test('機甲招募插畫：依 gameId 自動對照；卡池鍵不一定是英文名（Ranger＝龍雀 3015，遊騎兵 3032 是 Ranger02）', () => {
+  assert.equal(mechCardArt({ gameId: '3015' }), '/images/game/mechs/3015/card/mechcard_illustration_Ranger.webp')
+  assert.equal(mechCardArt({ gameId: '3032' }), '/images/game/mechs/3032/card/mechcard_illustration_Ranger02.webp')
+  assert.equal(mechAutoCardKey({ gameId: '3032' }), 'Ranger02')
+  // 沒有 gameId、沒開過專屬卡池（3002）→ undefined
+  assert.equal(mechCardArt({}), undefined)
+  assert.equal(mechCardArt({ gameId: '3002' }), undefined)
+  assert.equal(mechCardArt(null), undefined)
+})
+
+test('機甲招募插畫改選（cardKey）：圖與卡池動態的鍵都跟著卡池走、不跟這台的 gameId', () => {
+  assert.deepEqual(mechCard({ gameId: '3032', cardKey: 'Ranger' }), {
+    key: 'Ranger', wap: '3015', src: '/images/game/mechs/3015/card/mechcard_illustration_Ranger.webp',
+  })
+  // 沒開過專屬卡池的機甲也能改選
+  assert.equal(mechCard({ gameId: '3002', cardKey: 'Rex' })?.wap, '1012')
+  // 不顯示
+  assert.equal(mechCard({ gameId: '3015', cardKey: MECH_CARD_NONE }), undefined)
+  // 改選的鍵站上沒有圖 → 不顯示，不退回自動那張（會改選多半就是自動那張不對）
+  assert.equal(mechCard({ gameId: '3015', cardKey: 'NoSuchPool' }), undefined)
+})
+
+test('mechCardCatalog：每組卡池一筆、依卡池鍵排序，且都對得回自動對照', () => {
+  const list = mechCardCatalog()
+  assert.ok(list.length > 60)
+  assert.deepEqual(list.map((c) => c.key), [...list.map((c) => c.key)].sort((a, b) => a.localeCompare(b)))
+  assert.equal(new Set(list.map((c) => c.key)).size, list.length)
+  for (const c of list) assert.equal(mechAutoCardKey({ gameId: c.wap }), c.key)
 })

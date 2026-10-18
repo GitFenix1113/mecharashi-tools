@@ -106,6 +106,13 @@ export interface Mech {
    * 放在 mechs 而不是 mechLore：圖鑑本來就載入 mechs（0 額外讀取），且圖鑑不讀 mechLore（PLAN-042-B 決策 B-7）。
    */
   cardFocus?: number
+  /**
+   * 招募插畫改選（2026-10-19）：存**卡池鍵**（例 'Ranger'），不存路徑——同 PLAN-055／056「DB 只存官方檔名 key」。
+   * 未填＝自動（依 gameId 查 scripts/lib/mechGachaCards.json 的對照）；`'none'`（`MECH_CARD_NONE`）＝不顯示招募插畫。
+   * 只在自動對照不對、又來不及改對照表時用：圖仍住在它原本那台的資料夾，卡池動態也跟著卡池鍵走。
+   * 讀取一律走 `mechCard()`／`mechCardArt()`（src/utils/gameArt.ts）。放 mechs 的理由同 cardFocus。
+   */
+  cardKey?: string
   // ⚠ 官配刻意**不存在機甲側**（沒有 pairedPilotId）——用 `pairedPilotOf(mech.id, pilots)`
   //   （src/utils/officialPairs.ts）由機師側的 `Pilot.pairedMechId` 推導。
   /** 裝甲類型。PLAN-052-A D-1 由 `string` 收成 enum（實測值域乾淨：中甲 36／輕型 27／重型 27）。 */

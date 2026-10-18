@@ -278,7 +278,7 @@ const SKIN_META_FILE = path.join(ROOT, 'scripts/lib/pilotSkinMeta.json')
 const npcReport = { en: new Map(), skinCard: new Set() }
 const NPC_META_FILE = path.join(ROOT, 'scripts/lib/npcArtMeta.json')
 const CARD_MAP_FILE = path.join(ROOT, 'scripts/lib/mechGachaCards.json')
-const mechLoreReport = { freshSkins: [], freshCards: [], freshStages: [], rawDup: [], offsite: new Set(), cardOffsite: [], cardMissing: [], unmapped: [], noCard: 0 }
+const mechLoreReport = { freshSkins: [], freshCards: [], freshStages: [], rawDup: [], offsite: new Set(), cardOffsite: [], cardMissing: [], cardStale: [], unmapped: [], noCard: 0 }
 const PILOT_CARD_MAP_FILE = path.join(ROOT, 'scripts/lib/pilotGachaCards.json')
 const pilotLoreReport = { fresh: [], offsite: [], missing: [], unmapped: [], noCard: 0 }
 
@@ -588,6 +588,13 @@ if (MODE === 'v3') {
     tasks.push({ src: a, srcs: [a, b], dest, label: `機甲 wap${wap} 招募插畫`, group: 'mech-card', name, make: () => composeCard(a, b) })
     if (!fs.existsSync(dest)) mechLoreReport.freshCards.push(`${wap}（${key}）`)
   }
+  // 對照改過（例：10-19 Ranger 由 3032 改給 3015 龍雀）：舊資料夾裡那張不會自己消失，留著會讓 generate-art-index 報「一台兩張」
+  for (const wap of [...siteWaps].sort()) {
+    const cdir = path.join(destRoot, 'mechs', wap, MECH_CARD_DIR)
+    if (!fs.existsSync(cdir)) continue
+    const want = cardMap[wap] ? `${mechCardFile(cardMap[wap])}.webp` : undefined
+    for (const f of fs.readdirSync(cdir)) if (f.endsWith('.webp') && f !== want) mechLoreReport.cardStale.push(`mechs/${wap}/${MECH_CARD_DIR}/${f}`)
+  }
   const mapped = new Set(Object.values(cardMap))
   mechLoreReport.unmapped = [...tiles].filter(([k, t]) => t[1] && t[2] && !mapped.has(k)).map(([k]) => k).sort()
   mechLoreReport.noCard = [...siteWaps].filter((w) => !cardMap[w]).length
@@ -887,13 +894,15 @@ const mechLoreSection = MODE !== 'mechlore' ? [] : [
   `- 這次新增的廠商舞台：${listOr(mechLoreReport.freshStages)}`,
   `- 轉盤活動的 _Raw 塗裝（與一般版逐像素相同，不收）：${listOr(mechLoreReport.rawDup)}`,
   `- 站上沒有的機甲（不收）：${listOr([...mechLoreReport.offsite].sort())}`,
-  `- ⚠ **對不到機甲的卡池鍵**（新機甲就在 scripts/lib/mechGachaCards.json 補一行 "<wap>": "<卡池鍵>"；雙機池 GlaDre／MalAgl、常駐池 light／medium／heavy／featured、自選池 SelectTactician／SEFAS／Suit 不必補）：${listOr(mechLoreReport.unmapped)}`,
+  `- ⚠ **對不到機甲的卡池鍵**（新機甲就在 scripts/lib/mechGachaCards.json 補一行 "<wap>": "<卡池鍵>"；雙機池 GlaDre／MalAgl、常駐池 light／medium／heavy／featured、自選池 Select／SelectSniper／SelectTactician／Suit 不必補；卡池鍵不一定是英文名，補之前照 mechGachaCards.json 的「怎麼驗證」查官方卡池表）：${listOr(mechLoreReport.unmapped)}`,
   `- 對照表有、這次擷取沒有切片的（換 --src=latest 再跑一次；仍沒有＝官方改名了，查擷取改對照表）：${listOr(mechLoreReport.cardMissing)}`,
   `- 對照表指到站上沒有的機甲：${listOr(mechLoreReport.cardOffsite)}`,
+  `- ⚠ **對照表已不指向的舊插畫**（對照改過後留在原資料夾）：${listOr(mechLoreReport.cardStale)}`,
   `- 站上沒有招募插畫的機甲：${mechLoreReport.noCard} 台（沒開過專屬卡池的機甲本來就沒有，正常）`, '',
   '### 下一步（照抄）', '',
   `- ${mechLoreReport.freshSkins.length + mechLoreReport.freshCards.length + mechLoreReport.freshStages.length ? '⬜' : '✅'} 有新增時：\`npm run dev\`（重產 src/data/gameArtIndex.ts 的 GAME_MECH_SKINS／GAME_MECH_CARDS／GAME_MAKER_STAGES），`
     + '到機甲故事館該台的頁面確認：舞台左下出現「塗裝」列、卷宗最後有「卡池」卡、鑑賞可切廠商舞台背景',
+  `- ${mechLoreReport.cardStale.length ? '⬜' : '✅'} 有舊插畫時先刪掉：${mechLoreReport.cardStale.length ? mechLoreReport.cardStale.map((p) => `\`git rm public/images/game/${p}\``).join('、') : '（無）'}（不刪的話重產索引會報「一台兩張」）`,
   '- ⬜ 照規則 commit（public/images/game/mechs/*/{skins,card}/、public/images/game/makers/、src/data/gameArtIndex.ts、scripts/lib/mechGachaCards.json 一起）、push',
   '- ⬜ 部署完成（gh run list --workflow pages-build-deployment 顯示 completed）**之前**別打開新圖的網址——Cloudflare 會把 404 快取住；萬一中了要 Purge',
   '- ⬜ 部署後到後台 › 故事館編輯台 › 該機甲 › 塗裝，幫新塗裝命名、排順序，台版還沒推出的勾「隱藏」（選填；不填顯示「塗裝 N」。⚠ 這個分頁是 PLAN-042-B G-1，做好之前名稱只能等）', '',
