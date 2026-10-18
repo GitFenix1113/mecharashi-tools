@@ -168,20 +168,24 @@ function applySkinSettings(catalog: PilotSkinArt[], skins: readonly LoreSkinSett
 /**
  * 機甲塗裝的清單——圖檔層（build 時決定）。形狀沿用 `PilotSkinArt`：外觀列與舞台是兩館共用的元件，
  * `key`＝塗裝代碼（`S1`、`02`，也是網址 `?skin=` 的值）、`head`＝96px 縮圖、`raw`＝1600×1500 去背的整張塗裝圖。
+ * 兵裝組件（例：遊騎兵的龍膽）的圖保留官方檔名 `Img_Skin_wap3132`，由索引的 `file` 帶進來、代碼是 `wap3132`。
  * 前台用 `mechSkins()`（套上 mechLore.skins 的名稱、隱藏、順序）；這份給後台塗裝分頁列全部。
  */
 export function mechSkinCatalog(mech: { gameId?: string } | null | undefined): PilotSkinArt[] {
   const wap = mech?.gameId
   const list = (wap ? GAME_MECH_SKINS.get(wap) : undefined) ?? []
   const base = `${GAME_ROOT}/mechs/${wap}/skins`
-  return list.map((s, i) => ({
-    key: s.code,
-    label: `塗裝 ${i + 1}`,
-    defaultLabel: `塗裝 ${i + 1}`,
-    scene: false,
-    raw: `${base}/Img_Skin_wap${wap}_${s.code}.webp`,
-    head: s.thumb ? `${base}/Img_Skin_wap${wap}_${s.code}_thumb.webp` : undefined,
-  }))
+  return list.map((s, i) => {
+    const file = s.file ?? `Img_Skin_wap${wap}_${s.code}`
+    return {
+      key: s.code,
+      label: `塗裝 ${i + 1}`,
+      defaultLabel: `塗裝 ${i + 1}`,
+      scene: false,
+      raw: `${base}/${file}.webp`,
+      head: s.thumb ? `${base}/${file}_thumb.webp` : undefined,
+    }
+  })
 }
 
 /** 前台看到的塗裝：合併規則同 `pilotSkins()`（陣列順序、名稱、hidden；沒列到的接在後面顯示「塗裝 N」） */

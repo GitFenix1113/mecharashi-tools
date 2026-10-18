@@ -5,7 +5,7 @@
 // 這幾位是刻意挑的：例外 5 位要證明「資料夾用 gameId、檔名用 artKey、兩者不互推」。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { MECH_CARD_NONE, mechAutoCardKey, mechCard, mechCardArt, mechCardCatalog, mechGameArt, mechGameFileName, mechGameIdFromPath, npcGameArt, pilotCardArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkinCatalog, pilotSkins } from './gameArt.ts'
+import { MECH_CARD_NONE, mechAutoCardKey, mechCard, mechCardArt, mechCardCatalog, mechGameArt, mechGameFileName, mechGameIdFromPath, mechSkinCatalog, npcGameArt, pilotCardArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkinCatalog, pilotSkins } from './gameArt.ts'
 
 const 維娜 = { gameId: '10103144', artKey: 'Pilot_13019A' }
 const 葉夫根尼 = { gameId: '10103123', artKey: 'Pilot_10103123A' }
@@ -164,6 +164,17 @@ test('外觀設定：沒有圖的殘留 key 忽略、重複 key 只認第一筆�
 test('pilotSkinCatalog：含 DB 隱藏的外觀（後台外觀分頁要列全部）', () => {
   assert.equal(pilotSkinCatalog(ROSA_J).length, 3)
   assert.ok(pilotSkinCatalog(ROSA_J).every((s) => s.label === s.defaultLabel))
+})
+
+test('機甲塗裝：檔名＝Img_Skin_wap<wap>_<代碼>；兵裝組件（遊騎兵的龍膽 wap3132）保留官方檔名、代碼是 wap<兵裝號>', () => {
+  const list = mechSkinCatalog({ gameId: '3032' })
+  assert.deepEqual(list.map((s) => s.key), ['S1', 'wap3132'])
+  assert.equal(list[0].raw, '/images/game/mechs/3032/skins/Img_Skin_wap3032_S1.webp')
+  assert.equal(list[1].raw, '/images/game/mechs/3032/skins/Img_Skin_wap3132.webp')
+  assert.equal(list[1].head, '/images/game/mechs/3032/skins/Img_Skin_wap3132_thumb.webp')
+  assert.equal(list[1].label, '塗裝 2')
+  // 兵裝號不是一台機甲：查不到自己的塗裝列
+  assert.deepEqual(mechSkinCatalog({ gameId: '3132' }), [])
 })
 
 test('招募插畫（PLAN-042-A Phase J）：以 gameId 查，檔名是卡池鍵（插畫鍵不同名的例外照對照表）', () => {

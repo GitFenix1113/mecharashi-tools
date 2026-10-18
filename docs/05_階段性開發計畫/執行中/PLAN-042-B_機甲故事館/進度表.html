@@ -652,7 +652,8 @@
       <div>
         <div class="task-name">34 台 38 張</div>
         <div class="task-desc"><code>import-game-assets.mjs</code> 加機甲塗裝上站模式、<code>GAME_MECH_SKINS</code> 索引；色票用 <code>Img_custom_wap*</code>（<code>Icon_wap*_S*</code> 是油漆箱商品圖，別當縮圖）。塗裝名稱存 <code>mechLore.skins</code>。
-          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>import-game-assets.mjs --mech-lore</code>（規則在 <code>scripts/lib/mechLoreAssets.mjs</code>）：<b>38 套／35 台</b>（Data 37＋最新擷取的奧德修斯 S1；1014 的轉盤 <code>_Raw</code> 與一般版逐像素相同，不重收），索引 <code>GAME_MECH_SKINS</code>、前台 <code>mechSkins()</code> 合併 <code>mechLore.skins</code>。<br>⚠ <b>與計畫不同</b>：色票 <code>Img_custom_wap*</code> 沒用——37 套只有 34 張、編號還錯位（2003 塗裝 S71／色票 S2），而且是貼花條不是塗裝的樣子；塗裝列縮圖改由塗裝圖裁出（96px <code>_thumb</code>）。舞台用新構圖 <code>mskin</code>（塗裝圖取景緊、常切在畫布邊：依高度、四邊羽化，尺寸照主視覺留白比例校正，換塗裝時卷宗不跳）。名稱／隱藏要等 G-1 編輯台。</div>
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <code>import-game-assets.mjs --mech-lore</code>（規則在 <code>scripts/lib/mechLoreAssets.mjs</code>）：<b>38 套／35 台</b>（Data 37＋最新擷取的奧德修斯 S1；1014 的轉盤 <code>_Raw</code> 與一般版逐像素相同，不重收），索引 <code>GAME_MECH_SKINS</code>、前台 <code>mechSkins()</code> 合併 <code>mechLore.skins</code>。<br>⚠ <b>與計畫不同</b>：色票 <code>Img_custom_wap*</code> 沒用——37 套只有 34 張、編號還錯位（2003 塗裝 S71／色票 S2），而且是貼花條不是塗裝的樣子；塗裝列縮圖改由塗裝圖裁出（96px <code>_thumb</code>）。舞台用新構圖 <code>mskin</code>（塗裝圖取景緊、常切在畫布邊：依高度、四邊羽化，尺寸照主視覺留白比例校正，換塗裝時卷宗不跳）。名稱／隱藏要等 G-1 編輯台。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-19 補</span> <b>兵裝組件</b>：遊騎兵的商城兵裝「龍膽」是 <code>Img_Skin_wap3132</code>（換整套模型、自己有 wap 號、檔名沒有代碼後綴），原規則收不到。新增 <code>ARMAMENT_SKINS</code>（兵裝號→本體，人工登記）：保留官方檔名放進本體的 <code>skins/</code>、代碼 <code>wap3132</code>，索引多一個 <code>file</code> 欄位；沒登記的兵裝兩份報告都會列出。現為 <b>39 套／35 台</b>。</div>
         <div class="task-file">scripts/import-game-assets.mjs · public/images/game/</div>
       </div>
       <div class="task-assignee">開發者</div>

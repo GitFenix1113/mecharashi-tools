@@ -19,6 +19,7 @@ mechs/<wap>/          wap ＝ 機甲四碼編號（DB: mechs.gameId）
   Icon_mecha_wap<wap>_SN_Raw.webp   2000×1080   全身大圖
   skins/Img_Skin_wap<wap>_<代碼>.webp        1600×1500  塗裝（PLAN-042-B F-1）：故事館的塗裝切換讀這裡；索引 GAME_MECH_SKINS
   skins/Img_Skin_wap<wap>_<代碼>_thumb.webp  96²        塗裝列的縮圖（衍生檔：裁掉透明邊取中段）；匯入時自動產
+  skins/Img_Skin_wap<兵裝號>.webp            1600×1500  兵裝組件（換整套模型的商城外觀，例：遊騎兵 3032 的龍膽＝wap3132）：保留官方檔名、放在本體資料夾
   card/mechcard_illustration_<卡池鍵>.webp   2600×1080  招募插畫（F-2，衍生檔：兩片 1024² 切片拼回卡池比例）；索引 GAME_MECH_CARDS
 makers/               廠商舞台（PLAN-042-B F-2）
   Skynet_Wap_BG_<key>_Raw.webp      2048×1024   遊戲內機甲圖鑑的背景；<key>＝mechMakers 的文件 ID；索引 GAME_MAKER_STAGES
@@ -68,6 +69,8 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
 - **機甲故事館素材**（`mechs/<wap>/{skins,card}/`、`makers/`，2026-10-17 PLAN-042-B F）：站長 10-16 決定上站（Q5）。
   命名規則在 `scripts/lib/mechLoreAssets.mjs`。塗裝的名稱、順序、隱藏住 mechLore.skins（故事館編輯台，G-1 做好之前顯示「塗裝 N」）。
   轉盤活動的 `Img_Skin_wap*_Raw` 與一般版逐像素相同，不重複收；色票 `Img_custom_wap*` 對不齊塗裝（張數、編號都不合），不用。
+  **兵裝組件要人對照**：沒有代碼後綴的 `Img_Skin_wap<兵裝號>` 是換整套模型的商城外觀，自己有 wap 號、看不出是哪台的 ⇒
+  本體登記在 `scripts/lib/mechLoreAssets.mjs` 的 `ARMAMENT_SKINS`（註解寫了怎麼查）。沒登記的，差異報告與 `--mech-lore` 報告都會列「本體還沒登記的兵裝組件」。
   **招募插畫要人對照**：切片檔名只有卡池英文鍵（`Dopplesoldner`）、沒有 wap ⇒ 哪台用哪組寫在 `scripts/lib/mechGachaCards.json`。
   新機甲有專屬卡池時，差異報告與 `--mech-lore` 的報告都會列出「對不到機甲的卡池鍵」，在那張表補一行 `"<wap>": "<卡池鍵>"` 再跑一次；
   雙機池（GlaDre、MalAgl）、常駐池（light／medium／heavy／featured）、自選池（SelectTactician、SEFAS、Suit）不是單台的插畫，不必補。

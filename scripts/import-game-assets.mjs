@@ -66,6 +66,8 @@
  *   命名規則與落點在 scripts/lib/mechLoreAssets.mjs（索引與擷取差異報告共用）。只收**站上有的機甲**（game/mechs/<wap>/ 存在）。
  *     塗裝      Img_Skin_wap<wap>_<code>（1600×1500）→ mechs/<wap>/skins/，旁邊產 96px 縮圖 <檔名>_thumb（塗裝列的按鈕）。
  *               轉盤活動的 _Raw 版與一般版逐像素相同（2026-10-17 實測 1014_02）：有一般版就不收 _Raw。
+ *     兵裝組件  Img_Skin_wap<兵裝號>（沒有代碼後綴）→ 本體的 mechs/<wap>/skins/，保留官方檔名＋縮圖；本體照 mechLoreAssets.mjs 的 ARMAMENT_SKINS，
+ *               沒登記的列在報告裡、不收（2026-10-19 龍膽＝遊騎兵）。
  *     廠商舞台  Skynet_Wap_BG_<key>_Raw（2048×1024）→ makers/。<key> 就是 mechMakers 的文件 ID。
  *     招募插畫  兩片 1024² 切片拉回 1300×1080、左右拼成 2600×1080（卡池 prefab 的真實比例，q80）
  *               → mechs/<wap>/card/mechcard_illustration_<卡池鍵>.webp。
@@ -142,7 +144,7 @@ import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { GAME_DIR, MECH_KINDS, NPC_ART_RE, PILOT_KINDS, SCENE_VIEW_SUFFIX, TIER_GROUPS, classifyNpcFile, mechFileName, npcDirOf, pilotFileName, playableArtDirs } from './lib/gameAssetKinds.mjs'
 import { sceneViewWebp } from './lib/sceneArt.mjs'
-import { CARD_H, CARD_W, MAKER_STAGE_DIR, MAKER_STAGE_RE, MECH_CARD_DIR, MECH_SKIN_DIR, SKIN_THUMB_SIZE, SKIN_THUMB_SUFFIX, makerStageFile, mechCardFile, mechSkinFile, parseCardTile, parseMechSkin } from './lib/mechLoreAssets.mjs'
+import { CARD_H, CARD_W, MAKER_STAGE_DIR, MAKER_STAGE_RE, MECH_CARD_DIR, MECH_SKIN_DIR, SKIN_THUMB_SIZE, SKIN_THUMB_SUFFIX, makerStageFile, mechCardFile, mechSkinFile, parseCardTile, parseMechSkin, unregisteredArmament } from './lib/mechLoreAssets.mjs'
 import { PILOT_CARD_DIR, parsePilotCardTile, pilotCardFile, pilotCardTiles } from './lib/pilotLoreAssets.mjs'
 import { EMBLEM_EXCLUDE, EQUIP_POOLS, ICON_POOLS, OTHER_ICON_FOLDERS, emblemFamilyOf, equipGameIdOf, iconFamily, iconPoolIndex, isLibraryKey, keyFromValue, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { ARCHIVE_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, resolveDump } from './lib/gameDump.mjs'
@@ -278,7 +280,7 @@ const SKIN_META_FILE = path.join(ROOT, 'scripts/lib/pilotSkinMeta.json')
 const npcReport = { en: new Map(), skinCard: new Set() }
 const NPC_META_FILE = path.join(ROOT, 'scripts/lib/npcArtMeta.json')
 const CARD_MAP_FILE = path.join(ROOT, 'scripts/lib/mechGachaCards.json')
-const mechLoreReport = { freshSkins: [], freshCards: [], freshStages: [], rawDup: [], offsite: new Set(), cardOffsite: [], cardMissing: [], cardStale: [], unmapped: [], noCard: 0 }
+const mechLoreReport = { freshSkins: [], freshCards: [], freshStages: [], rawDup: [], offsite: new Set(), cardOffsite: [], cardMissing: [], cardStale: [], unmapped: [], noCard: 0, armamentUnknown: new Set() }
 const PILOT_CARD_MAP_FILE = path.join(ROOT, 'scripts/lib/pilotGachaCards.json')
 const pilotLoreReport = { fresh: [], offsite: [], missing: [], unmapped: [], noCard: 0 }
 
@@ -549,6 +551,8 @@ if (MODE === 'v3') {
   const tiles = new Map()   // 卡池鍵 → { 1: row, 2: row }
   for (const r of rows) {
     if (parseMechSkin(r.name) || MAKER_STAGE_RE.test(r.name)) (byName.get(r.name) ?? byName.set(r.name, []).get(r.name)).push(r)
+    const arm = unregisteredArmament(r.name)
+    if (arm) mechLoreReport.armamentUnknown.add(`wap${arm}`)
     const t = parseCardTile(r.name)
     if (t && t.n <= 2 && r.type === 'Texture2D' && Number(r.w) === 1024 && Number(r.h) === 1024) {
       const e = tiles.get(t.key) ?? tiles.set(t.key, {}).get(t.key)
@@ -568,7 +572,7 @@ if (MODE === 'v3') {
     const sk = parseMechSkin(name)
     if (!siteWaps.has(sk.wap)) { mechLoreReport.offsite.add(`wap${sk.wap}`); continue }
     if (sk.raw && byName.has(mechSkinFile(sk.wap, sk.code))) { mechLoreReport.rawDup.push(name); continue }
-    const out = mechSkinFile(sk.wap, sk.code)
+    const out = sk.file   // 兵裝組件保留官方檔名 Img_Skin_wap<兵裝號>，不改寫成本體的
     addTask(pick.row.path, `mechs/${sk.wap}/${MECH_SKIN_DIR}`, out, `機甲 wap${sk.wap} 塗裝`, 'mech-skin')
     const main = tasks.at(-1)
     if (!fs.existsSync(main.dest)) mechLoreReport.freshSkins.push(`${sk.wap}_${sk.code}`)
@@ -894,6 +898,7 @@ const mechLoreSection = MODE !== 'mechlore' ? [] : [
   `- 這次新增的廠商舞台：${listOr(mechLoreReport.freshStages)}`,
   `- 轉盤活動的 _Raw 塗裝（與一般版逐像素相同，不收）：${listOr(mechLoreReport.rawDup)}`,
   `- 站上沒有的機甲（不收）：${listOr([...mechLoreReport.offsite].sort())}`,
+  `- ⚠ **本體還沒登記的兵裝組件**（沒代碼後綴的 Img_Skin_wap<兵裝號>，換整套模型的商城外觀；查出是哪台的之後，在 scripts/lib/mechLoreAssets.mjs 的 ARMAMENT_SKINS 補一行 <兵裝號>: '<本體 wap>' 再跑一次）：${listOr([...mechLoreReport.armamentUnknown].sort())}`,
   `- ⚠ **對不到機甲的卡池鍵**（新機甲就在 scripts/lib/mechGachaCards.json 補一行 "<wap>": "<卡池鍵>"；雙機池 GlaDre／MalAgl、常駐池 light／medium／heavy／featured、自選池 Select／SelectSniper／SelectTactician／Suit 不必補；卡池鍵不一定是英文名，補之前照 mechGachaCards.json 的「怎麼驗證」查官方卡池表）：${listOr(mechLoreReport.unmapped)}`,
   `- 對照表有、這次擷取沒有切片的（換 --src=latest 再跑一次；仍沒有＝官方改名了，查擷取改對照表）：${listOr(mechLoreReport.cardMissing)}`,
   `- 對照表指到站上沒有的機甲：${listOr(mechLoreReport.cardOffsite)}`,

@@ -31,7 +31,7 @@ import { playableArtDirs } from './lib/gameAssetKinds.mjs'
 import { ARCHIVE_ROOT, DUMP_ROOT, PIXEL_DIFF_SAME, loadDumpIndex, localDate, pixelDiff, preferTexture, resolveDump } from './lib/gameDump.mjs'
 import { EQUIP_POOLS, emblemFamilyOf, iconFamily, iconPoolIndex, isLibraryKey, otherIconPaths } from './lib/gameIconKinds.mjs'
 import { UI_GROUPS, isUiArt, uiArchivePath, uiLocation, uiModuleInfo } from './lib/gameUiModules.mjs'
-import { MAKER_STAGE_RE, mechCardFile, parseCardTile, parseMechSkin } from './lib/mechLoreAssets.mjs'
+import { ARMAMENT_SKINS, ARMAMENT_SKIN_RE, MAKER_STAGE_RE, mechCardFile, parseCardTile, parseMechSkin, unregisteredArmament } from './lib/mechLoreAssets.mjs'
 import { parsePilotCardTile, pilotCardFile, pilotCardTiles } from './lib/pilotLoreAssets.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -142,9 +142,12 @@ function classify(r) {
   let m
   if ((m = n.match(/^Pilot_(\d+)([A-Z]{0,2})_(half|head|Raw)$/))) return { kind: 'pilot', id: m[1], skin: m[2] || 'A', part: m[3] }
   if ((m = n.match(/^Icon_item_(1010\d{4})([A-Z]{1,2})$/))) return { kind: 'pilot', id: m[1], skin: m[2], part: 'card' }
+  // 已登記的兵裝組件（ARMAMENT_SKINS）自己的圖鑑大圖、部件圖示：掛回本體、不上站——不然會被當成「新機甲」（2026-10 的 wap3132 就是這樣被誤認）
+  if ((m = n.match(/^Icon_(?:mecha_wap(\d{4})(?:_SN_Raw)?|wap(\d{4})_[1-4])$/)) && ARMAMENT_SKINS[m[1] ?? m[2]]) return { kind: 'mech', wap: ARMAMENT_SKINS[m[1] ?? m[2]], part: 'armament' }
   if ((m = n.match(/^Icon_mecha_wap(\d{4})(_SN_Raw)?$/))) return { kind: 'mech', wap: m[1], part: m[2] ? 'sn' : 'icon' }
   if ((m = n.match(/^Icon_wap(\d{4})_([1-4])$/))) return { kind: 'mech', wap: m[1], part: `part${m[2]}` }
   if ((m = n.match(/^(?:Img_Skin_wap|Icon_wap)(\d{4})_S\d+/))) return { kind: 'mech', wap: m[1], part: 'skin' }
+  if ((m = n.match(ARMAMENT_SKIN_RE))) return { kind: 'mech', wap: ARMAMENT_SKINS[m[1]] ?? m[1], part: 'skin', armament: m[1] }
   if ((m = n.match(/^Img_1_pilot_gacha_(?:banner_|title_)?([A-Za-z]+?)\d*(?:_Raw)?$/))) return { kind: 'gacha', key: m[1] }
   if ((m = n.match(/^Img_1_mechcard_(?:illustration|banner|name)_([A-Za-z]+?)\d*(?:_Raw)?$/))) return { kind: 'gacha', key: m[1] }
   if (isLibraryKey(n)) return { kind: 'icon', family: iconFamily(n) }
@@ -173,6 +176,8 @@ function siteStatus(r, c) {
   }
   if (c.kind === 'mech') {
     if (site.stems.has(r.name)) return { text: '站上已有', fresh: false }
+    if (c.part === 'armament') return { text: '兵裝組件自己的圖鑑／部件圖（不上站）', fresh: false }
+    if (c.armament && !ARMAMENT_SKINS[c.armament]) return { text: '兵裝組件（本體還沒登記：scripts/lib/mechLoreAssets.mjs 的 ARMAMENT_SKINS）', fresh: true }
     if (c.part === 'skin') return { text: site.waps.has(c.wap) ? '既有機甲的塗裝' : '塗裝（機甲站上沒有）', fresh: true }
     return { text: site.waps.has(c.wap) ? '既有機甲缺這張' : '新機甲', fresh: true }
   }
@@ -242,7 +247,7 @@ if (cards.length) {
   })
 }
 // 新機甲：立繪／部件／全身大圖。只放圖、不碰資料庫——哪台是哪台由管理者在後台「選取官方立繪」決定
-const mechCore = addedItems.filter((i) => i.kind === 'mech' && i.part !== 'skin')
+const mechCore = addedItems.filter((i) => i.kind === 'mech' && i.part !== 'skin' && i.part !== 'armament')
 if (mechCore.length) {
   step({
     kind: 'public', title: '新機甲 → 上站（只放圖、不碰資料庫；哪台是哪台由管理者在後台「選取官方立繪」決定）',
@@ -259,7 +264,10 @@ if (mechCore.length) {
   const wapOfCard = new Map(Object.entries(cardMap).map(([w, k]) => [k, w]))
   const targets = new Map()
   const unmapped = new Set()
+  const armaments = new Set()   // 本體還沒登記的兵裝組件
   for (const i of addedItems) {
+    const arm = unregisteredArmament(i.name)
+    if (arm) armaments.add(arm)
     const sk = parseMechSkin(i.name)
     if (sk && !sk.raw && site.waps.has(sk.wap)) targets.set(i.name, { name: i.name, ok: site.stems.has(i.name), url: `images/game/mechs/${sk.wap}/skins/${i.name}.webp` })
     if (MAKER_STAGE_RE.test(i.name)) targets.set(i.name, { name: i.name, ok: site.stems.has(i.name), url: `images/game/makers/${i.name}.webp` })
@@ -271,11 +279,12 @@ if (mechCore.length) {
       targets.set(out, { name: out, ok: site.stems.has(out), url: `images/game/mechs/${wap}/card/${out}.webp` })
     }
   }
-  if (targets.size || unmapped.size) {
+  if (targets.size || unmapped.size || armaments.size) {
     step({
       kind: 'public', title: '機甲塗裝、招募插畫、廠商舞台 → 上站（機甲故事館）',
       targets: [...targets.values()],
       lines: [`node scripts/import-game-assets.mjs ${SRC} --mech-lore`,
+        ...(armaments.size ? [`本體還沒登記的兵裝組件：${[...armaments].sort().map((w) => `Img_Skin_wap${w}`).join('、')}——查出是哪台的（scripts/lib/mechLoreAssets.mjs 的 ARMAMENT_SKINS 註解寫了怎麼查），在 ARMAMENT_SKINS 補一行 ${[...armaments][0]}: '<本體 wap>' 再跑上面那行`] : []),
         ...(unmapped.size ? [`對不到機甲的卡池鍵：${[...unmapped].sort().join('、')}——新機甲的專屬卡池就在 scripts/lib/mechGachaCards.json 補一行 "<wap>": "<卡池鍵>" 再跑上面那行；雙機池、常駐池、自選池不必補`] : [])],
     })
   }

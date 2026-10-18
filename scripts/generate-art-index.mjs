@@ -227,7 +227,7 @@ async function scanSkins(npcs) {
  * 塗裝沒有 _thumb 縮圖只警告（塗裝列那顆按鈕會是空的），招募插畫一台不該有兩張（對照表一台只指一組卡池鍵）。
  */
 function scanMechLore() {
-  const skins = []   // [wap, [{ code, thumb }]]
+  const skins = []   // [wap, [{ code, thumb, file? }]]
   const cards = []   // [wap, 卡池鍵]
   for (const wap of listDirs(path.join(GAME_ROOT, 'mechs'))) {
     const sdir = path.join(GAME_ROOT, 'mechs', wap, MECH_SKIN_DIR)
@@ -235,11 +235,13 @@ function scanMechLore() {
       const names = new Set(webps(sdir))
       const list = []
       for (const name of [...names].sort()) {
+        if (name.endsWith(SKIN_THUMB_SUFFIX)) continue   // 兵裝組件的縮圖 Img_Skin_wap3132_thumb 會被看成「wap3132 的 thumb 塗裝」
         const sk = parseMechSkin(name)
         if (!sk || sk.raw || sk.wap !== wap) continue
-        const thumb = names.has(`${mechSkinFile(wap, sk.code)}${SKIN_THUMB_SUFFIX}`)
+        const thumb = names.has(`${sk.file}${SKIN_THUMB_SUFFIX}`)
         if (!thumb) console.warn(`⚠ 塗裝 ${name}（mechs/${wap}/skins）沒有縮圖——跑 node scripts/import-game-assets.mjs --mech-lore --apply 補上`)
-        list.push({ code: sk.code, thumb })
+        // 兵裝組件的檔名不是 Img_Skin_wap<wap>_<code>，官方檔名要一起寫進索引
+        list.push({ code: sk.code, thumb, ...(sk.file !== mechSkinFile(wap, sk.code) && { file: sk.file }) })
       }
       if (list.length) skins.push([wap, list])
     }
@@ -370,11 +372,12 @@ ${skinBody(skins.byPilot)}
 /**
  * 機甲塗裝（PLAN-042-B F-1）：\`public/images/game/mechs/<wap>/skins/Img_Skin_wap<wap>_<code>.webp\`（1600×1500 去背）
  * ＋ \`…_thumb.webp\`（96px 縮圖，塗裝列的按鈕），以 **wap** 為 key、值是塗裝代碼。
+ * 兵裝組件（換整套模型的商城外觀，自己有 wap 號）保留官方檔名 \`Img_Skin_wap<兵裝號>\`：\`file\` 有值時照它組路徑，代碼是 \`wap<兵裝號>\`。
  * 名稱、隱藏、順序不在這裡：住 mechLore.skins（故事館編輯台）。查詢走 \`mechSkins()\`（src/utils/gameArt.ts）。
  */
-export interface GameMechSkin { code: string; thumb?: true }
+export interface GameMechSkin { code: string; thumb?: true; file?: string }
 export const GAME_MECH_SKINS: ReadonlyMap<string, readonly GameMechSkin[]> = new Map<string, readonly GameMechSkin[]>([
-${mechLore.skins.map(([w, list]) => `  ['${w}', [${list.map((e) => `{ code: '${e.code}'${e.thumb ? ', thumb: true' : ''} }`).join(', ')}]],`).join('\n')}
+${mechLore.skins.map(([w, list]) => `  ['${w}', [${list.map((e) => `{ code: '${e.code}'${e.thumb ? ', thumb: true' : ''}${e.file ? `, file: '${e.file}'` : ''} }`).join(', ')}]],`).join('\n')}
 ])
 
 /**

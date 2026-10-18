@@ -402,9 +402,10 @@ export const GAME_PILOT_NPC_SKINS: ReadonlyMap<string, readonly GameNpcSkin[]> =
 /**
  * 機甲塗裝（PLAN-042-B F-1）：`public/images/game/mechs/<wap>/skins/Img_Skin_wap<wap>_<code>.webp`（1600×1500 去背）
  * ＋ `…_thumb.webp`（96px 縮圖，塗裝列的按鈕），以 **wap** 為 key、值是塗裝代碼。
+ * 兵裝組件（換整套模型的商城外觀，自己有 wap 號）保留官方檔名 `Img_Skin_wap<兵裝號>`：`file` 有值時照它組路徑，代碼是 `wap<兵裝號>`。
  * 名稱、隱藏、順序不在這裡：住 mechLore.skins（故事館編輯台）。查詢走 `mechSkins()`（src/utils/gameArt.ts）。
  */
-export interface GameMechSkin { code: string; thumb?: true }
+export interface GameMechSkin { code: string; thumb?: true; file?: string }
 export const GAME_MECH_SKINS: ReadonlyMap<string, readonly GameMechSkin[]> = new Map<string, readonly GameMechSkin[]>([
   ['1011', [{ code: 'S1', thumb: true }]],
   ['1014', [{ code: '02', thumb: true }, { code: 'S1', thumb: true }]],
@@ -439,7 +440,7 @@ export const GAME_MECH_SKINS: ReadonlyMap<string, readonly GameMechSkin[]> = new
   ['3020', [{ code: 'S1', thumb: true }]],
   ['3027', [{ code: 'S1', thumb: true }]],
   ['3028', [{ code: 'S1', thumb: true }]],
-  ['3032', [{ code: 'S1', thumb: true }]],
+  ['3032', [{ code: 'S1', thumb: true }, { code: 'wap3132', thumb: true, file: 'Img_Skin_wap3132' }]],
   ['3037', [{ code: 'S1', thumb: true }]],
 ])
 

@@ -71,7 +71,7 @@
         <code>mechs.lore</code> 在 B-3 只「複製」過來，H-7 觀察一週後才刪。</small></td></tr>
       <tr><td>frontSource</td><td>string?</td><td>介紹的譯本來源（台版公告譯文／陸版原文），前台右對齊小字</td></tr>
       <tr><td>nameEn</td><td>string?</td><td>英文名：卷宗標題副標、名冊搜尋。初值取 v3 mapping 的 <code>mechEnKeys</code>（62／92），排除聯動與雙機池鍵（GlaDre／MalAgl／Nvidia／ROG），「有全名就用全名」</td></tr>
-      <tr><td>skins</td><td>LoreSkinSetting[]?</td><td><strong>塗裝顯示設定</strong>：<code>key</code> 為塗裝圖檔鍵（<code>Img_Skin_wap*</code>，34 台 38 張），名稱、隱藏、順序同機師外觀。圖檔上站見 042-B F-1</td></tr>
+      <tr><td>skins</td><td>LoreSkinSetting[]?</td><td><strong>塗裝顯示設定</strong>：<code>key</code> 為塗裝代碼（圖檔 <code>Img_Skin_wap&lt;wap&gt;_&lt;代碼&gt;</code> 的代碼段，例 <code>S1</code>；兵裝組件保留官方檔名 <code>Img_Skin_wap&lt;兵裝號&gt;</code>、代碼是 <code>wap&lt;兵裝號&gt;</code>，例遊騎兵的龍膽 <code>wap3132</code>；2026-10-19 共 35 台 39 套），名稱、隱藏、順序同機師外觀。圖檔上站見 042-B F-1</td></tr>
       <tr><td>chapters</td><td>LoreChapter[]</td><td>逸聞章節（PART 1..N），結構與 pilotLore 完全相同（必填穩定鍵 <code>key</code>、<code>bodyRefs</code>、<code>draft</code>…）。型別上必填，讀取端一律 <code>?.chapters</code> 防禦</td></tr>
       <tr><td>rev／updatedAt</td><td>number?／string?</td><td>🆕 2026-10-17 存檔衝突檢查的版本號與最後存檔時間，與 <a href="pilotLore.html" style="color:var(--accent-orange);">pilotLore</a> 同一個底座欄位、規則相同（只由 <code>saveWithRevision()</code> 寫；腳本改資料要順手把 rev +1）</td></tr>
       <tr><td>gachaTitle</td><td>string?</td><td>🆕 2026-10-17 移到底座（機師 PLAN-042-A Phase J 同義共用，見 <a href="pilotLore.html" style="color:var(--accent-orange);">pilotLore</a>）。<strong>卡池名稱</strong>，如「可能性的彼端」（莫比烏斯X）：卷宗最後招募插畫卡的標題（英文固定 KEY ART）與鑑賞時的圖名；空＝顯示「卡池」。
