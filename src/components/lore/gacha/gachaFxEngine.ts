@@ -26,6 +26,7 @@ import type { FxClip, FxCommonFlow, FxFlow, FxFlow1, FxFlow1Tex, FxTO, GachaFxDa
 const FLOW_DISTURB_K = 0.1
 const FLOW_GAIN = 0.85
 const ST_ID: FxTO = [1, 1, 0, 0]
+const WHITE = [1, 1, 1, 1]
 
 export interface GachaFxOptions {
   /** 招募插畫（2600×1080，與鑑賞模式那張 <img> 同一個網址：瀏覽器已經有快取） */
@@ -51,11 +52,12 @@ const FS_BG = `#version 300 es
 precision highp float; in vec2 vUV; in vec4 vCol; uniform sampler2D uTex; out vec4 o; void main(){ o = texture(uTex, vUV); }`
 
 // 粒子（UIFx_Alpha）：rgb×頂點色×顏色強度，alpha＝貼圖 a×頂點 a（×uStrA：UI/Flow1 的強度也乘 alpha，其他材質是 1）。
-// uRot＝主貼圖旋轉（UI_CommonFlow／UI/Flow1 當粒子材質時用）
+// uRot＝主貼圖旋轉（UI_CommonFlow／UI/Flow1 當粒子材質時用）；uTint＝材質色調（UI/Flow1 的 _Color，四個通道都乘，其他材質是白色——
+// 乘 1 逐位元不變，沒有色調的台畫面不受影響）
 const FS_PARTICLE = `#version 300 es
-precision highp float; in vec2 vUV; in vec4 vCol; uniform sampler2D uTex; uniform float uStr; uniform float uStrA; uniform float uRot; out vec4 o;
+precision highp float; in vec2 vUV; in vec4 vCol; uniform sampler2D uTex; uniform float uStr; uniform float uStrA; uniform float uRot; uniform vec4 uTint; out vec4 o;
 void main(){ vec2 uv = vUV - 0.5; float c = cos(uRot), s = sin(uRot); uv = vec2(c*uv.x - s*uv.y, s*uv.x + c*uv.y) + 0.5;
-  vec4 t = texture(uTex, uv); o = vec4(t.rgb * vCol.rgb * uStr, t.a * vCol.a * uStrA); }`
+  vec4 t = texture(uTex, uv) * uTint; o = vec4(t.rgb * vCol.rgb * uStr, t.a * vCol.a * uStrA); }`
 
 // 流動圖層（UI_CommonFlow）：擾動貼圖捲動、沿 U 推移主貼圖（校準版）；UV 的變換順序與遮罩照 shader；不做溶解（見檔頭）。
 // 旋轉的 r＝(cos, sin)，方向照 shader（UV 乘 [[c, s], [−s, c]]）。rot／to 以 0.5 為中心，但寫成「線性部分＋只含 uniform 的常數」：
@@ -155,7 +157,7 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
   const P_BG = program(FS_BG), P_PT = program(FS_PARTICLE), P_FLOW = program(FS_FLOW), P_FLOW1 = program(FS_FLOW1)
   const U = (p: WebGLProgram, names: string[]) => Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(p, n)]))
   const uBg = U(P_BG, ['uView', 'uTex'])
-  const uPt = U(P_PT, ['uView', 'uTex', 'uStr', 'uStrA', 'uRot'])
+  const uPt = U(P_PT, ['uView', 'uTex', 'uStr', 'uStrA', 'uRot', 'uTint'])
   const uFl = U(P_FLOW, ['uView', 'uMain', 'uDst', 'uMask', 'uTime', 'uMainValue', 'uDstVal', 'uVRepeat', 'uRepeatU', 'uDstFlow', 'uMainFlow',
     'uMainRot', 'uMainTO', 'uDstTO', 'uMainST', 'uMaskST', 'uMaskTO', 'uMaskRot', 'uMaskSoft', 'uMaskRev', 'uMaskDst'])
   /** FS_FLOW1 的貼圖槽（照順序綁 TEXTURE0…6） */
@@ -270,6 +272,7 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     gl.uniform1f(uPt.uStr, S.material.strength)
     gl.uniform1f(uPt.uStrA, S.material.strengthAlpha ? S.material.strength : 1)
     gl.uniform1f(uPt.uRot, S.material.texRotate)
+    gl.uniform4fv(uPt.uTint, S.material.tint ?? WHITE)
     // Unity 只換目的因子（[_Dst3]），片段輸出兩種模式相同；canvas 是 alpha:false，畫面緩衝的 alpha 不影響頁面合成
     gl.blendFunc(gl.SRC_ALPHA, S.material.blend === 'alpha' ? gl.ONE_MINUS_SRC_ALPHA : gl.ONE)
     const maxPx = (S.render.maxSize || 1) * H

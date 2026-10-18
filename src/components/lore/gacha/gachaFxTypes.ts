@@ -84,9 +84,10 @@ export interface FxSystem {
   /**
    * 貼圖（官方檔名，public/images/game/fx/）、顏色強度、主貼圖旋轉（弧度）。
    * blend：'alpha'＝一般透明（Unity 材質 _Dst3＝10 → SrcAlpha, OneMinusSrcAlpha）；省略＝疊加（SrcAlpha, One）。
-   * strengthAlpha：強度也乘 alpha（UI/Flow1 的 _MainValue 乘在最後、四個通道都乘）；省略＝只乘 RGB（UIFx_Alpha、UI_CommonFlow）
+   * strengthAlpha：強度也乘 alpha（UI/Flow1 的 _MainValue 乘在最後、四個通道都乘）；省略＝只乘 RGB（UIFx_Alpha、UI_CommonFlow）。
+   * tint：材質的色調 RGBA，跟貼圖、頂點色、強度相乘（UI/Flow1 的 _Color，四個通道都乘）；省略＝白色
    */
-  material: { tex: string; strength: number; texRotate: number; blend?: 'alpha'; strengthAlpha?: true }
+  material: { tex: string; strength: number; texRotate: number; blend?: 'alpha'; strengthAlpha?: true; tint?: [number, number, number, number] }
   duration: number
   looping: boolean
   prewarm: boolean

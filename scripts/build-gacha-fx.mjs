@@ -34,7 +34,7 @@
  * 試作只實作了芬里厄用到的功能（UIFx_Alpha／UI_CommonFlow、球／圓錐形狀、拉伸 billboard…），10-17 補了透明混色（_Dst3＝10）、
  * 序列幀（UVModule 的 Grid 模式、依壽命／依 fps）、流動圖層照 shader 規格的選填貼圖、主貼圖 tiling／旋轉／捲動與遮罩（見 UI_CommonFlow 的規格），
  * 以及祖先的位移／旋轉／縮放、錨點與 RectMask2D 裁切（見「版面」）、流動圖層的平面旋轉、方塊發射形狀（Box，見 SUPPORTED_SHAPES）、
- * 第二支流動 shader UI/Flow1（圖層照反組譯全做、粒子取單張貼圖，見「UI/Flow1 的規格」）、流動圖層的自身鏡像與繪製順序（under）、
+ * 第二支流動 shader UI/Flow1（圖層照反組譯全做、粒子取單張貼圖與 _Color 色調，見「UI/Flow1 的規格」）、流動圖層的自身鏡像與繪製順序（under）、
  * 粒子系統的延遲啟動（startDelay，只在播放開始時等一次，見 startDelay()）。
  * 下一台若用到拖尾、序列幀的其他模式等，這裡會列出來——那是 J-1／J-2 要補的引擎功能，不要硬上。
  * 10-17 對 61 台單機卡池批次試跑（匯出全部 + 本腳本 --dry-run；2060 彌造者的 prefab 官方拼成 …PoollItemPrefab，後來才補進來）：
@@ -46,6 +46,10 @@
  * 只差一種的 11 台：orbital 7（1036、1052、1303、2040、2043、3020、3028：1303、3020 是 Flow1 解開後只剩灰燼的 orbitalZ）、
  * TweenAlpha 1（1035：Flow1 解開後只剩這個，見主迴圈後的 Tween 檢查）、流動材質當粒子 1、Image 用 UIFx_Alpha 1、
  * Flow1 粒子 1（2062：startDelay 解開後只剩這個）。
+ * 10-19 依 ConfigDataWapGachaPoolInfo 修正卡池鍵對照後補匯三池（Ranger02→3032、SEFAS→1029、Nivequus→1071）：前兩台直接 0 ⚠，
+ * 1071 凜騎士卡在 Flow1 粒子的 _Color（雨絲 0.758 灰、Light04 橘光），補上色調（tint）後 0 ⚠——0 ⚠ 共 38 池。
+ * 同類的那 5 台都不是卡 _Color，這次一台也沒解開；機師的匯出重掃，10103167 黑障（同一組雨絲材質）因此變成 0 ⚠。
+ * 驗證（反組譯依據、逐像素比值、新舊引擎迴歸、全部匯出 dry-run 前後）在 _local-notes/2026-10/2026-10-19_卡池動態_Flow1粒子色調/。
  * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_startDelay/（更早的版本在同月的「剩餘30台」「Flow1」「Box形狀」「祖先位移」「不發射系統略過」「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
  * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質、或 emission 關又沒有 burst 的粒子會略過），照常可以上站。
  */
@@ -294,8 +298,10 @@ const deg = (d) => num(((d ?? 0) * Math.PI) / 180)
 
 /**
  * UI/Flow1 當粒子材質（2060 彌造者、2070、3014 的閃電與火花）：粒子 UV 就是 0–1（或序列幀那一格），所以 _MainTex1 與 _MainTex
- * 只有一張有指定時，畫面＝那張貼圖 × 頂點色 × _MainValue（四個通道都乘，輸出 strengthAlpha），沿用粒子 shader。
+ * 只有一張有指定時，畫面＝那張貼圖 × _Color × 頂點色 × _MainValue（四個通道都乘，輸出 strengthAlpha），沿用粒子 shader。
  * 旋轉的方向跟引擎粒子 shader 的 uRot 相反，換號輸出。主貼圖是 white 時 _ChannelChoose 沒有作用（1303／2060 的 Light02 就是這樣）。
+ * _Color（10-19 補，1071 凜騎士的雨絲 0.758 灰、Light04 橘光）：反組譯是 tex(_MainTex) × _Color × 頂點色、再乘主貼圖與 _MainValue，
+ * 中間沒有夾值，所以 RGBA 照樣乘、順序無關；輸出 tint，白色不輸出（已上站各台的 JSON 不變）。
  */
 function flow1ParticleMaterial(m, name, owner, dst) {
   const f = m.floats, c = m.colors, own = `${owner}：材質 ${name}（UI/Flow1）`
@@ -316,14 +322,15 @@ function flow1ParticleMaterial(m, name, owner, dst) {
   if (m.tex._Mask1?.tex || f._Mask1Revert2) gaps.push('遮罩 _Mask1')
   if (m.tex._Mask2?.tex || f._Mask2Revert2) gaps.push('遮罩 _Mask2')
   if (dissolveActive(m)) gaps.push('溶解')
-  if (!isWhite(c._Color)) gaps.push('顏色 _Color')
-  if (gaps.length) warn(`${own}當粒子材質，引擎只畫一張貼圖 × 強度，${gaps.join('、')}會被忽略`)
+  if (gaps.length) warn(`${own}當粒子材質，引擎只畫一張貼圖 × 顏色 × 強度，${gaps.join('、')}會被忽略`)
+  const tint = (c._Color ?? [1, 1, 1, 1]).map(num)
   return {
     tex: useTex(tex, `${own} 的主貼圖（_MainTex1 與 _MainTex 都沒指定）`),
     strength: num(f._MainValue ?? 1),
     texRotate: rotate ? -deg(rotate) : 0,
     ...(dst === 10 ? { blend: 'alpha' } : {}),
     strengthAlpha: true,
+    ...(isWhite(tint) ? {} : { tint }),
   }
 }
 
