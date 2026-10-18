@@ -1006,10 +1006,14 @@
           驗收：<code>npm test</code>、<code>npm run build</code>、<code>npm run lint</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader），7 台＋芬里厄 8／8 <code>.lore-viewer__live.is-ready</code>、貼圖請求數＝JSON 貼圖數且全 200、console 零錯誤。
           1028、2027、2055、2061 另做「只有背景／背景＋流動圖層」對照（固定亂數、假時鐘）：圖層都落在插畫上對應的光束、槍焰、煙塵上，2055 鏡像的兩層方向與插畫一致，捲動與溶解隔 0.5 秒有在動。
           截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_Flow1/</code>。
-          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>startDelay 解開 4 台</b>（見上一列）：2056 君權、3032 遊騎兵、3037 惡兆、3051 日蝕——共 <b>35 台</b>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>startDelay 解開 4 台</b>（見上一列）：2056 君權、3032 遊騎兵（實為 3015 龍雀，見下方 10-19）、3037 惡兆、3051 日蝕——共 <b>35 台</b>。
           已上站 31 台重產去 CR 後 sha1 全同。新增 4 個 JSON（28.1–34.4 KB），用到的貼圖都已在 <code>game/fx/</code>，<b>沒有新貼圖</b>。
           驗收：<code>npm test</code> 1598（1597 過、1 skip 既有）、<code>npm run build</code> 過、lint 改到的檔案 0 錯（全 repo 86 個既有錯誤）；production build＋<code>vite preview</code> headless Chromium（swiftshader），4 台＋芬里厄 5／5 <code>.lore-viewer__live.is-ready</code>、貼圖請求全 200、console 零錯誤。
-          ⚠ 「只等一次」沒對遊戲畫面看過，要比的話看 2056：三處光點應該錯開一秒輪流亮、每 3 秒一輪。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_startDelay/</code>。</div>
+          ⚠ 「只等一次」沒對遊戲畫面看過，要比的話看 2056：三處光點應該錯開一秒輪流亮、每 3 秒一輪。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_startDelay/</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-19</span> <b>卡池鍵修正後補兩台</b>：依 <code>ConfigDataWapGachaPoolInfo</code> 對帳，上面那筆「3032 遊騎兵」其實是 Ranger 卡池＝<b>3015 龍雀</b>（JSON 已改名 <code>3015.json</code>），遊騎兵自己的卡池是 Ranger02。
+          補匯 <b>3032 遊騎兵</b>（Ranger02，23 個粒子系統、38.6 KB）與 <b>1029 強電場</b>（SEFAS，10 個、15.4 KB），都是 0 ⚠，上站後共 <b>37 台</b>；用到的貼圖都已在 <code>game/fx/</code>，<b>沒有新貼圖</b>。
+          驗收：本機 vite（正式資料）在圖鑑卡池橫條「動態全景」與故事館鑑賞看過，動態疊在對的插畫上（遊騎兵：斷牆邊緣火光、刀鋒火花；強電場：瓦礫堆火光與餘燼，效果較淡），fx 貼圖全 200、console 零錯誤；<code>npm test</code> 1632 過、<code>npm run build</code> 過。
+          同批補匯的 1071 凜騎士（Nivequus）卡在 Flow1 粒子的 <code>_Color</code>，見 J-2。</div>
         <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
@@ -1044,7 +1048,12 @@
           <b>流動圖層的自身鏡像</b>（2055 雪鴞 localScale.x＝−1：負寬度＋旋轉先去掉鏡像再量）、<b>Tween 元件</b>（1035 海拉的 <code>TweenAlpha</code> 是 1.5 秒循環的閃爍，語意只能照 NGUI 慣例推、遊戲是 IL2CPP 沒有原始碼——對遊戲畫面確認前不實作，改報 ⚠，1035 先不上）。
           解開 7 台（見 J-1「上站整合」）。<b>還沒做</b>：1035（TweenAlpha）、1051（圖層夾在兩組粒子之間）、粒子用到單張貼圖以外設定的 5 台（2018 取 R 通道、2049 TO／擾動、2062／3047 遮罩 2、3007 擾動），
           以及 1303、3020（Flow1 已解開，只剩 orbital）。公式、41 個材質的盤點與工具在 <code>_local-notes/2026-10/2026-10-17_卡池動態_Flow1/</code>。
-          ⚠ 沒有對遊戲畫面校過（2055 的溶解是第一次照公式做，<code>UI_CommonFlow</code> 那條在 10-16 校準時刻意關掉），併入「抽樣校準」。</div>
+          ⚠ 沒有對遊戲畫面校過（2055 的溶解是第一次照公式做，<code>UI_CommonFlow</code> 那條在 10-16 校準時刻意關掉），併入「抽樣校準」。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-19</span> <b>Flow1 粒子的 <code>_Color</code> 色調</b>：反組譯是 <code>tex(_MainTex) × _Color × 頂點色</code>、再乘主貼圖與 <code>_MainValue</code>，四個通道都乘、中間沒有夾值。
+          builder 把非白色的 <code>_Color</code> 輸出成 <code>material.tint</code>（白色不輸出，已上站 35 台＋機師 12 位的 JSON 逐位元組不變），引擎粒子 shader 乘 <code>uTint</code>。
+          <b>1071 凜騎士</b>（10-19 卡池鍵修正後補匯的 Nivequus）因此 0 ⚠ 上站：雨絲 0.758 灰、Light04 橘光，逐像素比值 0.755–0.759／R 1.000·B 0.42–0.44 對得上；新貼圖 4 張。
+          同類「粒子用到單張貼圖以外設定」的 5 台都不是卡 <code>_Color</code>，<b>一台也沒解開</b>；機師 10103167 黑障（同一組雨絲材質）變成 0 ⚠，未上站。
+          迴歸：同一份 JSON 新舊引擎畫 2060／2070／3014／2054，全畫布逐像素相同（3014、2054 第一次因 swiftshader 時序不同，重跑後相同）。</div>
         <div class="task-file">src/components/lore/gacha/ · scripts/build-gacha-fx.mjs</div>
       </div>
       <div class="task-assignee">開發者</div>
