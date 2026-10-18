@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-19', type: 'feat', summary: '<b>遊騎兵</b>與<b>強電場</b>的招募插畫加上<b>卡池動態</b>：機甲圖鑑卡池橫條的「動態全景」與故事館的招募插畫鑑賞都會播放。' },
+
     { date: '2026-10-19', type: 'feat', summary: '機甲故事館的<b>遊騎兵</b>塗裝列新增商城兵裝「<b>龍膽</b>」（以古代東方名將為造型、換掉整套外裝的兵裝組件），可在舞台切換鑑賞。' },
 
     { date: '2026-10-19', type: 'fix', summary: '修正<b>遊騎兵</b>的招募插畫：原本顯示的其實是<b>龍雀</b>的卡池插畫（官方內部把龍雀的卡池叫 Ranger，剛好與遊騎兵的英文名撞名），'

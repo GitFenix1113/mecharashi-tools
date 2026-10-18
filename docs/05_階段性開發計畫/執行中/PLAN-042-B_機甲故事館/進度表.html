@@ -1006,10 +1006,14 @@
           驗收：<code>npm test</code>、<code>npm run build</code>、<code>npm run lint</code> 過；production build＋<code>vite preview</code> headless Chromium（swiftshader），7 台＋芬里厄 8／8 <code>.lore-viewer__live.is-ready</code>、貼圖請求數＝JSON 貼圖數且全 200、console 零錯誤。
           1028、2027、2055、2061 另做「只有背景／背景＋流動圖層」對照（固定亂數、假時鐘）：圖層都落在插畫上對應的光束、槍焰、煙塵上，2055 鏡像的兩層方向與插畫一致，捲動與溶解隔 0.5 秒有在動。
           截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_Flow1/</code>。
-          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>startDelay 解開 4 台</b>（見上一列）：2056 君權、3032 遊騎兵、3037 惡兆、3051 日蝕——共 <b>35 台</b>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-17</span> <b>startDelay 解開 4 台</b>（見上一列）：2056 君權、3032 遊騎兵（實為 3015 龍雀，見下方 10-19）、3037 惡兆、3051 日蝕——共 <b>35 台</b>。
           已上站 31 台重產去 CR 後 sha1 全同。新增 4 個 JSON（28.1–34.4 KB），用到的貼圖都已在 <code>game/fx/</code>，<b>沒有新貼圖</b>。
           驗收：<code>npm test</code> 1598（1597 過、1 skip 既有）、<code>npm run build</code> 過、lint 改到的檔案 0 錯（全 repo 86 個既有錯誤）；production build＋<code>vite preview</code> headless Chromium（swiftshader），4 台＋芬里厄 5／5 <code>.lore-viewer__live.is-ready</code>、貼圖請求全 200、console 零錯誤。
-          ⚠ 「只等一次」沒對遊戲畫面看過，要比的話看 2056：三處光點應該錯開一秒輪流亮、每 3 秒一輪。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_startDelay/</code>。</div>
+          ⚠ 「只等一次」沒對遊戲畫面看過，要比的話看 2056：三處光點應該錯開一秒輪流亮、每 3 秒一輪。截圖在 <code>_local-notes/2026-10/2026-10-17_卡池動態_startDelay/</code>。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-19</span> <b>卡池鍵修正後補兩台</b>：依 <code>ConfigDataWapGachaPoolInfo</code> 對帳，上面那筆「3032 遊騎兵」其實是 Ranger 卡池＝<b>3015 龍雀</b>（JSON 已改名 <code>3015.json</code>），遊騎兵自己的卡池是 Ranger02。
+          補匯 <b>3032 遊騎兵</b>（Ranger02，23 個粒子系統、38.6 KB）與 <b>1029 強電場</b>（SEFAS，10 個、15.4 KB），都是 0 ⚠，上站後共 <b>37 台</b>；用到的貼圖都已在 <code>game/fx/</code>，<b>沒有新貼圖</b>。
+          驗收：本機 vite（正式資料）在圖鑑卡池橫條「動態全景」與故事館鑑賞看過，動態疊在對的插畫上（遊騎兵：斷牆邊緣火光、刀鋒火花；強電場：瓦礫堆火光與餘燼，效果較淡），fx 貼圖全 200、console 零錯誤；<code>npm test</code> 1632 過、<code>npm run build</code> 過。
+          同批補匯的 1071 凜騎士（Nivequus）卡在 Flow1 粒子的 <code>_Color</code>，見 J-2。</div>
         <div class="task-file">src/components/lore/gacha/ · src/components/lore/LoreViewer.tsx · src/pages/lore/MechLorePage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
