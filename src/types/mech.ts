@@ -108,7 +108,7 @@ export interface Mech {
   cardFocus?: number
   /**
    * 招募插畫改選（2026-10-19）：存**卡池鍵**（例 'Ranger'），不存路徑——同 PLAN-055／056「DB 只存官方檔名 key」。
-   * 未填＝自動（依 gameId 查 scripts/lib/mechGachaCards.json 的對照）；`'none'`（`MECH_CARD_NONE`）＝不顯示招募插畫。
+   * 未填＝自動（依 gameId 查 scripts/lib/mechGachaCards.json 的對照）；`'none'`（`CARD_NONE`）＝不顯示招募插畫。
    * 只在自動對照不對、又來不及改對照表時用：圖仍住在它原本那台的資料夾，卡池動態也跟著卡池鍵走。
    * 讀取一律走 `mechCard()`／`mechCardArt()`（src/utils/gameArt.ts）。放 mechs 的理由同 cardFocus。
    */

@@ -193,63 +193,74 @@ export function mechSkins(mech: { gameId?: string } | null | undefined, lore?: P
   return applySkinSettings(mechSkinCatalog(mech), lore?.skins)
 }
 
-/** `Mech.cardKey` 的「不顯示招募插畫」 */
-export const MECH_CARD_NONE = 'none'
+// ── 招募插畫（2600×1080 卡池主視覺；機甲 PLAN-042-B、機師 PLAN-042-A Phase J）──────────────
+// 自動對照依 gameId（scripts/lib/{mech,pilot}GachaCards.json 匯入時決定、build 掃成 GAME_{MECH,PILOT}_CARDS）；
+// 後台可用 `cardKey` 改選（機甲 2026-10-19、機師同日比照）。兩邊規則一模一樣，只差圖的落點。
 
-/** 卡池鍵 → 圖住在哪台的資料夾（GAME_MECH_CARDS 反查；一組卡池只匯進一台） */
-const MECH_CARD_HOME: ReadonlyMap<string, string> = new Map([...GAME_MECH_CARDS].map(([wap, key]) => [key, wap]))
+/** `Mech.cardKey`／`Pilot.cardKey` 的「不顯示招募插畫」 */
+export const CARD_NONE = 'none'
 
-export interface MechCard {
-  /** 卡池鍵（例 'Ranger'） */
+export interface GachaCard {
+  /** 卡池鍵（例 'Ranger'、'MorganaSlyce'） */
   key: string
-  /** 圖所在的資料夾＝卡池動態的鍵（`src/data/gachaFx/<wap>.json`）；改選別台的卡池時不等於這台的 gameId */
-  wap: string
+  /**
+   * 圖所在的資料夾（機甲＝wap、機師＝gameId）＝卡池動態的鍵來源（`mechGachaFxKey()`／`pilotGachaFxKey()`）；
+   * 改選別台／別位的卡池時不等於自己的 gameId
+   */
+  home: string
   src: string
 }
 
-export type MechCardSubject = { gameId?: string; cardKey?: string } | null | undefined
+export type CardSubject = { gameId?: string; cardKey?: string } | null | undefined
+
+/** 同一套改選規則，套在機甲與機師的索引上（一組卡池只匯進一個資料夾，所以卡池鍵 → 資料夾反查得回來） */
+function cardResolver(index: ReadonlyMap<string, string>, file: (home: string, key: string) => string) {
+  const homeOf = new Map([...index].map(([home, key]) => [key, home]))
+  const byKey = (key: string): GachaCard | undefined => {
+    const home = homeOf.get(key)
+    return home ? { key, home, src: file(home, key) } : undefined
+  }
+  const auto = (s: CardSubject) => (s?.gameId ? index.get(s.gameId) : undefined)
+  return {
+    catalog: (): GachaCard[] =>
+      [...homeOf.keys()].sort((a, b) => a.localeCompare(b)).map(byKey).filter((c): c is GachaCard => !!c),
+    auto,
+    // 改選優先；改選的鍵站上已沒有那張圖 → 不顯示，不退回自動那張（會改選多半就是因為自動那張不對）
+    card: (s: CardSubject): GachaCard | undefined => {
+      const pick = s?.cardKey
+      if (pick) return pick === CARD_NONE ? undefined : byKey(pick)
+      const key = auto(s)
+      return key ? byKey(key) : undefined
+    },
+  }
+}
+
+const MECH_CARDS = cardResolver(GAME_MECH_CARDS, (wap, key) => `${GAME_ROOT}/mechs/${wap}/card/mechcard_illustration_${key}.webp`)
+const PILOT_CARDS = cardResolver(GAME_PILOT_CARDS, (id, key) => `${GAME_ROOT}/pilots/${id}/card/pilot_gacha_${key}.webp`)
 
 /** 站上所有機甲招募插畫（後台改選用），依卡池鍵排序 */
-export function mechCardCatalog(): MechCard[] {
-  return [...MECH_CARD_HOME.keys()].sort((a, b) => a.localeCompare(b)).map(mechCardByKey).filter((c): c is MechCard => !!c)
-}
-
-function mechCardByKey(key: string): MechCard | undefined {
-  const wap = MECH_CARD_HOME.get(key)
-  return wap ? { key, wap, src: `${GAME_ROOT}/mechs/${wap}/card/mechcard_illustration_${key}.webp` } : undefined
-}
-
+export const mechCardCatalog = (): GachaCard[] => MECH_CARDS.catalog()
 /** 這台不看改選時、照遊戲對照會用的卡池鍵 */
-export function mechAutoCardKey(mech: MechCardSubject): string | undefined {
-  return mech?.gameId ? GAME_MECH_CARDS.get(mech.gameId) : undefined
-}
-
+export const mechAutoCardKey = (mech: CardSubject): string | undefined => MECH_CARDS.auto(mech)
 /**
- * 機甲的招募插畫（2600×1080 卡池主視覺）：後台改選的 `cardKey` 優先、否則依 gameId 自動對照。
- * 回 undefined：沒開過專屬卡池（多數不是錯誤）、改選成「不顯示」，或改選的卡池鍵站上已沒有那張圖（寧可不顯示，不退回自動那張——
- * 會改選多半就是因為自動那張不對）。
+ * 機甲的招募插畫：後台改選的 `cardKey` 優先、否則依 gameId 自動對照。
+ * 回 undefined：沒開過專屬卡池（多數不是錯誤）、改選成「不顯示」，或改選的卡池鍵站上已沒有那張圖。
  */
-export function mechCard(mech: MechCardSubject): MechCard | undefined {
-  const pick = mech?.cardKey
-  if (pick) return pick === MECH_CARD_NONE ? undefined : mechCardByKey(pick)
-  const key = mechAutoCardKey(mech)
-  return key ? mechCardByKey(key) : undefined
-}
-
+export const mechCard = (mech: CardSubject): GachaCard | undefined => MECH_CARDS.card(mech)
 /** 招募插畫的路徑（見 `mechCard()`） */
-export function mechCardArt(mech: MechCardSubject): string | undefined {
-  return mechCard(mech)?.src
-}
+export const mechCardArt = (mech: CardSubject): string | undefined => mechCard(mech)?.src
 
+/** 站上所有機師招募插畫（後台改選用），依卡池鍵排序 */
+export const pilotCardCatalog = (): GachaCard[] => PILOT_CARDS.catalog()
+/** 這位不看改選時、照遊戲對照會用的卡池鍵 */
+export const pilotAutoCardKey = (pilot: CardSubject): string | undefined => PILOT_CARDS.auto(pilot)
 /**
- * 機師的招募插畫（2600×1080 卡池主視覺，PLAN-042-A Phase J）；沒開過專屬卡池的機師回 undefined（多數不是錯誤）。
- * 以 gameId 查（圖在 `pilots/<gameId>/card/`）：還沒有機師卡的 NPC 轉正角色（例：摩根娜）在連上 gameId 前沒有。
+ * 機師的招募插畫：規則同 `mechCard()`（圖在 `pilots/<gameId>/card/`）。
+ * 自動對照要有 gameId：還沒連上機師卡的 NPC 轉正角色沒有，但可以在後台直接改選。
  */
-export function pilotCardArt(pilot: { gameId?: string } | null | undefined): string | undefined {
-  const id = pilot?.gameId
-  const key = id ? GAME_PILOT_CARDS.get(id) : undefined
-  return key ? `${GAME_ROOT}/pilots/${id}/card/pilot_gacha_${key}.webp` : undefined
-}
+export const pilotCard = (pilot: CardSubject): GachaCard | undefined => PILOT_CARDS.card(pilot)
+/** 招募插畫的路徑（見 `pilotCard()`） */
+export const pilotCardArt = (pilot: CardSubject): string | undefined => pilotCard(pilot)?.src
 
 /** 廠商舞台（2048×1024）：`stage` 欄位優先、否則用文件 ID；站上沒有那張圖回 undefined */
 export function makerStageArt(maker: { id: string; stage?: string } | null | undefined): string | undefined {

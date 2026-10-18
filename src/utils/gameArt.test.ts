@@ -5,7 +5,7 @@
 // 這幾位是刻意挑的：例外 5 位要證明「資料夾用 gameId、檔名用 artKey、兩者不互推」。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { MECH_CARD_NONE, mechAutoCardKey, mechCard, mechCardArt, mechCardCatalog, mechGameArt, mechGameFileName, mechGameIdFromPath, mechSkinCatalog, npcGameArt, pilotCardArt, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkinCatalog, pilotSkins } from './gameArt.ts'
+import { CARD_NONE, mechAutoCardKey, mechCard, mechCardArt, mechCardCatalog, mechGameArt, mechGameFileName, mechGameIdFromPath, mechSkinCatalog, npcGameArt, pilotAutoCardKey, pilotCard, pilotCardArt, pilotCardCatalog, pilotGameArt, pilotGameFileName, pilotGameIdFromPath, pilotSkinCatalog, pilotSkins } from './gameArt.ts'
 
 const 維娜 = { gameId: '10103144', artKey: 'Pilot_13019A' }
 const 葉夫根尼 = { gameId: '10103123', artKey: 'Pilot_10103123A' }
@@ -198,12 +198,12 @@ test('機甲招募插畫：依 gameId 自動對照；卡池鍵不一定是英文
 
 test('機甲招募插畫改選（cardKey）：圖與卡池動態的鍵都跟著卡池走、不跟這台的 gameId', () => {
   assert.deepEqual(mechCard({ gameId: '3032', cardKey: 'Ranger' }), {
-    key: 'Ranger', wap: '3015', src: '/images/game/mechs/3015/card/mechcard_illustration_Ranger.webp',
+    key: 'Ranger', home: '3015', src: '/images/game/mechs/3015/card/mechcard_illustration_Ranger.webp',
   })
   // 沒開過專屬卡池的機甲也能改選
-  assert.equal(mechCard({ gameId: '3002', cardKey: 'Rex' })?.wap, '1012')
+  assert.equal(mechCard({ gameId: '3002', cardKey: 'Rex' })?.home, '1012')
   // 不顯示
-  assert.equal(mechCard({ gameId: '3015', cardKey: MECH_CARD_NONE }), undefined)
+  assert.equal(mechCard({ gameId: '3015', cardKey: CARD_NONE }), undefined)
   // 改選的鍵站上沒有圖 → 不顯示，不退回自動那張（會改選多半就是自動那張不對）
   assert.equal(mechCard({ gameId: '3015', cardKey: 'NoSuchPool' }), undefined)
 })
@@ -213,5 +213,25 @@ test('mechCardCatalog：每組卡池一筆、依卡池鍵排序，且都對得�
   assert.ok(list.length > 60)
   assert.deepEqual(list.map((c) => c.key), [...list.map((c) => c.key)].sort((a, b) => a.localeCompare(b)))
   assert.equal(new Set(list.map((c) => c.key)).size, list.length)
-  for (const c of list) assert.equal(mechAutoCardKey({ gameId: c.wap }), c.key)
+  for (const c of list) assert.equal(mechAutoCardKey({ gameId: c.home }), c.key)
+})
+
+test('機師招募插畫改選（cardKey）：規則同機甲——改選優先、不顯示、站上沒有的鍵不退回自動', () => {
+  // 摩根娜（13038）：NPC 轉正、官方 3.7 出卡後匯入；連上 gameId 自動就有，沒連上也能改選
+  assert.equal(pilotAutoCardKey({ gameId: '13038' }), 'MorganaSlyce')
+  assert.deepEqual(pilotCard({ cardKey: 'MorganaSlyce' }), {
+    key: 'MorganaSlyce', home: '13038', src: '/images/game/pilots/13038/card/pilot_gacha_MorganaSlyce.webp',
+  })
+  // 沒開過專屬卡池的機師（凱登）也能改選；卡池動態的鍵跟著圖所在的那位
+  assert.equal(pilotCard({ gameId: '10103101', cardKey: 'HailisMill' })?.home, '10103174')
+  assert.equal(pilotCardArt({ gameId: '10103174', cardKey: CARD_NONE }), undefined)
+  assert.equal(pilotCard({ gameId: '10103174', cardKey: 'NoSuchPool' }), undefined)
+})
+
+test('pilotCardCatalog：每組卡池一筆、依卡池鍵排序，且都對得回自動對照', () => {
+  const list = pilotCardCatalog()
+  assert.ok(list.length > 60)
+  assert.deepEqual(list.map((c) => c.key), [...list.map((c) => c.key)].sort((a, b) => a.localeCompare(b)))
+  assert.equal(new Set(list.map((c) => c.key)).size, list.length)
+  for (const c of list) assert.equal(pilotAutoCardKey({ gameId: c.home }), c.key)
 })

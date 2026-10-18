@@ -17,7 +17,7 @@ import { pilotSubject } from '../../components/lore/loreSubject'
 import { buildLoreGroups, readLoreSort, withLoreNames, writeLoreSort, type LoreSort } from '../../components/lore/loreRoster'
 import { publishedChapters } from '../../components/lore/loreText'
 import { defaultStageArt, loreSideOf, preloadImages, preloadStageArt, skinStageArt, type StageArt } from '../../components/lore/loreStageArt'
-import { pilotCardArt, pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
+import { pilotCard, pilotSkins, type PilotSkinArt } from '../../utils/gameArt'
 import { assetUrl } from '../../utils/assets'
 import { useFactionEmblems, useMechLore, useMechs, usePilotLore, usePilots } from '../../hooks/useFirestore'
 import { emblemTitle, emblemsById } from '../../utils/factionEmblems'
@@ -168,11 +168,12 @@ export default function PilotLorePage() {
   // 回圖鑑（PLAN-042-G）：指向「顯示中的那位」而不是網址的 id——換人時網址先變、舞台與卷宗落後一拍，
   // 點下去應該去畫面上看到的那位
   const codexHref = `/pilots/${encodeURIComponent(shown.id)}`
-  const cardUrl = pilotCardArt(shown)
+  const card = pilotCard(shown)
+  const cardUrl = card?.src
   const cardSrc = cardUrl ? assetUrl(cardUrl) : undefined
   const viewingCard = !!cardEl && !!cardSrc
-  // 卡池動態：這位有資料才有，且只在看招募插畫時播
-  const fxKeyRaw = pilotGachaFxKey(shown.gameId)
+  // 卡池動態：這組卡池有資料（gachaFx/pilots/<gameId>.json，gameId＝圖所在的那位）才有，且只在看招募插畫時播
+  const fxKeyRaw = pilotGachaFxKey(card?.home)
   const fxKey = hasGachaFx(fxKeyRaw) ? fxKeyRaw : undefined
   const viewerSrc = viewingCard ? cardSrc : art?.full
 

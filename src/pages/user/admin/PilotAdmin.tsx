@@ -23,6 +23,7 @@ import { RefPicker, type RefTextSection } from '../../../components/admin/RefPic
 import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { PilotGameArtFields } from '../../../components/admin/GameArtFields'
 import { PilotPortraitField } from '../../../components/admin/GameArtPicker'
+import { CardArtField } from '../../../components/admin/CardArtField'
 import { CardFocusField } from '../../../components/admin/CardFocusField'
 import { assetUrl, pilotPortraitPath } from '../../../utils/assets'
 import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
@@ -1574,8 +1575,9 @@ function PilotEditPanel({
             </div>
             <PilotPortraitField form={form} pilots={gd.pilots} onPatch={(patch) => setForm((f) => ({ ...f, ...patch }))} />
             <PilotGameArtFields form={form} update={update} pilots={gd.pilots} mechs={gd.mechs} />
-            {/* PLAN-063 C-1：機師圖鑑卡池橫條的收合焦點 */}
-            <div className="pt-3 border-t border-border/60">
+            {/* 招募插畫改選（2026-10-19，比照機甲）＋ PLAN-063 C-1：機師圖鑑卡池橫條的收合焦點 */}
+            <div className="pt-3 border-t border-border/60 space-y-4">
+              <CardArtField kind="pilot" form={form} entities={gd.pilots} onChange={(v) => update('cardKey', v)} />
               <CardFocusField kind="pilot" form={form} onChange={(v) => update('cardFocus', v)} />
             </div>
           </div>

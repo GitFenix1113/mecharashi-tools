@@ -346,6 +346,13 @@ export interface Pilot {
    * 未填＝30。由後台機師管理的滑桿調。放在 pilots 而不是 pilotLore：圖鑑本來就載入 pilots、且圖鑑不讀 pilotLore（PLAN-042-E 決策二）。
    */
   cardFocus?: number
+  /**
+   * 招募插畫改選（2026-10-19，與 Mech.cardKey 同一套）：存**卡池鍵**（例 'MorganaSlyce'），不存路徑。
+   * 未填＝自動（依 gameId 查 scripts/lib/pilotGachaCards.json 的對照）；`'none'`（`CARD_NONE`）＝不顯示招募插畫。
+   * 自動對照不對、或 NPC 轉正還沒連上 gameId 時用：圖仍住在它原本那位的資料夾，卡池動態也跟著卡池鍵走。
+   * 讀取一律走 `pilotCard()`／`pilotCardArt()`（src/utils/gameArt.ts）。放 pilots 的理由同 cardFocus。
+   */
+  cardKey?: string
   rarity: string
   class: string
   faction: string

@@ -17,7 +17,7 @@ import { MechGameArtFields } from '../../../components/admin/GameArtFields'
 import { artFolderNames } from '../../../components/admin/artFolderNames'
 import { MechPortraitField } from '../../../components/admin/GameArtPicker'
 import { CardFocusField } from '../../../components/admin/CardFocusField'
-import { MechCardArtField } from '../../../components/admin/MechCardArtField'
+import { CardArtField } from '../../../components/admin/CardArtField'
 import { mechGameArt, mechGameIdFromPath } from '../../../utils/gameArt'
 import { ModuleBoundPart } from '../../../components/module/ModuleBoundPart'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
@@ -785,7 +785,7 @@ function MechEditPanel({
               </p>
               {/* 招募插畫改選（2026-10-19）＋ PLAN-063 C-1：機甲圖鑑卡池橫條的收合焦點 */}
               <div className="pt-3 border-t border-border/60 space-y-4">
-                <MechCardArtField form={form} mechs={gd.mechs} onChange={(v) => set('cardKey', v)} />
+                <CardArtField kind="mech" form={form} entities={gd.mechs} onChange={(v) => set('cardKey', v)} />
                 <CardFocusField kind="mech" form={form} onChange={(v) => set('cardFocus', v)} />
               </div>
             </div>

@@ -102,6 +102,7 @@ export const GAME_PILOT_ART: ReadonlyMap<string, GamePilotArt> = new Map<string,
   ['10103183', { key: 'Pilot_10103183A', half: true, head: true, raw: true, card: true }],
   ['11021', { key: 'Pilot_11021A', half: true, head: true, raw: true, card: true }],
   ['13037', { key: 'Pilot_13037A', half: true, head: true, raw: true, card: true }],
+  ['13038', { key: 'Pilot_13038A', half: true, head: true, raw: true, card: true }],
 ])
 
 /**
@@ -588,4 +589,5 @@ export const GAME_PILOT_CARDS: ReadonlyMap<string, string> = new Map<string, str
   ['10103183', 'SylarValentina'],
   ['11021', 'CosetteCiel'],
   ['13037', 'AlenaVera'],
+  ['13038', 'MorganaSlyce'],
 ])

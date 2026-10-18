@@ -175,7 +175,7 @@ export default function MechLorePage() {
   // 招募插畫是整張場景（不透明）：背景切了也看不到，不給切
   const viewingCard = part?.label === CARD_LABEL
   // 卡池動態：這組卡池有資料（src/data/gachaFx/<wap>.json，wap＝圖所在的那台）才有，且只在看招募插畫時播
-  const fxKey = mechGachaFxKey(card?.wap)
+  const fxKey = mechGachaFxKey(card?.home)
   const fxWap = hasGachaFx(fxKey) ? fxKey : undefined
   const fxSrc = viewingCard && fxWap && fxOn ? part?.src : undefined
   const skins = stage?.skins ?? NO_SKINS
