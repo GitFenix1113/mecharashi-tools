@@ -18,12 +18,12 @@ test('開放中：剩幾天含今天、最後一天＝結束前一天', () => {
   assert.deepEqual(gachaBannerText('mech', s, NOW), { kind: 'ongoing', label: '開放中', text: '剩 26 天（至 11/11）', predicted: false, rerun: false })
 })
 
-test('開放中但結束日是推估：寫「預計至」並附說明', () => {
+test('開放中但結束日是推估：寫「預計至」、不附說明（站長 10-18）', () => {
   const v = [ver('3.3', half([act('鐵幕法典', ['君權'], '2026/10/15', 2, { confidence: 'predicted' })]))]
   const t = gachaBannerText('mech', gachaBannerStatus('mech', '君權', v, NOW), NOW)
   assert.equal(t.text, '預計至 10/28')
   assert.equal(t.predicted, true)
-  assert.ok(t.sub)
+  assert.equal(t.sub, undefined)
 })
 
 test('復刻：這期機甲不在該半版本新增名單裡', () => {

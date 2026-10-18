@@ -181,7 +181,7 @@ export interface GachaBannerText {
   /** 狀態標籤：開放中／可自選／即將開放／新機甲（新機師）／已結束；無紀錄為空字串 */
   label: string
   text: string
-  /** 第二行的補充（活動種類、推估說明、陸版登場日）；沒有就不帶這個鍵 */
+  /** 第二行的補充（活動種類、陸版登場日）；沒有就不帶這個鍵 */
   sub?: string
   /** 這個狀態含推估（結束日或登場日）→ 標籤畫虛線框 */
   predicted: boolean
@@ -214,7 +214,8 @@ export function gachaBannerText(kind: GachaSubjectKind, s: GachaBannerStatus, no
   switch (s.kind) {
     case 'ongoing': {
       const r = s.current!
-      const sub = [sourceNote(kind, r), r.predicted && '結束日是推估（公告沒寫）'].filter(Boolean).join('・')
+      // 推估只靠「預計至」與虛線框表達，不另寫說明（站長 10-18：推估大多精準，有誤會去校稿）
+      const sub = sourceNote(kind, r)
       return {
         kind: 'ongoing', label: ONGOING_LABEL[r.source],
         text: r.predicted ? `預計至 ${shortDate(r.last, now)}` : `剩 ${r.daysLeft} 天（至 ${shortDate(r.last, now)}）`,
