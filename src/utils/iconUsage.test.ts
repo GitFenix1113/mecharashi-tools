@@ -67,6 +67,23 @@ test('中文佔位名不列入', () => {
   assert.equal(usageKey('/images/skills/主動技能/Icon_skill_main_凱登01.png'), undefined)
 })
 
+test('詞條圖示納入已使用與名稱搜尋，舊路徑可與 BUFF 共用同一張圖', () => {
+  const terms: IconUsageSource = {
+    ...src,
+    glossaryTerms: [
+      { id: 'term_看破', name: '看破', description: '', icon: '/images/game/icons/buff/Icon_buff_4012.webp' },
+      { id: 'term_未設圖', name: '未設圖', description: '' },
+    ],
+  }
+  const result = buildIconUsage(terms)
+  const users = result.get('Icon_buff_4012')
+  assert.deepEqual(users?.map((u) => u.kind), ['BUFF', '詞條'])
+  assert.ok(usageSearchText(users).includes('看破'))
+  assert.equal([...result.values()].flat().some((u) => u.id === 'term_未設圖'), false)
+  terms.glossaryTerms![0].icon = undefined
+  assert.deepEqual(buildIconUsage(terms).get('Icon_buff_4012')?.map((u) => u.kind), ['BUFF'])
+})
+
 test('搜尋文字含名稱與持有者', () => {
   const t = usageSearchText(usage.get('Icon_skill_main_1106'))
   assert.ok(t.includes('崩穹斬') && t.includes('hmg-29c'))

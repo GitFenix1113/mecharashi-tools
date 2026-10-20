@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import type {
   Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component,
   GlobalResearch, GameBuff, PilotSkillDoc, MechForm, NeuralDriveAbility, LoreDoc, FactionEmblem,
-  MechLoreDoc, MechMaker,
+  MechLoreDoc, MechMaker, GlossaryTerm,
 } from '../types'
 import { mechModuleSet, type MechModuleSet } from '../utils/mechModules'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
@@ -434,6 +434,7 @@ export interface IconUsageData {
   backpackSkills: BackpackSkillDoc[]
   forms: MechForm[]
   buffs: GameBuff[]
+  glossaryTerms: GlossaryTerm[]
   weapons: Weapon[]
   /** PLAN-056：背包本身的圖示 */
   backpacks: Backpack[]
@@ -443,15 +444,15 @@ export interface IconUsageData {
  * 用到技能類圖示的集合全部載入（後台多半早就載過 → 走記憶體／localStorage 快取，0 次 Firestore read）。
  * 只在選圖器**開啟時**才呼叫，前台一般頁面不會付這筆。
  */
-const ICON_USAGE_KEYS: CollectionKey[] = ['pilots', 'pilotSkills', 'neuralDriveAbilities', 'modules', 'components', 'backpackSkills', 'forms', 'buffs', 'weapons', 'backpacks']
+const ICON_USAGE_KEYS: CollectionKey[] = ['pilots', 'pilotSkills', 'neuralDriveAbilities', 'modules', 'components', 'backpackSkills', 'forms', 'buffs', 'glossaryTerms', 'weapons', 'backpacks']
 
 export function useIconUsageData(): HookResult<IconUsageData | null> {
-  const { pilots, pilotSkills, neuralDriveAbilities, modules, components, backpackSkills, forms, buffs, weapons, backpacks } = useGameData()
+  const { pilots, pilotSkills, neuralDriveAbilities, modules, components, backpackSkills, forms, buffs, glossaryTerms, weapons, backpacks } = useGameData()
   const { loading, error } = useCollections(ICON_USAGE_KEYS)
   const data = useMemo<IconUsageData | null>(() => {
     if (loading) return null
-    return { pilots, pilotSkills, neuralDriveAbilities, modules, components, backpackSkills, forms, buffs, weapons, backpacks }
-  }, [loading, pilots, pilotSkills, neuralDriveAbilities, modules, components, backpackSkills, forms, buffs, weapons, backpacks])
+    return { pilots, pilotSkills, neuralDriveAbilities, modules, components, backpackSkills, forms, buffs, glossaryTerms, weapons, backpacks }
+  }, [loading, pilots, pilotSkills, neuralDriveAbilities, modules, components, backpackSkills, forms, buffs, glossaryTerms, weapons, backpacks])
   return { data, loading, error }
 }
 

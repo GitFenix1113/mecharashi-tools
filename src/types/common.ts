@@ -68,6 +68,6 @@ export interface GlossaryTerm {
   descriptionRefs?: DescriptionRefs
   /** 同義詞：別名 [xxx] 對應同一詞條 */
   aliases?: string[]
-  /** 選填圖示（遠端 URL 或本地 /images/…） */
+  /** 選填白色字形：官方檔名 key（如 Icon_buff_4012），讀取端相容舊本機路徑；底色固定粉紫、不另存欄位。 */
   icon?: string
 }

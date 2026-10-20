@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { EntityRef, RefType, DescriptionRefs, PilotTalent, GameBuff, BuffLevel } from '../../types'
+import type { EntityRef, RefType, DescriptionRefs, PilotTalent, GameBuff, BuffLevel, GlossaryTerm } from '../../types'
 import { useGameData, type CollectionKey } from '../../contexts/GameDataContext'
 import { useReference } from '../../contexts/ReferenceContext'
 import { STAT_LABELS } from '../../utils/moduleStats'
@@ -11,6 +11,7 @@ import { buffDescriptionView, type BuffLevelLine } from '../../utils/buffDescrip
 import { mechModuleSet, type MechModuleSet } from '../../utils/mechModules'
 import { FallbackImage } from '../common/FallbackImage'
 import { BuffGlyph } from '../icons/BuffGlyph'
+import { TermGlyph } from '../icons/TermGlyph'
 import { buffGlyphKey } from '../../utils/buffGlyph'
 import { RefText } from './RefText'
 import { RefScopeContext } from './RefChip'
@@ -67,6 +68,8 @@ interface Resolved {
   images?: string[]
   /** BUFF 專用：照遊戲畫法的色塊＋白色字形（PLAN-055 D-4），有它就不畫 images */
   buffGlyph?: { buff: GameBuff; level?: BuffLevel }
+  /** 詞條專用：固定粉紫底＋白色字形。 */
+  termGlyph?: GlossaryTerm
   description?: string
   descriptionRefs?: DescriptionRefs
   /** BUFF 專用：引用沒指定等級時列出的各級（PLAN-058）。頂層通用說明留空也不會是空白浮窗 */
@@ -213,7 +216,7 @@ function resolve(ref: EntityRef, gd: ReturnType<typeof useGameData>): Resolved |
       return {
         title: t.name,
         subtitle: t.category,
-        images: gameIconCandidates(t.icon),
+        termGlyph: t,
         description: t.description,
         descriptionRefs: t.descriptionRefs,
       }
@@ -321,6 +324,7 @@ export function EntityRefView({ entityRef, interactive, showClose = false }: { e
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               {resolved.buffGlyph && <BuffGlyph buff={resolved.buffGlyph.buff} level={resolved.buffGlyph.level} size="xl" />}
+              {resolved.termGlyph && <TermGlyph term={resolved.termGlyph} size="xl" />}
               {!!resolved.images?.length && (
                 <FallbackImage
                   candidates={resolved.images}

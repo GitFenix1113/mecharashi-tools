@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { GlossaryTerm } from '../../../types'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton, DraftRestoreBar } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
@@ -6,6 +6,8 @@ import { updateGlossaryTerm, docExists } from '../../../lib/firestoreApi'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
+import { GameIconField } from '../../../components/admin/GameIconPicker'
+import { TermGlyph } from '../../../components/icons/TermGlyph'
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
 function makeDefaultTerm(id: string, name = ''): GlossaryTerm {
@@ -26,8 +28,6 @@ function GlossaryEditPanel({
   useDraftWrite('glossaryTerms', form, (t) => t.name)   // 草稿暫存（PLAN-045）：監聽的必須是 form，不是外層的 editing
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
-
-  useEffect(() => { setForm({ ...term }) }, [term])
 
   function update<K extends keyof GlossaryTerm>(key: K, value: GlossaryTerm[K]) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -75,18 +75,34 @@ function GlossaryEditPanel({
           onCompileText={(tf, refs) => { update('description', tf(form.description)); if (refs) update('descriptionRefs', refs) }}
         />
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="同義詞 aliases（逗號分隔）">
-            <input
-              value={(form.aliases ?? []).join(', ')}
-              onChange={(e) => update('aliases', e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean))}
-              className="input-field"
-              placeholder="如：真實傷害, 固傷"
-            />
-          </Field>
-          <Field label="圖示 icon（選填，URL 或 /images/…）">
-            <input value={form.icon ?? ''} onChange={(e) => update('icon', e.target.value || undefined)} className="input-field" placeholder="/images/glossary/..." />
-          </Field>
+        <Field label="同義詞 aliases（逗號分隔）">
+          <input
+            value={(form.aliases ?? []).join(', ')}
+            onChange={(e) => update('aliases', e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean))}
+            className="input-field"
+            placeholder="如：真實傷害, 固傷"
+          />
+        </Field>
+
+        <div className="rounded-lg border border-border/60 bg-bg-dark/40 p-3 space-y-2">
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
+              <GameIconField
+                label="圖示（白色字形，選填）"
+                value={form.icon}
+                onChange={(key) => update('icon', key || undefined)}
+                library="buff"
+                placeholder="Icon_buff_4012"
+              />
+            </div>
+            <div className="flex flex-col items-center gap-1 pb-0.5">
+              <span className="text-[11px] text-text-dim">前台樣子</span>
+              <TermGlyph term={form} size="lg" />
+            </div>
+          </div>
+          <p className="text-[11px] text-text-dim leading-relaxed">
+            從 BUFF 圖庫選擇遊戲中的白色字形，詞條底色固定為粉紫色。未設定圖示時顯示中性小點。
+          </p>
         </div>
       </div>
     </AdminModal>
@@ -200,6 +216,7 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
             className="bg-bg-dark border border-accent-purple/20 rounded-lg px-3 py-2.5 flex items-center gap-3 hover:border-border-accent transition-colors cursor-pointer"
             onClick={() => setEditing(term)}
           >
+            <span className="w-8 h-8 inline-flex items-center justify-center shrink-0"><TermGlyph term={term} /></span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm text-text-primary truncate">
@@ -228,6 +245,7 @@ export default function GlossaryAdmin({ initialSearch = '' }: { initialSearch?: 
 
       {editing && (
         <GlossaryEditPanel
+          key={editing.id}
           term={editing}
           onSave={handleSave}
           onCancel={() => { draft.discard(); setEditing(null) }}

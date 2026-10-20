@@ -9,11 +9,11 @@
 // ⚠ 圖示不等於技能：同一張圖本來就會被多個技能共用（main_1106＝乘勝追擊／崩山／拘敵猛襲），
 //   這裡只回答「誰長這樣」，不拿來推導任何關聯。
 import type {
-  Backpack, BackpackSkillDoc, Component, GameBuff, MechForm, Module, NeuralDriveAbility, Pilot, PilotSkillDoc, Weapon,
+  Backpack, BackpackSkillDoc, Component, GameBuff, GlossaryTerm, MechForm, Module, NeuralDriveAbility, Pilot, PilotSkillDoc, Weapon,
 } from '../types'
 import { canonicalIconKey, equipIconKey, isLibraryKey, keyFromValue } from './gameIcons.ts'
 
-export type IconUserKind = '技能' | '天賦' | '神經驅動' | '模組' | '元件' | '背包技能' | '形態' | 'BUFF' | '武器技能' | '武器' | '背包'
+export type IconUserKind = '技能' | '天賦' | '神經驅動' | '模組' | '元件' | '背包技能' | '形態' | 'BUFF' | '詞條' | '武器技能' | '武器' | '背包'
 
 export interface IconUser {
   kind: IconUserKind
@@ -33,6 +33,7 @@ export interface IconUsageSource {
   backpackSkills?: BackpackSkillDoc[]
   forms?: MechForm[]
   buffs?: GameBuff[]
+  glossaryTerms?: GlossaryTerm[]
   weapons?: Weapon[]
   backpacks?: Backpack[]
 }
@@ -99,6 +100,7 @@ export function buildIconUsage(src: IconUsageSource): Map<string, IconUser[]> {
   const pilotName = new Map((src.pilots ?? []).map((p) => [p.id, p.name]))
   for (const f of src.forms ?? []) add([f.icon], { kind: '形態', id: f.id, name: f.name, owner: pilotName.get(f.pilotId) })
   for (const b of src.buffs ?? []) add([b.icon, ...(b.levels ?? []).map((l) => l.icon)], { kind: 'BUFF', id: b.id, name: b.name })
+  for (const t of src.glossaryTerms ?? []) add([t.icon], { kind: '詞條', id: t.id, name: t.name })
 
   // 武器、背包本身的圖示（PLAN-056）：與讀取端同一個規則——有 gameId（或左右肩圖）就只算官方圖，
   // icon 只在沒有官方圖時才會被畫出來（過渡期的舊路徑也是），所以也只在那時算數。

@@ -56,7 +56,7 @@
       <tr><td>description</td><td>string</td><td>詞條解釋文字（可含 <code>[xxx]</code> 標記，再引用其他實體）</td></tr>
       <tr><td>descriptionRefs</td><td>DescriptionRefs?</td><td>解釋內 <code>[xxx]</code> → 實體引用側錄（PLAN-019 Layer 1）</td></tr>
       <tr><td>aliases</td><td>string[]?</td><td>同義詞：別名 <code>[xxx]</code> 對應同一詞條</td></tr>
-      <tr><td>icon</td><td>string?</td><td>選填圖示（遠端 URL 或本地 /images/…）</td></tr>
+      <tr><td>icon</td><td>string?</td><td>選填白色字形，選圖器寫入官方檔名 key（如 <code>Icon_buff_4012</code>）；由 <code>gameIconCandidates</code> 解析到 <code>/images/game/icons/buff/</code>，相容既有本機圖片路徑。詞條固定粉紫底 <code>#6c45a2</code>＋米白框，不另存 <code>iconTone</code>；未設圖時顯示中性小點。</td></tr>
     </table>
   </div>
 </section>
@@ -67,7 +67,9 @@
 
   <div class="info-block">
     <strong>🛠️ 後台編輯</strong><br>
-    管理後台「詞條管理」分頁新增 / 編輯詞條文件。新增時 ID 採 <code>term_&lt;名稱&gt;</code>。詞條解釋本身也能用 RefPicker 標記內部引用。
+    管理後台「詞條管理」分頁新增 / 編輯詞條文件。新增時 ID 採 <code>term_&lt;名稱&gt;</code>。詞條解釋本身也能用 RefPicker 標記內部引用。<br>
+    圖示沿用 BUFF 的 <code>GameIconField</code> 選圖器（預設 BUFF 字形圖庫），支援選取、清除與即時預覽；<code>TermGlyph</code> 讓後台列表、編輯預覽及前台引用浮窗／手機詳情使用同一套粉紫底圖示。選圖器「誰在用」與已使用篩選包含詞條。<br>
+    寫入沿用 <code>updateGlossaryTerm → saveWithHistory('glossaryTerm', term)</code>，圖示存於既有 <code>glossaryTerms/{id}.icon</code>，並記錄變更歷史。清除圖示後省略該欄位，以整份文件寫入移除舊值；無須新增集合或遷移未設圖的詞條。
   </div>
   <div class="info-block" style="margin-top:12px;">
     <strong>🔗 RefPicker（引用挑選器）</strong><br>
@@ -79,7 +81,7 @@
   </div>
   <div class="info-block" style="margin-top:12px;">
     <strong>🔒 安全規則</strong><br>
-    <code>glossaryTerms</code> 所有人可讀、管理員可寫（見 security-rules）。寫入後自動 <code>bumpDataVersion('glossaryTerms')</code> 只使<b>該集合</b>快取失效（每集合各一版本號）。
+    <code>glossaryTerms</code> 的 Firestore 直接讀寫限管理員；前台讀取沿用公開資料 Worker 與 GameDataContext 快取。圖示沿用既有權限，不需修改安全規則。寫入後自動 <code>bumpDataVersion('glossaryTerms')</code> 只使<b>該集合</b>快取失效（每集合各一版本號），編輯者以 <code>patchCollectionItem</code> 同步本機快取。
   </div>
 </section>
 
