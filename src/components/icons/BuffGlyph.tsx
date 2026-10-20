@@ -1,5 +1,5 @@
 import type { BuffLevel, GameBuff } from '../../types'
-import { BUFF_TONE_LABEL, buffGlyphKey, buffIconTone } from '../../utils/buffGlyph'
+import { BUFF_TONE_BG, BUFF_TONE_LABEL, buffGlyphKey, buffIconTone } from '../../utils/buffGlyph'
 import { StatusGlyph, type StatusGlyphSize } from './StatusGlyph'
 
 // ─── BUFF 圖示（PLAN-055 D-1）────────────────────────────────────────────────
@@ -11,9 +11,6 @@ import { StatusGlyph, type StatusGlyphSize } from './StatusGlyph'
 // ⚠ 沒有字形（BUFF 還沒對到圖）時畫一顆**中性小點**，不畫空色塊：空的藍／紅塊會被讀成「有一個沒圖的增益」，
 //   而實際上只是我們還沒建檔。字形 key 有、但檔案載不到時才留下空色塊（不該發生，掃描器 (c) 會抓）。
 // ⚠ 不畫層數與剩餘回合：那是戰鬥中的即時狀態，網站顯示的是 BUFF 定義。
-
-// Tailwind v4 要在原始碼裡看得到完整 class 名稱才會產生，所以用查表、不拼字串
-const TONE_BG = { buff: 'bg-buff-up', debuff: 'bg-buff-down', special: 'bg-buff-special', heal: 'bg-buff-heal' } as const
 
 export function BuffGlyph({
   buff, level, size = 'md', className = '',
@@ -29,7 +26,7 @@ export function BuffGlyph({
     <StatusGlyph
       icon={buffGlyphKey(buff, level)}
       name={buff.name}
-      backgroundClass={TONE_BG[tone]}
+      backgroundClass={BUFF_TONE_BG[tone]}
       title={`${buff.name}・${BUFF_TONE_LABEL[tone]}`}
       size={size}
       className={className}

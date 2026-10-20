@@ -1,3 +1,5 @@
+import type { BuffIconTone } from './buff'
+
 // ─── 實體引用層（PLAN-019 Layer 1）──────────────────────────────────────────
 
 /**
@@ -68,6 +70,8 @@ export interface GlossaryTerm {
   descriptionRefs?: DescriptionRefs
   /** 同義詞：別名 [xxx] 對應同一詞條 */
   aliases?: string[]
-  /** 選填白色字形：官方檔名 key（如 Icon_buff_4012），讀取端相容舊本機路徑；底色固定粉紫、不另存欄位。 */
+  /** 選填白色字形：官方檔名 key（如 Icon_buff_4012），讀取端相容舊本機路徑。 */
   icon?: string
+  /** 選填底色，沿用 BUFF 色系；未設定時維持粉紫色，不隨 category 改變。 */
+  iconTone?: BuffIconTone
 }

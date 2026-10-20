@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { GlossaryTerm } from '../../../types'
+import type { BuffIconTone, GlossaryTerm } from '../../../types'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton, DraftRestoreBar } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateGlossaryTerm, docExists } from '../../../lib/firestoreApi'
@@ -8,6 +8,7 @@ import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { GameIconField } from '../../../components/admin/GameIconPicker'
 import { TermGlyph } from '../../../components/icons/TermGlyph'
+import { BUFF_TONE_LABEL } from '../../../utils/buffGlyph'
 
 // ─── 預設值工廠 ────────────────────────────────────────────────────────────────
 function makeDefaultTerm(id: string, name = ''): GlossaryTerm {
@@ -86,7 +87,7 @@ function GlossaryEditPanel({
 
         <div className="rounded-lg border border-border/60 bg-bg-dark/40 p-3 space-y-2">
           <div className="flex items-end gap-3 flex-wrap">
-            <div className="flex-1 min-w-[240px]">
+            <div className="w-full">
               <GameIconField
                 label="圖示（白色字形，選填）"
                 value={form.icon}
@@ -95,13 +96,26 @@ function GlossaryEditPanel({
                 placeholder="Icon_buff_4012"
               />
             </div>
+            <Field label="底色">
+              <select
+                aria-label="詞條圖示底色"
+                value={form.iconTone ?? ''}
+                onChange={(e) => update('iconTone', (e.target.value || undefined) as BuffIconTone | undefined)}
+                className="input-field"
+              >
+                <option value="">預設（粉紫）</option>
+                {(Object.keys(BUFF_TONE_LABEL) as BuffIconTone[]).map((tone) => (
+                  <option key={tone} value={tone}>{BUFF_TONE_LABEL[tone]}</option>
+                ))}
+              </select>
+            </Field>
             <div className="flex flex-col items-center gap-1 pb-0.5">
               <span className="text-[11px] text-text-dim">前台樣子</span>
               <TermGlyph term={form} size="lg" />
             </div>
           </div>
           <p className="text-[11px] text-text-dim leading-relaxed">
-            從 BUFF 圖庫選擇遊戲中的白色字形，詞條底色固定為粉紫色。未設定圖示時顯示中性小點。
+            從 BUFF 圖庫選擇遊戲中的白色字形，底色可依遊戲畫面選擇，未指定時使用粉紫色。底色不影響機制分類；未設定圖示時顯示中性小點。
           </p>
         </div>
       </div>

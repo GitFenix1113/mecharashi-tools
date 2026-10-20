@@ -25,6 +25,11 @@ export const BUFF_TONE_LABEL: Record<BuffIconTone, string> = {
   heal: '治療（綠）',
 }
 
+// BUFF 與詞條共用色系；完整 class 名稱供 Tailwind 掃描。
+export const BUFF_TONE_BG: Record<BuffIconTone, string> = {
+  buff: 'bg-buff-up', debuff: 'bg-buff-down', special: 'bg-buff-special', heal: 'bg-buff-heal',
+}
+
 /**
  * 圖示底色：有人工覆寫（iconTone）就用它，否則由 buffType 推。
  * 推不出來（未知 buffType）一律當特殊——紫色在遊戲裡本來就是「不屬於增減益」的那一類。

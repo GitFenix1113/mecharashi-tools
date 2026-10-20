@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const oct2026: ChangelogMonth = {
   month: '2026-10',
   entries: [
+    { date: '2026-10-21', type: 'feat', summary: '詞條圖示底色可比照 BUFF 選擇藍、紅、紫、綠，並即時預覽；未指定時維持粉紫色。' },
+
     { date: '2026-10-21', type: 'feat', summary: '詞條管理新增圖示選取與預覽，使用白色字形搭配固定粉紫底，並同步顯示於詞條列表與引用說明。' },
 
     { date: '2026-10-19', type: 'feat', summary: '後台機師管理也加上「<b>招募插畫</b>」選單（比照機甲）：自動對照不對、或機師還沒連上遊戲 ID 時，管理者可直接改選站上的招募插畫，或先設成不顯示。' },

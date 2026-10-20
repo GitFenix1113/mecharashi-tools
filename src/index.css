@@ -106,7 +106,7 @@
   --color-buff-special: #6d48a1;
   --color-buff-heal: #298558;
   --color-buff-frame: #ebe3d6;
-  /* 詞條固定粉紫底（2026-10-21「看破」截圖），與 BUFF 共用白色字形及外框。 */
+  /* 詞條未指定底色時使用粉紫（2026-10-21「看破」截圖），可覆寫為上方 BUFF 色系。 */
   --color-term-glyph: #6c45a2;
 }
 
