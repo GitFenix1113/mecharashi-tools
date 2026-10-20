@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-18
+## [Unreleased] - 2026-10-20
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **admin**: 詞條支援白色字形與固定粉紫底圖示 (`51cacf8`)
 - **admin**: 機師招募插畫改選（Pilot.cardKey，比照機甲）＋摩根娜招募插畫上站 (`404e991`)
 - **lore**: 黑障卡池動態上站——機師第 13 位（PLAN-042-A Phase J） (`e69bf6b`)
 - **lore**: 遊騎兵、強電場卡池動態上站（PLAN-042-B Phase J） (`538d251`)
