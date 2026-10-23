@@ -93,6 +93,11 @@ scripts/bump-data-version.mjs
 # PLAN-034 H-2：唯讀漂移檢查，但內含官方 API endpoint 與 appkey，與 scraper 同級敏感。
 # 換機器／重新 clone 時需重建（同 bump-data-version.mjs 的既有取捨）。
 scripts/check-nd-minsum-drift.mjs
+# PLAN-064 開放問題 ① 選 A（只給結果、不公開推算方式）：武裝討伐首領面板的推算段。
+# 擷取腳本少了它照常跑，只是不產面板。備份在 E:\Mecharashi_Data\script-archive\2026-10-11\_本機獨有的保留檔備份\scripts\lib\。
+scripts/lib/raid_estimate.py
+# Python 擷取腳本（extract-raid-dungeons.py、export-gacha-prefab.py）import 本機模組時產生的位元組碼
+__pycache__/
 .claude/skills/data-patch/
 
 # PLAN-038 follow-up：社群卡片用的 JPEG 立繪，由 scripts/generate-og-entity-images.mjs

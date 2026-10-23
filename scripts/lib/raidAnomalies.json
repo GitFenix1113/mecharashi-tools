@@ -1,0 +1,23 @@
+{
+  "_說明": [
+    "PLAN-064 決策六／A-6：陸版資料裡已知的異常，以及怎麼處置。scripts/import-raid-dungeons.mjs 讀這份。",
+    "匯入時的通用偵測（classifyBossMismatch）抓到「高難度實際用了初試首領、且沒有任何強化來源」會列 ⚠；",
+    "在這裡登記過的不再列 ⚠，改把 note 寫進首領卡與關卡的異常註記。",
+    "status：unverified＝未經遊戲內確認；confirmed＝台版遊戲內確認也是如此；fixed-tw＝台版沒有這個問題（note 會改寫）。",
+    "站長遊戲內確認後改 status 與 note（F-5），重跑匯入、後台發布，前台註記跟著變。不要自行把數值「修正」成推測的強化值——補值等於編造。"
+  ],
+  "levels": {
+    "110202": {
+      "season": 10, "difficulty": "hard", "battleId": 8342,
+      "phenomenon": "BossID 是磨鍊模板 834201，但戰場實際放的是初試模板 834101，也沒有關卡全域強化",
+      "status": "unverified",
+      "note": "陸版資料中此關磨鍊未套用難度強化，台版是否相同未經實測"
+    },
+    "113203": {
+      "season": 13, "difficulty": "hard", "battleId": 8394,
+      "phenomenon": "BossID 是磨鍊模板 839401，但戰場實際放的是初試模板 839301，也沒有關卡全域強化",
+      "status": "unverified",
+      "note": "陸版資料中此關磨鍊未套用難度強化，台版是否相同未經實測"
+    }
+  }
+}

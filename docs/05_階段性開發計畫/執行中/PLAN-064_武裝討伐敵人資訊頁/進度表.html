@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-064 武裝討伐敵人資訊頁 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  flex-wrap: wrap;
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+  word-break: break-all;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+@media (max-width: 640px) {
+  .task-row { grid-template-columns: 1fr; gap: 6px; }
+  .task-assignee { text-align: left; }
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+
+/* 共用樣式沒有紅色版的 hero-badge／section-label（比照 PLAN-060 頁內補上） */
+.hero-badge.red      { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.06); }
+.section-label.red   { color: var(--accent-red); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-064 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ PLAN-064</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">武裝討伐敵人資訊頁</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-24</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label red">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">15</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">2</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">24</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">33</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-red);">15 / 41</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 37%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    玩家能在 <code>/raids</code> 查到每一期武裝討伐、每個難度的首領（推算面板與技能）、開場陣容、增援時程、勝敗與懸賞線索；
+    之後每期新討伐，站長跑一條指令、照報告清單補譯名並在後台按發布即可上站，不需要開發者介入。
+  </div>
+
+  <div class="impact-note" style="background:rgba(168,85,247,0.06);border-color:rgba(168,85,247,0.25);">
+    <strong style="color:var(--accent-purple);">2026-10-24 狀態：</strong>
+    只完成計畫書，尚未動工。站長尚未決定要實作；開放問題 ①（公開範圍）②（譯名來源）待答，受影響的任務標「待拍板」。
+    其餘任務兩題怎麼答都能先做。共 41 項：開發者 33、站長 8（0-1～0-3、C-5、F-1～F-3、F-5）。
+  </div>
+
+  <div class="impact-note" style="background:rgba(168,85,247,0.06);border-color:rgba(168,85,247,0.25);">
+    <strong style="color:var(--accent-purple);">2026-10-24 站長追加方向後的調整：</strong>
+    首領剿滅延後（日後與元件掉落合併）、不做標籤、強敵劇情重現列備選、逸聞與故事館結合。
+    因此新增 <b>A-9 強敵圖鑑擷取</b>（勢力、台詞、逸聞，與關卡組對接）與 <b>Phase G 故事館接點</b>（逸聞進草稿、擬定 PLAN-042 子計畫）；
+    C-1、E-2、E-4、B-1 的說明同步更新。
+  </div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
+    <strong style="color:var(--accent-green);">2026-10-24 開工（分支 claude/plan-064-raids）：</strong>
+    站長拍板：① 選 <b>A 只給結果</b>（推算段 <code>scripts/lib/raid_estimate.py</code> 進 .gitignore，備份在 <code>E:\Mecharashi_Data\script-archive\2026-10-11\_本機獨有的保留檔備份\</code>）；② <b>先探測 infodata</b>，缺的再截圖；路由用 <b><code>/raids</code></b>。<br>Phase A 完成：擷取 21 期／307 關／斷鏈 0、首領面板 318 筆、回歸基準 8／8；增援 994 筆中 39 筆推不出時點（前台顯示「特定條件觸發」）；強敵圖鑑對接只剩已知的梅利圖斯 1 筆。<br>設計微調：Python 只擷取、保留原始結構；轉人讀文字（標籤、條件句、增援時程、強化文字）改在 Node 的 <code>scripts/lib/raidRender.mjs</code>，才能用 <code>npm test</code> 測（21 項）。機轉沿用既有爬蟲的 opencc-js <code>cn→tw</code>＋<code>textFixes</code>（不用 <code>twp</code>：詞彙轉換可能和遊戲台版用字不合，反正全標待校）。<code>raidTerms</code> 只存人工校對或來源匯入的條目，機轉不落地，重新匯入不會洗掉校對。<br>更正：台版目前只開到第 18 期，第 19–21 期在時間線上是推估日期，匯入判定為「台版預計開放」。
+  </div>
+</section>
+
+<!-- Phase 0 -->
+<section class="section">
+  <div class="section-label purple">Phase 0</div>
+  <div class="section-title">拍板與審閱</div>
+  <div class="section-desc">盤點報告 8.1 的兩件事，加上本計畫的整體審閱。這段的答案決定 A-2、C-4、E-4、E-8、B-4 的部分內容。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">0 &nbsp; 站長決策</div>
+      <div class="task-group-meta">計畫書「開放問題」</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0-1 &nbsp; 開放問題 ①：公開範圍</div>
+        <div class="task-desc">
+          A 只給事實與結果／B 連公式一起公開。影響首領卡要不要附「怎麼算的」、來源說明措辭、面板推算段能不能進 public repo、技術文件要不要發布到 <code>/documents</code>。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0-2 &nbsp; 開放問題 ②：譯名來源</div>
+        <div class="task-desc">
+          台服 infodata API／遊戲內截圖人工對照；兩者之外一律以 簡→繁 機械轉換兜底並標「待校」。只影響 C-4 的批次補譯怎麼做。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">0-3 &nbsp; 審閱計畫書並決定是否實作</div>
+        <div class="task-desc">
+          特別確認：路由用 <code>/raids</code>（要補 CF 白名單）還是 <code>/guides/raids</code>（不必動 CF）；五個集合的切法；重裝征伐排除在外。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label red">Phase A</div>
+  <div class="section-title">匯入腳本：擷取與 dry-run</div>
+  <div class="section-desc">以附件 <code>raid_crawl.py</code>／<code>raid_crawl_out.json</code> 為起點，產出 期 → 難度 → 關 → 首領／小兵／增援 → 技能 → 勝敗／懸賞／線索／關卡特性 的 dry-run JSON 與帶 ✅／⬜ 照抄清單的報告。這一段完全不碰 Firestore 的公開集合。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1～A-6、A-9 &nbsp; 擷取段（Python）</div>
+      <div class="task-group-meta">scripts/extract-raid-dungeons.py</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-1 &nbsp; 移植全量串接</div>
+        <div class="task-desc">
+          把 <code>raid_crawl.py</code>＋<code>db.py</code> 移進 repo：<code>--src</code> 預設取最新的 <code>E:\Mecharashi_Data\遊戲參數資料包_*</code>，拒寫資料包目錄，拿掉寫死的 scratchpad 路徑；以 venv <code>python -I</code> 執行。
+          輸出中性 JSON（簡中原文＋ID＋結構），帶 <code>PARSER_VERSION</code> 與資料包 BuildNum；保留斷鏈與文字覆蓋統計（目前 21 期／307 關／斷鏈 0 當作驗收基準）。
+        </div>
+        <div class="task-file">scripts/extract-raid-dungeons.py · scripts/lib/raid_db.py</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-2 &nbsp; 首領判定與面板推算</div>
+        <div class="task-desc">
+          數值取戰場 <code>m_refName=BOSS</code> 的實際模板（<code>BossID</code> 只供顯示）；<code>m_actorType=1</code>（第 11、12 期最終關）也當敵人模板；第 20–21 期用 <code>m_absoluteLevel</code> 覆寫等級。
+          移植 <code>calc_boss.py</code>：部位耐久／裝甲、武器攻擊、機師屬性，同乘區先相加，結果取整並附「未計入」清單。
+          回歸基準：卢克、皮普各 4 難度的數字寫進 <code>raidRegression.json</code>，每次匯入比對（容差末位 1）。
+          <b>推算段放不放 public repo 依 0-1。</b>
+        </div>
+        <div class="task-file">scripts/extract-raid-dungeons.py · scripts/lib/raidRegression.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-3 &nbsp; 增援時程解析</div>
+        <div class="task-desc">
+          從戰場 <code>m_triggerInfos</code>／<code>m_actionGroups</code> 的結構化條件推出「第 N 回合／特定條件」＋召喚單位與數量（<code>SummonAtSceneObject</code>、<code>Summon</code>，2,124 次 TU＋395 次載具）。
+          <b>不使用 <code>m_desc</code> 企劃備註</b>（574 筆空白、其餘語意含糊）。條件／動作型別 → 中文模板放對照表；對不到的列 ⬜。成就判定觸發器不進增援時程。
+          要涵蓋三種形態（第 21 期第 1 關實查）：回合條件（含提前一回合的「增援預警」）、黑板變數條件（護衛被擊破後回合結束重新部署）、每回合固定事件（每回合首領加護盾層數，依難度 1／1／2／2）。
+        </div>
+        <div class="task-file">scripts/lib/raidTriggerTypes.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-4 &nbsp; 文字標籤與開發備註過濾</div>
+        <div class="task-desc">
+          <code>&lt;buf ID=n&gt;</code>（500 個，42 個無名稱要用 <code>ActorBufInfo.NameDescStrKey</code> 補）轉成 Buff 標記並收進該關的敵方 Buff 字典；<code>&lt;terrian&gt;</code>、<code>&lt;range&gt;</code>、<code>&lt;color&gt;</code> 轉換。
+          過濾 <code>*#</code> 開發備註、<code>HiddenAchievementIds</code>、戰場內部代號；勝敗、懸賞、線索三段（名稱／短述／詳情）、關卡特性（<code>BufDescPassiveSkillID</code>）、地形照抄。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-5 &nbsp; 難度強化與支援協議轉人讀文字</div>
+        <div class="task-desc">
+          難度強化 Buff（<code>3200xxxx</code>，含大型首領組 22／24／26、第 6–7 期舊 ID <code>3000xxxx</code>、第 20–21 期關卡全域 Buff、戰場觸發器 <code>AddBuff*</code>）與每週加成 <code>30000027–29</code>，
+          依屬性 → 中文標籤對照轉成「HP +29.7%、裝甲 +14.2%…」。對照表沒收的屬性列 ⬜。
+        </div>
+        <div class="task-file">scripts/lib/raidPropertyLabels.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-6 &nbsp; 異常偵測</div>
+        <div class="task-desc">
+          <code>BossID</code> 與實際模板不同的 14 關分兩類：「指向他難度同名首領」（顯示用、無害）與「高難度實際用了初試模板且無其他強化來源」（疑似未強化，現有 <code>110202</code>、<code>113203</code>）。
+          後者進報告 ⚠ 並對照 <code>raidAnomalies.json</code> 的處置與驗證狀態；新期出現同類情況也會被抓到。
+        </div>
+        <div class="task-file">scripts/lib/raidAnomalies.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-9 &nbsp; 強敵圖鑑擷取與對接（2026-10-24 追加）</div>
+        <div class="task-desc">
+          <code>SkynetStrongEnemyAtlasInfo</code> 取 <code>StrongEnemyType=2</code> 的 83 筆：首領名、台詞、勢力（<code>SkynetStrongEnemyBattleLevelInfo</code> 的勢力名＋<code>Icon_logo_*</code> 徽章鍵）、
+          逸聞（<code>AnecdoteLevelTemplateInfo</code> → <code>AnecdoteInfo</code> 的標題＋正文，3–4 篇）並記原文雜湊。以戰場、模板、名字三者對上關卡組，不一致列 ⚠（已知：第 14 期梅利圖斯）。
+          type 1（首領剿滅）略過但解析器保持通用；<b>標籤表不擷取</b>。
+        </div>
+        <div class="task-file">scripts/extract-raid-dungeons.py</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-7～A-8 &nbsp; 組裝段（Node）與報告</div>
+      <div class="task-group-meta">scripts/import-raid-dungeons.mjs</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-7 &nbsp; 組裝、dry-run 與照抄清單報告</div>
+        <div class="task-desc">
+          Node 入口（必要時自行呼叫 A-1、檢查擷取是否過期）：套譯名對照表（C-1）、依時間線 <code>twDate</code> 判定每期是「台版已開放」或「台版預計開放」（時間線未收錄的不產草稿；重裝征伐標「略過」）、組成 <code>raidSeasons</code>／<code>stages</code>／<code>bosses</code> 文件。
+          預設 dry-run，輸出 <code>_local-notes/&lt;YYYY-MM&gt;/&lt;YYYY-MM-DD&gt;_武裝討伐匯入.html</code>＋同名 <code>.json</code>：與已發布版本的差異、各集合大小（&gt; 1 MB 警示）、待校數、異常、回歸基準比對、
+          「下一步」✅／⬜ 照抄清單（附指令，做完重跑變 ✅）。<code>--write</code> 才寫 <code>raidDrafts</code>，永不直接寫公開集合。
+        </div>
+        <div class="task-file">scripts/import-raid-dungeons.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">A-8 &nbsp; 純函式測試</div>
+        <div class="task-desc">
+          條件 → 回合、標籤解析、強化文字、台版開放判定、譯名查表順序抽成可測模組，附 <code>node:test</code>（注意測試在本機 CRLF 下切行用 <code>/\r?\n/</code>）。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label red">Phase B</div>
+  <div class="section-title">資料模型與集合</div>
+  <div class="section-desc">沿用 <code>src/types/boss.ts</code> 的 Boss／Stage，補「難度」維度與「增援時程」；三個公開集合走 Worker，兩個後台限定集合只開規則。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1～B-4 &nbsp; 型別、集合接線、文件</div>
+      <div class="task-group-meta">src/types/ · src/lib/api/ · workers/ · firestore.rules</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B-1 &nbsp; 型別</div>
+        <div class="task-desc">
+          <code>enums.ts</code> 新增 <code>RaidDifficulty</code>；<code>boss.ts</code> 擴充 <code>Boss.variants</code>、<code>BossSkill.kind</code>、<code>Stage.raid</code>，新增 <code>BossVariant</code>／<code>RaidStageInfo</code>／<code>RaidStageVariant</code>／<code>RaidUnit</code>／<code>RaidReinforcement</code>／<code>RaidSeason</code>；
+          強敵圖鑑欄位：<code>RaidSeason.faction</code>、<code>Boss.atlasId</code>／<code>quote</code>／<code>anecdoteCount</code>／<code>alsoIn</code>。
+          註解寫明：重裝征伐另案、<code>EnhancementLevelReplaceId</code> 是玩家方補正、日後若寫 <code>descriptionRefs</code> 必須先補 <code>entityRefs</code> SPECS。
+        </div>
+        <div class="task-file">src/types/enums.ts · src/types/boss.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B-2 &nbsp; 公開集合接線：raidSeasons／stages／bosses</div>
+        <div class="task-desc">
+          <code>./api/raids.ts</code>＋barrel re-export；<code>collectionKeys.ts</code>；<code>GameDataContext</code> 的 <code>CollectionKey</code>、state、switch、型別（漏 case 的症狀是永遠空陣列、零錯誤）；
+          Worker <code>ARRAY_COLLECTIONS</code>（漏＝正式站 404、本機全綠）；<code>firestore.rules</code>（讀寫皆 <code>isAdmin()</code>，前台經 Worker）；<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>（該檔被 <code>.gitignore</code> 擋，改完要更新封存夾備份）；測試 helper；
+          hooks <code>useRaidSeasons()</code>／<code>useRaidSeason(id)</code>。<b>不進 <code>entityRefs</code> SPECS。</b>
+        </div>
+        <div class="task-file">src/lib/api/raids.ts · src/contexts/GameDataContext.tsx · src/hooks/useFirestore.ts · workers/src/index.ts · firestore.rules</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B-3 &nbsp; 後台限定集合：raidDrafts／raidTerms</div>
+        <div class="task-desc">
+          只開規則（ADMIN 讀寫），不進 Worker、不進 <code>GameDataContext</code>；後台頁直接讀寫，匯入腳本以 admin SDK 讀寫。<code>raidTerms</code> 依種類分片，A-7 報告監看每片大小。
+        </div>
+        <div class="task-file">firestore.rules · src/lib/api/raids.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">B-4 &nbsp; docs 同步（規則 2）</div>
+        <div class="task-desc">
+          新增 <code>02_資料模型/bosses_stages.html</code>、<code>04_Firebase/資料庫設計文件/raids.html</code>；更新 <code>enums.html</code>、<code>Firebase資料庫設計文件.html</code>、<code>security-rules.html</code>、<code>系統架構.html</code>（<code>src/components/raids/</code>）。
+          是否列入 <code>copy-docs.mjs</code> 白名單依 0-1。
+        </div>
+        <div class="task-file">docs/02_技術文件/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label red">Phase C</div>
+  <div class="section-title">譯名對照</div>
+  <div class="section-desc">簡→繁＋台版譯名對照表。對照表存 <code>raidTerms</code>、以簡中原文為鍵，校一次全站生效，重新匯入不會洗掉。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1～C-5 &nbsp; 對照表與補譯</div>
+      <div class="task-group-meta">raidTerms · scripts/import-raid-dungeons.mjs</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C-1 &nbsp; 對照表結構與查表順序</div>
+        <div class="task-desc">
+          條目：種類（含勢力、台詞、逸聞）、簡中原文、台版譯名、狀態（已校／待校）、來源（infodata／截圖／機轉／手動）、首次出現的期。查表：已校 → ② 選定的來源 → 機械轉換（待校）。
+          逸聞正文量大（約 330 篇）另成一個分片。
+          文件附 <code>i18nPending</code>（待校欄位清單）供前台標示。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C-2 &nbsp; 機械轉換兜底</div>
+        <div class="task-desc">
+          候選 OpenCC <code>s2twp</code>（<code>opencc-js</code>），確認授權與體積後定案；只用在匯入端。長文先替換已知專有名詞再轉，避免把人名轉成錯字。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C-3 &nbsp; 自動帶入站上既有譯名</div>
+        <div class="task-desc">
+          期名（時間線 <code>armamentRaids[].name</code>）、獎勵武器／背包名、與玩家機體同名的敵方機體（<code>mechs</code>），直接以「已校、來源＝站上既有」寫入對照表。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C-4 &nbsp; 依 ② 的來源批次補譯</div>
+        <div class="task-desc">
+          候選一：寫一支 infodata 探測／匯入腳本（先唯讀探測有沒有收敵人）；候選二：在後台校對頁（D-2）逐條填，搭配遊戲內截圖。結果都寫進同一張對照表。
+          參考：遊戲內「強敵圖鑑 → 武裝討伐」一頁就列出勢力名、期名、英文副標與首領名（台版已有 130 位），截圖對照的效率比逐關截圖高。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C-5 &nbsp; 難度名與介面固定用語確認</div>
+        <div class="task-desc">
+          台版的四個難度名（陸版：初试／磨炼／死境／炼狱，自己還混用「磨练」）、「懸賞」「線索」「關卡特性」「支援協議」等介面用語，以台版遊戲內實際文字為準。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label red">Phase D</div>
+  <div class="section-title">後台審核 /admin/raids</div>
+  <div class="section-desc">比照公告管線（PLAN-048）的 staging → 審核 → 合併。發布只能由站長在這裡按，腳本不代為發布。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1～D-4 &nbsp; 審核頁</div>
+      <div class="task-group-meta">src/pages/admin/AdminRaidsPage.tsx · src/components/admin/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">D-1 &nbsp; 草稿列表與差異檢視</div>
+        <div class="task-desc">
+          每期一列：新期／有差異／與已發布相同、解析器版本、待校數、異常數。點開逐關列出草稿 vs 已發布的數值、文字、增援變動。路由 <code>admin/raids</code>，僅 ADMIN。
+        </div>
+        <div class="task-file">src/App.tsx · src/pages/admin/AdminRaidsPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">D-2 &nbsp; 譯名校對</div>
+        <div class="task-desc">
+          列出本期待校條目（依種類分組），填台版譯名即寫回 <code>raidTerms</code> 並重算預覽；可批次標「已校」。不替站長清佇列。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">D-3 &nbsp; 異常與公開開關</div>
+        <div class="task-desc">
+          顯示 <code>raidAnomalies.json</code> 與通用偵測結果、驗證狀態；每期的 <code>published</code> 開關（發布但先不在前台列出）。驗證結論的存放方式（回寫檔案或另存 Firestore）實作時定。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">D-4 &nbsp; 發布</div>
+        <div class="task-desc">
+          草稿寫入 <code>raidSeasons</code>／<code>stages</code>／<code>bosses</code>（該期舊文件中已不存在的關卡一併清除）、<code>bumpDataVersion</code> 三個集合、記一筆發布紀錄（摘要＋解析器版本，不存全文）。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label red">Phase E</div>
+  <div class="section-title">前台頁面</div>
+  <div class="section-desc"><code>/raids</code> 期列表與 <code>/raids/:seasonId</code> 期詳情。元件放 <code>src/components/raids/</code>。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1～E-8 &nbsp; 前台</div>
+      <div class="task-group-meta">src/pages/raids/ · src/components/raids/ · src/lib/seo.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">E-1 &nbsp; 路由、SEO、入口</div>
+        <div class="task-desc">
+          <code>App.tsx</code> 加 <code>raids</code>、<code>raids/:seasonId</code>（路徑依 0-3）；<code>seo.ts</code> 的 <code>PAGE_TITLES</code> 與 sitemap 歸屬（<code>npm test</code> 會擋）；詳情頁 <code>usePageTitle()</code> 換期名；導覽列／工具頁入口。
+        </div>
+        <div class="task-file">src/App.tsx · src/lib/seo.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">E-2 &nbsp; /raids 期列表</div>
+        <div class="task-desc">
+          21 期由新到舊，比照遊戲內強敵圖鑑分組：勢力徽章＋勢力名｜武裝討伐 N·期名＋英文副標、一排首領（最終關首領強調）；另加台版版本與狀態（已開放／預計開放＋日期）、獎勵武器／背包（取自時間線）、難度數；第 15 期以前收成精簡列；只列 <code>published</code> 的期。只載 <code>raidSeasons</code>＋<code>patchVersions</code>。
+          樣式參考 <code>_local-notes/2026-10/2026-10-24_武裝討伐頁_樣式預覽.html</code>。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">E-3 &nbsp; /raids/:seasonId 期詳情與難度切換</div>
+        <div class="task-desc">
+          難度分頁只畫實際有的難度（第 1 期只有初試、第 2–5 期無煉獄），選擇記在網址參數方便分享；四個關卡組（最終關標線索門檻）；勝敗、回合上限、關卡特性、地形、難度強化文字。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">E-4 &nbsp; 首領卡</div>
+        <div class="task-desc">
+          頭像、機體、等級、武器、強敵圖鑑台詞、推算面板＋「推算值」徽章（四部位耐久條、與初試相比的增幅）、技能依難度（與初試不同處加提示、Buff 標記可點開說明）、「未計入」清單、異常註記、
+          「也出現在：第 N 期」互連、「逸聞 N 篇 → 故事館」入口（故事館子計畫上線前不顯示）。
+          頭像來源待查：資料包機師模板沒有圖檔鍵；與可抽機師同名者沿用站上圖，其餘佔位。
+          <b>是否附「怎麼算的」摺疊區依 0-1。</b>
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">E-5 &nbsp; 開場陣容與增援時程</div>
+        <div class="task-desc">
+          開場單位（含載具）與增援依時點排列：「第 2 回合：老練傭兵 ×2」「首領軀幹耐久 ≤ 75%：自律戴亞斯 ×1」；對不到的條件顯示「特定條件觸發」。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">E-6 &nbsp; 懸賞、線索、每週加成與規則</div>
+        <div class="task-desc">
+          每關懸賞（最終關 1 個、其餘 3 個）與對應線索（名稱／短述，詳情預設收合）；期層級的支援協議 Ⅰ～Ⅲ（只對初試、磨鍊有效）與每週規則。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">E-7 &nbsp; 版本情報接點</div>
+        <div class="task-desc">
+          版本情報速覽／時間線的武裝討伐欄位連到對應的 <code>/raids/:seasonId</code>（以 <code>raidSeasons.twVersion</code> 與期名對應）。
+        </div>
+        <div class="task-file">src/components/versions/VersionQuickTable.tsx · src/components/timeline/VersionGanttPanel.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">E-8 &nbsp; 來源與待校標示、手機版</div>
+        <div class="task-desc">
+          頁首來源說明（「依陸版資料」，措辭依 0-1）、待校小標與頁尾說明；手機版排版（難度分頁、首領卡、增援表在窄螢幕的呈現）。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label red">Phase F</div>
+  <div class="section-title">上線與例行化</div>
+  <div class="section-desc">部署類動作交站長（auto mode 會擋正式部署）；rules 與 Worker 要在推送前端程式之前部署好。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1～F-6 &nbsp; 上線</div>
+      <div class="task-group-meta">firestore.rules · workers/ · Cloudflare Dashboard</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">F-1 &nbsp; 首次全量匯入與審核發布</div>
+        <div class="task-desc">
+          照 A-7 報告跑 dry-run → 補譯名 → <code>--write</code> → 後台逐期審核發布 → 重跑確認全 ✅。先在本機演練一次備份（<code>backup-firestore.mjs</code>）。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">F-2 &nbsp; 部署 rules 與 Worker</div>
+        <div class="task-desc">
+          <code>firebase deploy --only firestore:rules</code>、<code>wrangler deploy</code>；複驗 <code>/api/data/raidSeasons</code>、<code>stages</code>、<code>bosses</code> 皆回 200。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">F-3 &nbsp; Cloudflare SPA fallback 白名單</div>
+        <div class="task-desc">
+          若用 <code>/raids</code>：編輯既有規則（不新建），在 <code>method eq "GET"</code> 括號內加 <code>or starts_with(http.request.uri.path, "/raids")</code>；不要動尾端社群爬蟲的 <code>and not (...)</code>。
+          複驗 <code>/raids</code>、<code>/raids/raid-21</code> 為 200，<code>/notarealpath</code> 維持 404。用 <code>/guides/raids</code> 則本項免做。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">F-4 &nbsp; 例行流程文件</div>
+        <div class="task-desc">
+          <code>public/images/game/README.md</code> 加「新一期討伐」照抄清單；CLAUDE.md 6.5 補一句武裝討伐匯入；<code>data-patch</code> skill 交叉引用 bump 流程。
+        </div>
+        <div class="task-file">public/images/game/README.md · CLAUDE.md · .claude/skills/data-patch/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">F-5 &nbsp; 遊戲內抽驗</div>
+        <div class="task-desc">
+          能進的話確認第 10 期磨鍊 <code>110202</code>、第 13 期磨鍊 <code>113203</code> 是否真的沒強化；挑一兩隻首領對照遊戲內可見的數字。結果更新 <code>raidAnomalies.json</code>／<code>raidRegression.json</code>，前台註記跟著變。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">F-6 &nbsp; 關聯計畫補註</div>
+        <div class="task-desc">
+          PLAN-019 總綱與 PLAN-010 各補一句「Layer 3 的 bosses／stages 型別由 PLAN-064 以腳本匯入的方式復用；打法攻略仍歸 PLAN-010」。
+        </div>
+        <div class="task-file">docs/05_階段性開發計畫/執行中/PLAN-019_實體引用與模擬基礎_總綱/ · PLAN-010_攻略系統/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase G -->
+<section class="section">
+  <div class="section-label purple">Phase G</div>
+  <div class="section-title">故事館接點（2026-10-24 追加）</div>
+  <div class="section-desc">強敵的逸聞與故事館結合。本計畫只做到「擷取＋翻譯＋審核預覽」，故事館內的呈現、協作校對與發布交給 PLAN-042 新子計畫（計畫書決策十四）。強敵劇情重現列為備選、首領剿滅日後與元件掉落合併，皆不在此。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">G-1～G-2 &nbsp; 逸聞草稿與子計畫</div>
+      <div class="task-group-meta">raidDrafts · docs/05_階段性開發計畫/</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">G-1 &nbsp; 逸聞進草稿與後台預覽</div>
+        <div class="task-desc">
+          A-9 擷取的逸聞（每位首領 3–4 篇，標題＋正文＋原文雜湊）隨同期進 <code>raidDrafts</code>，走 C-1／C-2 的譯名查表與機械轉換、標待校；<code>/admin/raids</code> 可逐篇預覽。
+          此時不寫任何故事館集合，也不在討伐頁顯示全文。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">G-2 &nbsp; 擬定 PLAN-042 子計畫「強敵與故事館」</div>
+        <div class="task-desc">
+          由 plan-manager 開子計畫並更新 PLAN-042 總綱的子計畫表。內容：故事館集合（暫名 <code>enemyLore</code>，比照 <code>pilotLore</code>／<code>mechLore</code> 含 <code>rev</code>）、呈現方式（第三館或卷宗頁）、
+          LORE_EDITOR 協作校對與「已校鎖」（原文變動列 ⚠、不覆蓋）、從草稿發布逸聞、首領與可抽機師同名者（至少 11 位）的互連、勢力資料與 PLAN-059 徽章的共用。
+          G-1 完成後、站長決定要做故事館這一段時再開。
+        </div>
+        <div class="task-file">docs/05_階段性開發計畫/執行中/PLAN-042_故事館_總綱/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-064 — <a href="../index.html" style="color:var(--accent-red);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

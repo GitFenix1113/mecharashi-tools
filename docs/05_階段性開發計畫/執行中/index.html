@@ -31,6 +31,19 @@
   <div class="section-label yellow">Plans</div>
   <div class="section-title">計畫列表</div>
   <div class="card-grid">
+    <div class="card red">
+      <div class="card-icon">◆</div>
+      <h3>PLAN-064 · 武裝討伐敵人資訊頁</h3>
+      <p>把陸版遊戲參數資料包的武裝討伐（21 期、307 關、斷鏈 0）用腳本匯成站上資料：期 → 難度 → 關 → 首領／小兵／增援 → 技能 → 勝敗／懸賞／線索／關卡特性。
+        沿用 PLAN-019 descope 掉的 <code>bosses</code>／<code>stages</code> 型別並補難度維度與增援時程；首領面板一律標「推算值」；譯名走 <code>raidTerms</code> 對照表、對不到標「待校」；
+        匯入 → 後台 <code>/admin/raids</code> 審核發布 → 前台 <code>/raids</code>，報告附 ✅／⬜ 照抄清單讓站長每期自己跑。
+        強敵圖鑑提供勢力、台詞與逸聞；逸聞交故事館（PLAN-042 另開子計畫）。重裝征伐、首領剿滅（日後併元件掉落）另案，不做標籤，強敵劇情重現列備選。
+        <br><b>2026-10-24 開工（15／41）</b>：站長拍板 ① 只給結果（推算段不進 repo）、② 先探測 infodata、路由 <code>/raids</code>；Phase A 匯入腳本完成（斷鏈 0、回歸 8／8）。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-064_武裝討伐敵人資訊頁/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-064_武裝討伐敵人資訊頁/進度表.html">→ 進度表</a>
+      </div>
+    </div>
     <div class="card cyan">
       <div class="card-icon">◆</div>
       <h3>PLAN-042-H · 故事館協作編輯</h3>

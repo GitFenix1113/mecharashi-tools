@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-064 武裝討伐敵人資訊頁 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.question-block {
+  background: rgba(168,85,247,0.06);
+  border: 1px solid rgba(168,85,247,0.25);
+  border-left: 3px solid var(--accent-purple);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.question-block h4 { margin: 0 0 6px; color: var(--accent-purple); font-size: 15px; }
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+  white-space: pre;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.table-wrap { overflow-x: auto; }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+
+/* 共用樣式沒有紅色版的 hero-badge／section-label（比照 PLAN-060 頁內補上） */
+.hero-badge.red      { border-color: var(--accent-red); color: var(--accent-red); background: rgba(239,68,68,0.06); }
+.section-label.red   { color: var(--accent-red); }
+
+/* 匯入管線流程圖 */
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 16px 0;
+}
+.flow-step {
+  flex: 1 1 150px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.flow-step b { display: block; color: var(--accent-red); font-size: 13px; margin-bottom: 4px; }
+.flow-step.human { border-color: rgba(168,85,247,0.45); }
+.flow-step.human b { color: var(--accent-purple); }
+.flow-arrow { align-self: center; color: var(--text-dim); font-size: 18px; }
+@media (max-width: 640px) { .flow-arrow { display: none; } }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-064 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ PLAN-064</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    武裝討伐敵人資訊頁<span style="-webkit-text-fill-color:var(--text-secondary);">RaidDungeon · 21 期 307 關 · 強敵圖鑑 · 首領推算面板 · 譯名對照</span>
+  </h1>
+  <p class="hero-sub">把陸版遊戲參數資料包裡的武裝討伐（期 → 難度 → 關 → 首領／小兵／增援 → 技能 → 勝敗／懸賞／線索／關卡特性），連同強敵圖鑑的勢力、台詞與逸聞，用腳本匯成站上資料，經後台審核後發布成前台的敵人資訊頁；逸聞交給故事館呈現。每期新討伐由站長照報告清單自己跑完。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label red">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value red">PLAN-064</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-24</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">scripts/ 匯入腳本 · src/types/boss.ts · enums.ts · 5 個新集合 · Worker · /raids · /admin/raids · 故事館接點（逸聞）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value red">執行中（2026-10-24 開工，分支 claude/plan-064-raids）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">開放問題 ①②；遊戲參數資料包 20261017（本機）；rules／Worker／CF 由站長部署</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>依據：</strong>2026-10-24 的盤點報告與附件（本機，不進版控）——
+    <code>_local-notes/2026-10/2026-10-24_遊戲參數資料包盤點_武裝討伐與傷害模擬.html</code> 第 4、7、8 節，
+    <code>_local-notes/2026-10/2026-10-24_遊戲參數資料包盤點_附件/raid/武裝討伐_詳細筆記.md</code>，
+    以及同資料夾的 <code>raid_crawl.py</code>／<code>raid_crawl_out.json</code>／<code>calc_boss.py</code>。
+    本計畫只處理報告 8.2 的第 1 項「武裝討伐資訊頁（純資料，不含傷害計算）」；傷害模擬另案。
+  </div>
+
+  <div class="decision-block">
+    <strong>2026-10-24 站長追加的方向（看過遊戲內強敵圖鑑截圖後）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>首領剿滅先不做</b>，以後再做，屆時與「元件掉落」頁合併（見「備選與後續」）。</li>
+      <li><b>不做標籤</b>：強敵圖鑑的「最熱標籤」（玻璃大炮、華而不實…）沒有意義，不擷取、不上站。</li>
+      <li><b>強敵劇情故事列為「備選」</b>：站長之後會嘗試解包，讓劇情可以重現；本計畫不處理。</li>
+      <li><b>強敵的逸聞與故事館結合</b>：逸聞不放在討伐頁內文，交給故事館呈現（決策十四）。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>站上查不到武裝討伐的敵人資訊</strong><br>
+    時間線（<code>patchVersions.armamentRaids</code>）只記了每期的期名、獎勵武器／背包與相關機師。玩家實際要查的是
+    「這關首領是誰、有什麼技能、各難度強多少、第幾回合來增援、懸賞條件是什麼」，站上目前沒有任何一處能回答。
+  </div>
+
+  <div class="problem-block">
+    <strong>PLAN-019 Layer 3 當初為什麼放棄，現在為什麼可以重來</strong><br>
+    2026-06-28 PLAN-019-D 把 <code>bosses</code>／<code>stages</code> 降級（descope），理由是「各關是獨特的敘事內容，人工建成結構化資料投報率低」，
+    改交 PLAN-010 攻略 CMS 自由圖文承接。型別留在 <code>src/types/boss.ts</code>，但沒有集合、規則、API。<br>
+    這次情況不同：遊戲參數資料包把整個玩法都攤開了——<b>21 期、307 關、斷鏈 0</b>，首領／小兵／增援／技能文字／勝敗／懸賞／線索全部可程式化串接，
+    資料包最新一期（第 21 期「伏影」）也已排進台版時間線，沒有台版不知道的期數。資料可以<b>用腳本產生、不靠人工建檔</b>，當初的投報率顧慮已經不成立。<br>
+    <span style="font-size:13px;color:var(--text-dim);">（2026-10-24 查時間線更正：台版目前只開到第 18 期「逐火之心」（v3.2，2026/08/20）；第 19–21 期在時間線上是推估日期——歸途 2026/11/12、無風起瀾 2027/02/04、伏影 2027/03/18。見決策九。）</span>
+  </div>
+
+  <div class="info-block">
+    <strong>資料可信度的前提（貫穿整份計畫）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>資料包是陸版 2026-09-20 建置的快照（BuildNum 376_ZiLongA）。台版數值口徑與陸版相同，只是改版時間不同步；台版若有平衡差異，資料包反映不了。</li>
+      <li>驗證只證明「擷取正確、關聯正確」，<b>不等於戰鬥結果正確</b>；首領面板是依公式推算、未經遊戲內實測，Fix64 取整可能讓末位差 1。</li>
+      <li>文字全是簡中，敵方 NPC 名、技能名、關卡名都要有台版譯名（見開放問題 ②）。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 開放問題 -->
+<section class="section">
+  <div class="section-label purple">Open Questions</div>
+  <div class="section-title">開放問題（交站長回答，計畫不代為拍板）</div>
+
+  <p style="font-size:14px;color:var(--text-secondary);">
+    這兩題來自盤點報告 8.1「動工前要先拍板的兩件事」。下方每題列出選項，以及<b>各選項對本計畫會改到哪裡</b>；
+    計畫的其餘設計刻意做成兩題怎麼答都能接得上，受影響的工作在進度表標「待拍板」。
+  </p>
+
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
+    <strong style="color:var(--accent-green);">2026-10-24 站長拍板：</strong>
+    ① 選 <b>A 只給事實與結果</b>——推算段 <code>scripts/lib/raid_estimate.py</code> 進 <code>.gitignore</code>，備份在
+    <code>E:\Mecharashi_Data\script-archive\2026-10-11\_本機獨有的保留檔備份\scripts\lib\</code>；首領卡不附「怎麼算的」、技術文件不列入 <code>/documents</code> 白名單。
+    ② <b>先探測台服 infodata</b>，有收敵人就批次匯入，缺的再用截圖補。決策十一的路由定案 <b><code>/raids</code></b>（要補 CF 白名單，F-3）。
+  </div>
+
+  <div class="question-block">
+    <h4>① 公開範圍：站上要呈現到哪一層？</h4>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>選項 A　只給事實與結果</b>：敵人名、技能、條件、面板數字。計算方式留在程式裡。</li>
+      <li><b>選項 B　連公式一起公開</b>：連同面板的推算方式（部位基礎值 × 成長曲線表值 × (1 ＋ 同乘區加總)）一起寫出來。對玩家最有用，但等於公開逆向成果。</li>
+    </ul>
+    <div class="table-wrap">
+    <table class="impact-table">
+      <tr><th>本計畫受影響處</th><th>選 A</th><th>選 B</th></tr>
+      <tr><td>首領卡（E-4）</td><td>只顯示推算數字＋「推算值」標示＋「未計入」清單</td><td>另加「怎麼算的」摺疊區，列成長曲線與加成來源</td></tr>
+      <tr><td>來源說明措辭（E-8）</td><td>「依陸版遊戲資料推算」一句帶過</td><td>可註明資料來自客戶端設定表</td></tr>
+      <tr><td>面板推算程式碼放哪（A-2）</td>
+          <td>repo 是 <b>public</b>，推算段（成長曲線套法）若進 <code>scripts/</code> 就等於公開公式 → 推算段需放 repo 外本機路徑，比照 <code>bump-data-version.mjs</code> 的 <code>.gitignore</code> 防線並在封存夾留備份</td>
+          <td>推算段可直接進 <code>scripts/</code>，換電腦不怕遺失</td></tr>
+      <tr><td>docs 是否發布到 <code>/documents</code>（B-4）</td><td>描述擷取管線的技術文件不列入 <code>copy-docs.mjs</code> 白名單</td><td>可列入</td></tr>
+    </table>
+    </div>
+    兩個選項共通、與本題無關的部分：推算一律在<b>匯入端</b>完成，前端只拿結果，所以前端打包內不會出現公式；
+    資料包原檔、反組譯、完整設定表無論如何都留在本機（報告第 7 節）。
+    盤點報告也指出，7 月〈傷害模擬引擎保護架構草案 v2〉傾向把公式放後端，而公式現在是從遊戲程式還原的，「保護自家邏輯」的意義變了，值得一併重新評估——這一點屬於傷害模擬的範圍，本計畫只需要結論。
+  </div>
+
+  <div class="question-block">
+    <h4>② 譯名來源：敵方 NPC 名、首領技能名、關卡名的台版譯名從哪裡來？</h4>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>候選一　台服 infodata API</b>：已知有官方繁中譯名，但<b>不確定有沒有收敵人</b>。</li>
+      <li><b>候選二　遊戲內截圖人工對照</b>：存成對照表。</li>
+      <li><b>兜底（不論選哪個都會有）</b>：對照不到的先用 簡→繁 機械轉換，並標「待校」。</li>
+    </ul>
+    <div class="info-block" style="margin-top:10px;">
+      <strong>供判斷用的新事實（2026-10-24 站長提供的遊戲內截圖）</strong>
+      <ul style="margin:6px 0 0 16px;line-height:1.9;">
+        <li>台版遊戲內「天網 → 強敵圖鑑 → 武裝討伐」頁籤，一個畫面就列出<b>勢力名＋「武裝討伐N·期名」＋英文副標＋各首領名</b>，詳情頁另有台詞與逸聞全文。台版目前 130／130，正好是陸版 142 隻扣掉第 19–21 期的 12 隻，與「台版開到第 18 期」一致。</li>
+        <li>機械轉換確實不夠：陸版「科斯蒂利亚」機轉是「科斯蒂利亞」，台版是「科斯蒂<b>莉</b>亞」。專有名詞需要真的對照來源。</li>
+        <li>截圖已可確認的台版用語：北陸殘黨、雷擊小隊、盧諾家族、鬣蜥傭兵團、晨星困獸、雷鳴漸起、過界、克羅蒂、熔渣、尖嘯、污泥、鐵索、吉賽爾、「逸聞」「解析等級」。</li>
+      </ul>
+    </div>
+    <div class="table-wrap">
+    <table class="impact-table">
+      <tr><th>本計畫受影響處</th><th>說明</th></tr>
+      <tr><td>C-4 批次補譯</td><td>選候選一要寫一支探測／匯入 infodata 的腳本；選候選二是站長截圖、在後台校對頁逐條填。兩者都寫進同一張對照表（決策八）。</td></tr>
+      <tr><td>上線時「待校」比例</td><td>候選一若真的收了敵人，第一次匯入後待校會大幅降低；否則上線初期多數專有名詞會帶「待校」標記。</td></tr>
+      <tr><td>工作量歸屬</td><td>候選一主要是開發者工作；候選二主要是站長的資料作業（觀察維護型尾巴）。</td></tr>
+    </table>
+    </div>
+    計畫裡的對照表結構、查表順序、待校標記、後台校對頁都與本題無關，可以先做；只有 C-4 等答案。
+  </div>
+</section>
+
+<!-- 現況盤點 -->
+<section class="section">
+  <div class="section-label red">Facts</div>
+  <div class="section-title">資料現況（摘自盤點報告）</div>
+
+  <div class="table-wrap">
+  <table class="impact-table">
+    <tr><th>期</th><th>難度數</th><th>每難度關數</th><th>難度如何做出來</th></tr>
+    <tr><td>1 晨星困獸</td><td>1（只有初試）</td><td>3</td><td>—</td></tr>
+    <tr><td>2–5</td><td>3（無煉獄）</td><td>4</td><td>每難度換一組模板，等級每檔 +1～2</td></tr>
+    <tr><td>6–19</td><td>4</td><td>4</td><td>每難度一組模板（同機體、武器、等級），掛不同強度的「難度強化 Buff」；部分最終關改由戰場事件掛</td></tr>
+    <tr><td>20–21</td><td>4</td><td>4</td><td>四難度同一組模板，難度改由「關卡全域 Buff」掛；小兵等級由戰場覆寫為 96</td></tr>
+  </table>
+  </div>
+  <ul style="margin:8px 0 0 16px;line-height:1.9;font-size:14px;color:var(--text-secondary);">
+    <li>每難度 4 關＝3 個一般關＋1 個最終關；最終關要先累積線索（初試 1／9、磨鍊 9／18、死境 18／27、煉獄 27／36）。同一關的四個難度是四個獨立戰場（戰場 ID 連號）。</li>
+    <li>敵人用到的 173 個主動、178 個被動技能說明<b>沒有 <code>{0}</code> 佔位</b>，數值已寫進文字可直接顯示；但同名技能會隨難度改數值（皮普「无畏前行Ⅰ」初試 3 格、死境 4 格），所以技能文字必須依難度存。</li>
+    <li>勝敗／回合上限、懸賞（1,010 次引用）、線索（690）、關卡特性、地形可直接用；難度強化、每週加成、增援事件要加工。</li>
+    <li><code>raid_crawl_out.json</code> 壓縮後約 1.29 MB（含大量內部欄位），首領 330 KB、開場單位 226 KB、增援 278 KB，不重複單位名 144 個。</li>
+    <li><b>強敵圖鑑（<code>SkynetStrongEnemy*</code>）</b>：142 筆，<code>StrongEnemyType</code> 1＝首領剿滅 59 筆（16 組）、2＝武裝討伐 83 筆（21 期，<b>正好一個關卡組一位首領</b>）。每期一個群組（<code>BattleLevelInfo</code>）帶勢力名與勢力徽章鍵（<code>Icon_logo_00xx</code>，站上 PLAN-059 已有這套徽章）；每位首領帶名字、台詞、初試戰場＋敵人模板，以及 3–4 篇逸聞（標題＋正文，依解析等級解鎖；第 1 期每人 3 篇）。另有 40 個「標籤」——不採用。</li>
+    <li>同一角色會在多期以不同身分出現（熔渣：第 2、10、13 期；曼恩：第 1、16、20 期），強敵圖鑑每次出場各算一筆，<b>逸聞也各自不同</b>（已實查：熔渣三期分別是「寒冷／背叛…」「新盟友／新工作…」「合作／同行…」）。</li>
+  </ul>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label red">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：匯入管線分四段——擷取 → 組裝＋dry-run → 寫入暫存 → 後台審核發布</strong>
+    <div class="flow">
+      <div class="flow-step"><b>① 擷取（Python）</b><code>scripts/extract-raid-dungeons.py</code><br>唯讀資料包 SQLite＋戰場 JSON → 中性 JSON（簡中、ID、結構、推算面板）</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><b>② 組裝（Node）</b><code>scripts/import-raid-dungeons.mjs</code><br>套譯名對照表、判定台版是否已開、組成三個集合的文件；預設 dry-run，出報告</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><b>③ 寫入暫存</b><code>--write</code><br>只寫 <code>raidDrafts</code>，不碰前台讀的集合</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step human"><b>④ 後台審核（站長）</b><code>/admin/raids</code><br>看差異、校譯名、看異常 → 按「發布」寫入三個公開集合並 bump 版本</div>
+    </div>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>擷取段沿用 Python</b>：直接移植已驗證的 <code>raid_crawl.py</code>／<code>calc_boss.py</code>／<code>db.py</code>；<code>E:\Mecharashi_Data\unitypy-venv</code> 已存在，<code>scripts/export-gacha-prefab.py</code> 是先例。以 <code>python -I</code> 執行，只讀資料包，拒絕把任何檔寫進資料包目錄。</li>
+      <li><b>組裝段用 Node</b>：要讀 Firestore 的對照表與時間線，<code>firebase-admin</code> 已在 Node 端。Node 入口必要時自己呼叫 ① 並檢查擷取結果是否過期，<b>站長只需要記一條指令</b>。</li>
+      <li><b>報告</b>沿用 <code>diff-game-dump.mjs</code> 的慣例：輸出 <code>_local-notes/&lt;YYYY-MM&gt;/&lt;YYYY-MM-DD&gt;_武裝討伐匯入.html</code>＋同名 <code>.json</code>；「下一步」是標 ✅／⬜ 的照抄清單，做完一步重跑會變 ✅ 而不是消失。</li>
+      <li><b><code>PARSER_VERSION</code></b>比照公告管線（PLAN-048）：解析規則一改就 +1，草稿記下版本，報告能分辨「資料變了」與「解析器變了」。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策二：資料放 Firestore 經 Worker 供應，不放 repo 靜態 JSON</strong><br>
+    曾考慮比照卡池動態（<code>src/data/gachaFx/</code>）把資料做成靜態 JSON 打進前端。不採用，理由：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>repo 與前端打包都是公開的，整包 JSON 等於繞過 PLAN-029 的反爬兩層（Worker 守門／zone 限流）與 <code>read: if isAdmin()</code>，也與開放問題 ① 的保守選項衝突。</li>
+      <li>譯名校對要能在後台改、改完立刻生效；靜態檔每改一字都要 commit＋部署。</li>
+      <li>與其餘遊戲資料走同一條版本 gate 三層快取（記憶體 → localStorage → Worker），不需要新機制。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：五個集合——三個公開、兩個後台限定</strong>
+    <div class="table-wrap">
+    <table class="impact-table">
+      <tr><th>集合</th><th>一份文件＝</th><th>文件 ID</th><th>筆數／估計大小</th><th>誰讀</th></tr>
+      <tr><td><code>raidSeasons</code></td><td>一期（期名、副標、難度清單、四個關卡組摘要、每週加成與規則、台版版本連結、公開旗標）</td><td><code>raid-21</code>（期 ID 兩位數）</td><td>21 筆／小</td><td>前台列表頁（Worker）</td></tr>
+      <tr><td><code>stages</code></td><td>一期的一個關卡組（含四難度變體、開場陣容、增援時程、懸賞線索、敵方 Buff 字典）</td><td><code>raid-21-g1</code></td><td>83 筆／預估 400 KB 上下</td><td>期詳情頁（Worker）</td></tr>
+      <tr><td><code>bosses</code></td><td>一個關卡組的一位首領（含四難度變體的面板與技能）</td><td><code>raid-21-g1-luke</code> 類（實作時定 slug 規則）</td><td>約 85 筆／預估 250 KB 上下</td><td>期詳情頁；日後傷害模擬的「打誰」目標</td></tr>
+      <tr><td><code>raidDrafts</code></td><td>一期的匯入草稿（三集合的待發布內容＋該期首領的逸聞全文與原文雜湊＋差異＋異常＋待校清單＋解析器版本）</td><td>同 <code>raidSeasons</code></td><td>21 筆</td><td>僅後台；腳本以 admin SDK 寫入</td></tr>
+      <tr><td><code>raidTerms</code></td><td>譯名對照表的一個分片（依種類：期／勢力／關卡／單位／技能／Buff／懸賞／線索／台詞／長文；逸聞正文量大，另成一片）</td><td>種類名</td><td>約 8 筆；每片 &lt; 1 MB</td><td>僅後台與匯入腳本</td></tr>
+    </table>
+    </div>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>stages</code>／<code>bosses</code> 沿用 PLAN-019 當初設計的名稱與型別，以 <code>category: '討伐'</code>（既有 <code>StageCategory.RAID</code>）區分；日後首領剿滅、定點突襲等首領類玩法可以共用。</li>
+      <li>Worker 只供整個集合（<code>/api/data/:collection</code>）；列表頁只載 <code>raidSeasons</code>，進期詳情頁才載 <code>stages</code>＋<code>bosses</code>。兩者合計預估與機師集合（1.3 MB）同量級以下；A-7 的報告會印出實際大小，<b>超過 1 MB 就回頭評估 Worker 單文件端點</b>，不在此預先實作。</li>
+      <li>只服務單一期的資料（敵方 Buff 字典）放在 <code>stages</code> 文件內，讓每份關卡文件能獨立渲染，代價是同期內少量重複。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：難度是型別上的第一級維度，技能文字與面板依難度分開存</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>enums.ts</code> 新增 <code>RaidDifficulty</code>，值用穩定代碼（<code>normal</code>／<code>hard</code>／<code>hell</code>／<code>d4</code>，對應遊戲列舉 1–4），<b>顯示名走對照表</b>——陸版是「初试／磨炼／死境／炼狱」，陸版自己還混用「磨练」，台版用語屬於開放問題 ② 的一部分。</li>
+      <li><code>Stage.raid.variants</code> 與 <code>Boss.variants</code> 皆為 <code>Partial&lt;Record&lt;RaidDifficulty, …&gt;&gt;</code>：第 1 期只有 <code>normal</code>、第 2–5 期沒有 <code>d4</code>，前台依實際有的鍵畫分頁。</li>
+      <li>每個變體存完整技能清單，不做跨難度去重；「此難度與初試不同」的提示由前端比對文字產生。</li>
+      <li>不只技能：懸賞條件也會隨難度變（第 21 期「小心翼翼」初試／磨鍊是護盾不超過 4 層、死境起 3 層），<b>線索詳情更是逐難度加長</b>（每升一級多一段），所以懸賞與線索也存在變體裡，前台可以標出「此難度新增的那一段」。</li>
+      <li>難度強化 Buff 的名稱是開發備註（<code>*#…</code>），不顯示名稱，只把屬性值翻成「HP +29.7%、裝甲 +14.2%…」這類人讀文字（大型首領另一組、第 6–7 期舊 ID 也要對到）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：「增援時程」由戰場觸發器的結構化條件推出，不用企劃備註</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>2,124 次召喚全可解析，但 <code>raid_crawl_out.json</code> 的 <code>trigger</code> 欄位其實是企劃備註（<code>m_desc</code>）：574 筆是空的，其餘像「3回合增援」「增援预警召唤」「招副T2阶段」，<b>不能當資料、也不能顯示</b>。</li>
+      <li>回合數要從觸發器的條件（<code>BattleTriggerConditionType</code>）與動作（<code>SummonAtSceneObject</code>／<code>Summon</code>）推：回合條件 → 「第 N 回合」；其他條件（首領軀幹耐久 ≤ 75%、某單位被擊破…）→ 依對照表轉成中文條件句。</li>
+      <li>條件／動作型別 → 中文模板的對照放 <code>scripts/lib/raidTriggerTypes.json</code>（人可維護）；<b>對不到的型別在報告列成 ⬜</b>，前台顯示「特定條件觸發」而不是空白或猜測。</li>
+      <li>同一時點、同一模板的單位合併成「×N」；屬於成就判定的觸發器不進增援時程。</li>
+      <li><b>預覽時從第 21 期第 1 關（戰場 8538）實查到的三種形態</b>，型別要都能表達：
+        <ol style="margin:4px 0 0 18px;">
+          <li>回合條件：<code>Round</code> 1／2／3 是「增援預警」、2／3／4 才是召喚——<b>預警要另外標</b>，玩家在遊戲裡看得到預警標記。</li>
+          <li>戰場狀態條件：「招副T」是回合結束時檢查黑板變數（護衛被擊破後設旗標）才重新召喚，要翻成「自律戴亞斯被擊破 → 該回合結束時於機兵站重新部署」；黑板變數的語意只能靠同一戰場其他觸發器反推，對不到就退回「特定條件觸發」。</li>
+          <li>每回合固定事件：「每回合上護盾」無條件、每回合開始對首領加層（初試／磨鍊 1 層、死境／煉獄 2 層），以一條「每回合開始：…」呈現，不塞進每一格回合。</li>
+        </ol>
+      </li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：首領面板一律標「推算值」；數值取戰場 ref=BOSS 的實際模板，BossID 只供顯示</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>取哪個模板</b>：307 關中有 14 關的 <code>BossID</code> 指向別的難度的同名首領，所以 <code>BossID</code> 只拿來顯示名字與頭像；數值一律用戰場 JSON 裡 <code>m_refName=BOSS</code> 那個單位的 <code>m_configId</code>。第 11、12 期最終關的首領 <code>m_actorType=1</code>，也要當敵人模板解析。第 20–21 期戰場以 <code>m_absoluteLevel</code> 覆寫等級，推算要用覆寫後的等級。</li>
+      <li><b>推算內容</b>：部位耐久與裝甲、武器攻擊、機師屬性（移植 <code>calc_boss.py</code>），同一乘區先相加再乘；結果存整數，<code>BossVariant.estimated: true</code>，並附「未計入」清單（天賦條件減傷、疊層護盾、機師適性等戰鬥中才成立的效果）。</li>
+      <li><b>回歸基準</b>：筆記裡卢克（第 21 期）與皮普（第 9 期）的 4 難度數字寫進 <code>scripts/lib/raidRegression.json</code>，每次匯入都比對，不符就在報告標 ⚠——之後遊戲內實測對上，再把基準換成實測值。</li>
+      <li><b>兩筆疑似陸版設定錯誤</b>（第 10 期磨鍊 <code>110202</code>、第 13 期磨鍊 <code>113203</code>：戰場實際放的是初試模板，等於磨鍊沒強化）：
+        <ol style="margin:4px 0 0 18px;">
+          <li>前台照戰場實際資料呈現（數字會與初試相同），首領卡加註「陸版資料中此關磨鍊未套用難度強化，台版是否相同未經實測」。不自行「修正」成推測的強化值——補值等於編造。</li>
+          <li>記在 <code>scripts/lib/raidAnomalies.json</code>（關卡 ID、現象、處置、驗證狀態），站長遊戲內確認後更新狀態，前台註記跟著變。</li>
+          <li>匯入腳本另有<b>通用偵測</b>：「BossID 與實際模板不同」分成「只是指向他難度同名首領（顯示用，無害）」與「高難度實際用了初試模板且無其他強化來源（疑似未強化）」兩類，後者一律進報告 ⚠，讓之後的新期也抓得到，不靠這兩筆寫死。</li>
+        </ol>
+      </li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：文字標籤轉成站上可渲染的格式，開發備註一律不上站</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><code>&lt;buf ID=n&gt;[名稱]&lt;/buf&gt;</code>（500 個，其中 42 個沒附名稱要用 Buff 表補）→ 轉成可點的 Buff 標記，說明來自關卡文件內的敵方 Buff 字典；<code>&lt;terrian&gt;</code>、<code>&lt;range&gt;</code> 轉成文字，<code>&lt;color&gt;</code> 只保留語意上的強調。</li>
+      <li>敵方 Buff 不在站上 <code>buffs</code> 集合（那是玩家側官方 ID），v1 不寫 <code>descriptionRefs</code>、<b>不加進 <code>entityRefs</code> 的 SPECS</b>——避免牽動 <code>cascadeDelete</code> 與 <code>useRefScanData</code>（新集合寫進 SPECS 會在規則未部署時弄壞既有的後台刪除）。在 <code>boss.ts</code> 註解寫明「日後若要引用站上實體，必須先補 SPECS」，延續 PLAN-019 留下的警告。</li>
+      <li>不顯示：<code>*#</code> 開頭的開發備註、<code>HiddenAchievementIds</code>、戰場內部代號（<code>DescStrKey</code> 的「Raid副本11-1简单」之類）、觸發器 <code>m_desc</code>。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策八：譯名對照表存 Firestore（<code>raidTerms</code>），以簡中原文為鍵；校對結果不會被重新匯入洗掉</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>查表順序</b>：① 對照表裡「已校」的條目 → ② 開放問題 ② 選定的來源（infodata 或截圖對照，結果同樣寫進對照表）→ ③ 簡→繁 機械轉換，標「待校」。長文（技能說明、線索詳情）走 ③，但會先把文中出現的已知專有名詞換成台版譯名再轉。</li>
+      <li><b>鍵是簡中原文</b>，不是單一欄位：同一個「卢克」出現在 4 個難度、多個關卡，校一次全站生效。條目欄位：種類、簡中原文、台版譯名、狀態（已校／待校）、來源（infodata／截圖／機轉／手動）、首次出現的期。</li>
+      <li><b>為什麼不用 repo JSON</b>：校對發生在後台審核頁，存 Firestore 才能在頁上改完立刻重算預覽；腳本以 admin SDK 讀同一份。這也避開了舊爬蟲「整筆覆寫洗掉人工欄位」的老坑（<code>PilotTalent.manual</code> 那次）——人工校對只存在對照表，草稿與發布文件都是對照表套出來的結果。</li>
+      <li><b>機械轉換工具</b>候選 OpenCC（台灣用語 <code>s2twp</code>，Node 端 <code>opencc-js</code>），實作時確認授權與包體後定案；只在匯入端使用，不進前端打包。</li>
+      <li><b>前台標示</b>：文件帶 <code>i18nPending</code>（待校欄位清單），前台在對應名稱旁加小標「待校」，頁尾說明譯名尚在校對。</li>
+      <li><b>可自動帶入的既有台版譯名</b>（不必等 ②）：期名（時間線 <code>armamentRaids[].name</code>）、獎勵武器／背包名、與玩家機體同名的敵方機體（站上 <code>mechs</code>）、與可抽機師同名的首領（站上 <code>pilots</code>，例：第 15 期的摩根娜）。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策九：哪幾期上站、標什麼狀態——依台版時間線的 <code>twDate</code> 判定</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>先以期名把資料包的期對上時間線的 <code>armamentRaids</code>，該版本半期的 <code>twDate</code> 決定狀態：<b>已過 → 台版已開放；未到 → 台版預計開放</b>（例：2026-10-24 時第 15–18 期已開放，第 19–21 期是推估日期）。</li>
+      <li>「預計開放」的期也產草稿、可上站，前台標「台版預計 YYYY/MM/DD」（虛線框），與版本時間線本來就公開推估版本的做法一致；站長不想提前公開時用後台公開開關擋（D-3）。</li>
+      <li>台版時間線只從 v2.8 起有資料（第 15 期「無名之輩」起），v1.0–v2.7 是空白佔位。對不上時間線、但期號小於已對上的最小期號者，視為台版早已開放（兩邊開放順序相同）。</li>
+      <li>連時間線都還沒有的期（陸版先開、台版尚未公告）只進報告「台版時間線未收錄」一欄，不產草稿；時間線補上後重跑就會出現。</li>
+      <li>期名對不上（譯名不同）時不猜：報告列 ⬜「請在對照表補這一期的台版期名」。</li>
+      <li><code>raidSeasons</code> 存台版版本號與時間線連結，版本情報的武裝討伐欄位可直接連到 <code>/raids/raid-21</code>。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十：重裝征伐（RaidActivity，台版 v3.5）明確排除在本計畫外</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>結構不同：活動 → 4 個難度群組、各 3／4／5／6 關＋1 最終關；有信標解鎖數、「終局協議」部署數、只有初試有 12 台支援機，與武裝討伐「期 → 4 難度 → 固定 4 關」不能共用一套型別而不扭曲。</li>
+      <li>易混淆處要在型別註解寫清楚，避免日後誤建：「重装征伐·极境」是榮譽章名，第 4 難度仍叫「炼狱」；<code>EnhancementLevelReplaceId 18</code> 是<b>玩家方</b>等級補正（拉到 Lv70、科研全解），不是敵人難度來源。</li>
+      <li>匯入腳本遇到時間線上的「重裝征伐」條目，報告標「略過：RaidActivity，不在 PLAN-064」，不算未對上。</li>
+      <li>型別預留 <code>Stage.raid.kind: 'dungeon'</code>，日後另開計畫時加 <code>'activity'</code> 分支；22 關已證實可串，屆時可複用本計畫的擷取、譯名與後台。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十一：前台路由用 <code>/raids</code>、<code>/raids/:seasonId</code>；後台放 <code>/admin/raids</code></strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>敵人資訊是圖鑑型內容，與 <code>/pilots</code>、<code>/mechs</code> 同層最好分享、最利於收錄。代價是新頂層路徑：<b>必須到 Cloudflare 把 <code>/raids</code> 加進 SPA fallback 白名單</b>（CLAUDE.md §3），build 與 test 都抓不到，列為站長任務 F-3 並附 curl 複驗。</li>
+      <li>若站長不想動 CF 規則，替代方案是 <code>/guides/raids</code>（沿用既有前綴），審閱時一句話即可改。</li>
+      <li>後台留在 <code>/admin</code> 底下，不另開頂層路徑。</li>
+      <li><code>src/lib/seo.ts</code>：<code>PAGE_TITLES</code> 補兩條、sitemap 歸屬比照圖鑑詳情頁；詳情頁以 <code>usePageTitle()</code> 換成期名。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十二：例行流程要能不靠 AI——「新一期討伐」一條指令＋照抄清單</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>陸版改版、重新擷取資料包後（工具會拒絕覆蓋舊 SQLite，輸出到新目錄），站長跑 <code>node scripts/import-raid-dungeons.mjs</code>（預設取最新資料包），看報告「下一步」：補譯名 → <code>--write</code> → 後台審核發布 → 重跑確認全 ✅。</li>
+      <li>流程寫進 <code>public/images/game/README.md</code> 的改版例行清單，並在 CLAUDE.md 6.5 補一句（現在寫「唯一仍在運作的擷取是活動」）。</li>
+      <li>只有遊戲改了規則（新觸發器型別、新屬性、新結構）才需要開發者：這些都會在報告以 ⬜／⚠ 浮出來，而不是默默產出錯資料。</li>
+      <li>審核佇列是站長的：腳本與開發者不代為發布、不代為把「待校」改成「已校」。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十三：強敵圖鑑當首領的「人物層」，戰鬥資料當「關卡層」，兩層用戰場＋模板接起來</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>人物層（強敵圖鑑，type 2 的 83 筆）</b>：勢力名、勢力徽章、首領名、台詞、逸聞。這是玩家在遊戲裡認得的樣子，也是台版譯名最集中的地方。</li>
+      <li><b>關卡層（RaidDungeon）</b>：各難度的面板、技能、陣容、增援、懸賞。</li>
+      <li><b>對接</b>：圖鑑條目的 <code>StrongEnemyList</code> 指向初試戰場＋敵人模板，對上本計畫的關卡組；<code>bosses</code> 文件記 <code>atlasId</code>。已發現 1 筆對不齊（第 14 期梅利圖斯指到第 3 組的磨鍊戰場，而它其實是第 4 組首領），所以匯入時以「戰場、模板、名字」三者交叉比對，不一致就列 ⚠，不靠單一欄位。</li>
+      <li><b>勢力</b>存在 <code>raidSeasons</code>（每期一個勢力：北陸殘黨、雷擊小隊、盧諾家族…），徽章鍵沿用 PLAN-059 的 <code>Icon_logo_*</code> 徽章庫，缺的圖列 ⬜ 交圖片匯入流程補。</li>
+      <li><b>同一角色多次出場不合併</b>：圖鑑本身就是每次出場一筆、逸聞各自不同；前台只在首領卡加「也出現在：第 10、13 期」的互連。</li>
+      <li><b>首領剿滅（type 1 的 59 筆）</b>同一套表，本計畫擷取時略過，但解析器寫成通用的，留給日後與元件掉落合併時使用。</li>
+      <li><b>標籤（<code>SkynetStrongEnemyLabelInfo</code>）不擷取</b>；解析等級、擊殺次數這類遊戲進度數值也不上站。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>決策十四：逸聞歸故事館——本計畫負責「擷取＋翻譯＋審核」，故事館子計畫負責「呈現＋協作校對」</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>本計畫做的</b>：逸聞（武裝討伐 83 位、約 330 篇，每篇標題＋正文）隨同期的草稿進 <code>raidDrafts</code>，與其他文字走同一張譯名對照表與機械轉換，在 <code>/admin/raids</code> 可預覽、可看待校。討伐頁的首領卡只放<b>台詞</b>與一個「逸聞 N 篇 → 故事館」入口。</li>
+      <li><b>交給 PLAN-042 新子計畫做的</b>：故事館的集合（暫名 <code>enemyLore</code>，比照 <code>pilotLore</code>／<code>mechLore</code>，含 <code>rev</code> 衝突檢查）、強敵在故事館的呈現方式（第三館或卷宗頁，由子計畫決定）、LORE_EDITOR 協作校對、從草稿發布逸聞。</li>
+      <li><b>為什麼這樣切</b>：逸聞是長文敘事，最需要人校對，而故事館已經有協作編輯角色與編輯台（PLAN-042-H）；擷取管線則與討伐資料同源、同一張對照表，拆開做會重寫兩次。</li>
+      <li><b>已校的篇章不被重新匯入覆蓋</b>：協作者校對過的逸聞加「已校」鎖；之後陸版原文若變動，報告列 ⚠「原文已變，此篇已人工校對，請人工比對」，不自動蓋掉（記取舊爬蟲洗掉 <code>PilotTalent.manual</code> 的教訓）。這條規則在子計畫實作，本計畫的草稿格式先預留「原文雜湊」欄位讓它比得出來。</li>
+      <li><b>首領與可抽機師同名者</b>（以暫譯名比對站上機師，至少 11 位：吉賽爾、索妮婭、喬恩、皮普、摩根娜、阿列娜、貝爾莎、凱倫、加雷斯、泰歐、葛里高利）：機師故事館頁可加「強敵檔案」連結，細節由子計畫決定。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 型別草案 -->
+<section class="section">
+  <div class="section-label red">Types</div>
+  <div class="section-title">型別草案（沿用 boss.ts，實作時可微調欄位名）</div>
+
+<div class="code-block"><span class="cm">// src/types/enums.ts（新增）</span>
+<span class="kw">export const</span> <span class="ty">RaidDifficulty</span> = { NORMAL: <span class="st">'normal'</span>, HARD: <span class="st">'hard'</span>, HELL: <span class="st">'hell'</span>, D4: <span class="st">'d4'</span> } <span class="kw">as const</span>
+<span class="cm">// 顯示名走譯名對照表；遊戲列舉 Simple=1 / Hard=2 / Hell=3 / Difficult4=4</span>
+
+<span class="cm">// src/types/boss.ts（擴充既有 Boss / BossSkill / Stage，新增其餘）</span>
+<span class="kw">interface</span> <span class="ty">BossSkill</span> { …既有; kind?: <span class="st">'main'</span> | <span class="st">'passive'</span> | <span class="st">'talent'</span> }
+
+<span class="kw">interface</span> <span class="ty">BossVariant</span> {
+  templateId: <span class="ty">number</span>          <span class="cm">// 戰場 ref=BOSS 的實際 TU 模板（不是 BossID）</span>
+  level: <span class="ty">number</span>
+  mechName?: <span class="ty">string</span>
+  weapon?: { name: <span class="ty">string</span>; level: <span class="ty">number</span>; attack?: <span class="ty">number</span> }
+  parts?: <span class="ty">Boss</span>[<span class="st">'parts'</span>]        <span class="cm">// 推算值</span>
+  pilotStats?: <span class="ty">Record</span>&lt;<span class="ty">string</span>, <span class="ty">number</span>&gt;
+  skills: <span class="ty">BossSkill</span>[]          <span class="cm">// 依難度完整存放</span>
+  difficultyBuffText?: <span class="ty">string</span>[] <span class="cm">// 「HP +97.6%」…</span>
+  notCounted?: <span class="ty">string</span>[]         <span class="cm">// 未計入面板的條件效果</span>
+  estimated: <span class="kw">true</span>
+  anomaly?: <span class="ty">string</span>              <span class="cm">// 例：陸版此關磨鍊未套用難度強化</span>
+}
+<span class="kw">interface</span> <span class="ty">Boss</span> { …既有; seasonId?: <span class="ty">string</span>; variants?: <span class="ty">Partial</span>&lt;<span class="ty">Record</span>&lt;<span class="ty">RaidDifficulty</span>, <span class="ty">BossVariant</span>&gt;&gt;
+  atlasId?: <span class="ty">number</span>          <span class="cm">// 強敵圖鑑條目（人物層，決策十三）</span>
+  quote?: <span class="ty">string</span>            <span class="cm">// 圖鑑台詞</span>
+  anecdoteCount?: <span class="ty">number</span>    <span class="cm">// 逸聞篇數；全文在故事館（決策十四）</span>
+  alsoIn?: <span class="ty">string</span>[]          <span class="cm">// 同一角色其他期的出場（只做互連，不合併）</span>
+}
+
+<span class="kw">interface</span> <span class="ty">Stage</span> { …既有; raid?: <span class="ty">RaidStageInfo</span> }
+<span class="kw">interface</span> <span class="ty">RaidStageInfo</span> {
+  kind: <span class="st">'dungeon'</span>                <span class="cm">// 預留 'activity'（重裝征伐，另案）</span>
+  seasonId: <span class="ty">string</span>; group: <span class="nm">1</span> | <span class="nm">2</span> | <span class="nm">3</span> | <span class="nm">4</span>; order: <span class="ty">number</span>; isFinal: <span class="ty">boolean</span>
+  variants: <span class="ty">Partial</span>&lt;<span class="ty">Record</span>&lt;<span class="ty">RaidDifficulty</span>, <span class="ty">RaidStageVariant</span>&gt;&gt;
+  buffDict: <span class="ty">Record</span>&lt;<span class="ty">number</span>, { name: <span class="ty">string</span>; desc: <span class="ty">string</span> }&gt;  <span class="cm">// 敵方 Buff 字典</span>
+}
+<span class="kw">interface</span> <span class="ty">RaidStageVariant</span> {
+  levelId: <span class="ty">number</span>; battleId: <span class="ty">number</span>; battleName: <span class="ty">string</span>
+  winText: <span class="ty">string</span>; loseText: <span class="ty">string</span>; turnLimit: <span class="ty">number</span>
+  bossIds: <span class="ty">string</span>[]               <span class="cm">// → bosses</span>
+  features?: <span class="ty">string</span>[]              <span class="cm">// 關卡特性（BufDescPassiveSkillID）</span>
+  terrain?: <span class="ty">string</span>[]
+  difficultyBuffText?: <span class="ty">string</span>[]
+  units: <span class="ty">RaidUnit</span>[]                 <span class="cm">// 開場陣容（首領以外）</span>
+  reinforcements: <span class="ty">RaidReinforcement</span>[]  <span class="cm">// 增援時程（新）</span>
+  bounties: { name: <span class="ty">string</span>; desc: <span class="ty">string</span>; clue?: { name: <span class="ty">string</span>; desc: <span class="ty">string</span>; details: <span class="ty">string</span> } }[]
+  clueGate?: { show: <span class="ty">number</span>; unlock: <span class="ty">number</span> }   <span class="cm">// 最終關</span>
+}
+<span class="kw">interface</span> <span class="ty">RaidUnit</span> { templateId: <span class="ty">number</span>; name: <span class="ty">string</span>; mechName?: <span class="ty">string</span>; level: <span class="ty">number</span>; count: <span class="ty">number</span>; kind: <span class="st">'unit'</span> | <span class="st">'vehicle'</span> }
+<span class="kw">interface</span> <span class="ty">RaidReinforcement</span> {
+  when: { kind: <span class="st">'turn'</span>; turn: <span class="ty">number</span>; timing: <span class="st">'start'</span> | <span class="st">'end'</span> }
+      | { kind: <span class="st">'condition'</span>; text: <span class="ty">string</span> }   <span class="cm">// 「首領軀幹耐久 ≤ 75%」；對不到 →「特定條件觸發」</span>
+  units: <span class="ty">RaidUnit</span>[]
+}
+
+<span class="cm">// raidSeasons/{raid-21}</span>
+<span class="kw">interface</span> <span class="ty">RaidSeason</span> {
+  id: <span class="ty">string</span>; seq: <span class="ty">number</span>; name: <span class="ty">string</span>; nameCn: <span class="ty">string</span>; subtitleEn?: <span class="ty">string</span>
+  faction: { name: <span class="ty">string</span>; emblemKey?: <span class="ty">string</span> }   <span class="cm">// 強敵圖鑑群組：北陸殘黨／Icon_logo_0020…</span>
+  difficulties: <span class="ty">RaidDifficulty</span>[]; cnOpenDate?: <span class="ty">string</span>; twVersion?: <span class="ty">string</span>; twStatus: <span class="st">'open'</span> | <span class="st">'planned'</span>
+  groups: { stageId: <span class="ty">string</span>; name: <span class="ty">string</span>; isFinal: <span class="ty">boolean</span>; bossNames: <span class="ty">string</span>[]; portrait?: <span class="ty">string</span> }[]
+  weekBuffs: { week: <span class="ty">number</span>; name: <span class="ty">string</span>; text: <span class="ty">string</span>; difficulties: <span class="ty">RaidDifficulty</span>[] }[]
+  published: <span class="ty">boolean</span>; parserVersion: <span class="ty">number</span>; sourceBuild: <span class="ty">string</span>; i18nPending?: <span class="ty">string</span>[]
+}</div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label red">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>前台頁面（在範圍內）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b><code>/raids</code> 期列表</b>：21 期由新到舊，比照遊戲內強敵圖鑑的分組方式——<b>勢力徽章＋勢力名｜武裝討伐 N·期名＋英文副標</b>，下面一排首領（最終關首領放大強調），再加台版版本與狀態、獎勵武器／背包（取自時間線）；未發布的期不出現。</li>
+      <li><b><code>/raids/:seasonId</code> 期詳情</b>：難度分頁（只畫實際有的難度）→ 四個關卡組（3 一般＋最終，最終關標出線索門檻）→ 每關：
+        勝敗與回合上限、關卡特性、地形、難度強化文字、首領卡、開場陣容、增援時程（「第 2 回合：老練傭兵 ×2」）、懸賞與線索（線索詳情預設收合）。</li>
+      <li><b>首領卡</b>：頭像、機體、等級、武器、推算面板（徽章「推算值」）、主動／被動／天賦技能（依目前難度；與初試不同處加提示）、「未計入」清單、異常註記。
+        <br><span style="font-size:13px;color:var(--text-dim);">頭像來源未定：預覽時查到 <code>PilotTemplateInfo</code>／<code>PilotInfo</code> 都沒有圖檔鍵（<code>Icon</code> 為空）。首領與可抽機師同名者（至少 11 位，見決策十四）可沿用站上機師圖；其餘先用佔位，來源列為 E-4 的待查項。遊戲內強敵圖鑑對 130 位首領都有半身像（最終關首領另有全身像），所以圖一定在客戶端裡，只是設定表沒有直接的鍵；依先前整理的官方圖庫命名，<code>Pilot_13XXX</code> 短碼是 NPC／關卡首領素材，是第一個要查的方向。</span>
+      </li>
+      <li><b>台詞與逸聞入口</b>：首領卡顯示強敵圖鑑的台詞（例：吉賽爾「凡所有遇見都是注定……僅讓它們穿過你的身軀。」），以及「逸聞 N 篇 → 故事館」入口（故事館子計畫上線前先不顯示入口）。</li>
+      <li><b>期層級資訊</b>：每週加成「支援協議 Ⅰ～Ⅲ」（只對初試、磨鍊有效）與每週規則（每週可選 3 個關卡組、最終關需本週完成同難度其他關等）。</li>
+      <li><b>標示</b>：頁首來源說明（依陸版資料、措辭依 ①）、推算值徽章、「待校」小標。手機版排版。</li>
+      <li><b>入口</b>：導覽列／工具頁入口；版本情報的武裝討伐欄位連到對應期。</li>
+    </ul>
+  </div>
+
+  <div class="decision-block">
+    <strong>後台審核流程（在範圍內）：<code>/admin/raids</code></strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><b>草稿列表</b>：每期一列，狀態（新期／有差異／與已發布相同）、解析器版本、待校數、異常數。</li>
+      <li><b>差異檢視</b>：草稿 vs 已發布，逐關列出變動（數值、文字、增援），讓「陸版改了什麼」一眼可見。</li>
+      <li><b>譯名校對</b>：列出本期待校條目（依種類分組），填台版譯名即寫回 <code>raidTerms</code> 並重算預覽；可批次標「已校」。</li>
+      <li><b>異常</b>：顯示 <code>raidAnomalies.json</code> 與通用偵測的結果，站長可填驗證結論（由腳本下次匯入時寫回檔案，或後台另存，實作時定）。</li>
+      <li><b>發布</b>：把草稿寫入 <code>raidSeasons</code>／<code>stages</code>／<code>bosses</code>，<code>bumpDataVersion</code> 三個集合，記一筆發布紀錄（摘要＋解析器版本，不存全文）；<b>公開開關</b>可讓某期先發布但不在前台列出。</li>
+      <li>權限只開 ADMIN（不放行 LORE_EDITOR）。</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>傷害模擬（報告 8.2 第 2、4 項）；本計畫產出的 <code>bosses</code> 之後可當它的目標，但介面不在這裡做。</li>
+      <li>重裝征伐（RaidActivity）——見決策十，另開計畫。</li>
+      <li>首領剿滅（強敵圖鑑 type 1 的 59 位）與定點突襲／暗域閃擊／危境重構等其他首領類玩法——見下方「備選與後續」。</li>
+      <li>強敵圖鑑的標籤（最熱標籤、我的標籤）、解析等級與擊殺次數等遊戲進度數值。</li>
+      <li>逸聞在故事館的呈現、協作校對與發布——交給 PLAN-042 新子計畫（決策十四）；本計畫只做到草稿與審核預覽。</li>
+      <li>強敵的劇情故事重現——列為備選。</li>
+      <li>敵方機甲圖片（在 <code>_reserve</code>，未上站）；只用既有 NPC 圖庫的頭像。</li>
+      <li>社群連結預覽（OG）：Worker 目前只處理 <code>/pilots</code>、<code>/mechs</code>、<code>/weapons</code>，<code>/raids</code> 先用預設卡。</li>
+      <li>修正既有〈傷害公式〉文件——跟開放問題 ① 綁在一起，屬傷害模擬範圍。</li>
+      <li>條件式 Buff、疊層 Buff 的數值化（只列成說明文字）。</li>
+      <li>打法攻略：仍歸 PLAN-010 攻略 CMS，本頁只呈現資料。</li>
+    </ul>
+  </div>
+
+  <div class="info-block">
+    <strong>備選與後續（不在本計畫，先記下接點）</strong>
+    <div class="table-wrap">
+    <table class="impact-table">
+      <tr><th>項目</th><th>性質</th><th>與本計畫的接點</th></tr>
+      <tr><td><b>強敵在故事館的呈現</b>（逸聞、台詞、勢力）</td><td>後續：PLAN-042 新子計畫</td><td>本計畫的草稿已含逸聞全文與譯名；子計畫建 <code>enemyLore</code>、決定呈現與協作校對（決策十四）</td></tr>
+      <tr><td><b>首領剿滅＋元件掉落合併</b></td><td>後續：另開計畫，時間未定</td><td>強敵圖鑑 type 1（59 位、16 組）同一套表；擷取器寫成通用、<code>bosses</code>／<code>stages</code> 型別可直接沿用。現有 <code>/guides/component-drops</code> 與 <code>src/data/bossDrops.ts</code> 是合併的目標；屆時 <code>StageCategory</code> 要補「首領剿滅」</td></tr>
+      <tr><td><b>強敵劇情故事重現</b></td><td>備選：等站長解包</td><td>依賴客戶端劇情資源（台版 bundle 仍為 UnityCN 加密）；與故事館子計畫共用人物與勢力資料</td></tr>
+      <tr><td><b>重裝征伐</b>（RaidActivity）</td><td>後續：另開計畫</td><td>見決策十</td></tr>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- docs 同步 -->
+<section class="section">
+  <div class="section-label red">Docs Sync</div>
+  <div class="section-title">要同步的文件（CLAUDE.md 規則 2）</div>
+
+  <div class="table-wrap">
+  <table class="impact-table">
+    <tr><th>變更來源</th><th>要同步的文件</th><th>備註</th></tr>
+    <tr><td><code>src/types/boss.ts</code>（經 <code>types/index.ts</code> barrel）新增 <code>BossVariant</code>／<code>RaidStageInfo</code>／<code>RaidStageVariant</code>／<code>RaidReinforcement</code>／<code>RaidSeason</code></td>
+        <td><code>docs/02_技術文件/02_資料模型/</code> <b>新增</b> <code>bosses_stages.html</code></td><td>目前沒有 boss／stage 的資料模型頁</td></tr>
+    <tr><td><code>src/types/enums.ts</code> 新增 <code>RaidDifficulty</code></td>
+        <td><code>docs/02_技術文件/04_Firebase/資料庫設計文件/enums.html</code></td><td></td></tr>
+    <tr><td><code>src/lib/api/raids.ts</code>（新）＋ <code>firestoreApi.ts</code> barrel</td>
+        <td><code>docs/02_技術文件/04_Firebase/資料庫設計文件/</code> <b>新增</b> <code>raids.html</code>（五個集合）；更新 <code>Firebase資料庫設計文件.html</code> 索引、<code>security-rules.html</code></td><td></td></tr>
+    <tr><td>新頁面 <code>/raids</code>、<code>/raids/:seasonId</code></td>
+        <td><code>docs/03_頁面規劃/</code> <b>新增</b> <code>14_武裝討伐/index.html</code>；更新 <code>03_頁面規劃/index.html</code></td><td></td></tr>
+    <tr><td>後台 <code>/admin/raids</code></td><td><code>docs/03_頁面規劃/10_管理後台/index.html</code></td><td></td></tr>
+    <tr><td>新元件資料夾 <code>src/components/raids/</code></td><td><code>docs/02_技術文件/01_架構設計/系統架構.html</code> 分類表</td><td>CLAUDE.md 6.6：扁平層不放檔案</td></tr>
+    <tr><td>新 docs 頁是否上 <code>/documents</code></td><td><code>scripts/copy-docs.mjs</code> 白名單</td><td>依開放問題 ①</td></tr>
+    <tr><td>例行流程</td><td><code>public/images/game/README.md</code>、<code>CLAUDE.md</code> 6.5</td><td>決策十二</td></tr>
+    <tr><td>PLAN 進度</td><td>本計畫進度表；PLAN-019 總綱／PLAN-010 補一句「Layer 3 型別由 PLAN-064 復用」；開故事館子計畫時更新 PLAN-042 總綱的子計畫表</td><td></td></tr>
+    <tr><td>commit 時</td><td><code>src/data/siteChangelog/</code></td><td>規則 1，前台上線那次記 feat</td></tr>
+  </table>
+  </div>
+</section>
+
+<!-- 風險 -->
+<section class="section">
+  <div class="section-label red">Risks</div>
+  <div class="section-title">風險與對策</div>
+
+  <div class="table-wrap">
+  <table class="impact-table">
+    <tr><th>風險</th><th>程度</th><th>對策</th></tr>
+    <tr><td>陸版 ≠ 台版（數值平衡、回合數、譯名）</td><td><span class="badge-med">中</span></td><td>頁首標「依陸版資料」、面板標「推算值」；譯名走對照表、對不到標「待校」；站長遊戲內抽驗（F-5）</td></tr>
+    <tr><td>新集合接線漏一處（九處連動）</td><td><span class="badge-high">高</span></td><td>B-2 逐項列 <code>collectionKeys</code>、Worker <code>ARRAY_COLLECTIONS</code>、rules、<code>bump-data-version.mjs</code> 的 <code>KNOWN_KEYS</code>、<code>GameDataContext</code>（state＋switch＋型別）、測試 helper；不進 SPECS。<b>rules 與 Worker 要在 push 前部署</b>，否則正式站 404、本機全綠</td></tr>
+    <tr><td>新頂層路徑忘了補 CF 白名單</td><td><span class="badge-med">中</span></td><td>F-3 列為站長任務，附 curl 複驗（新路徑 200、<code>/notarealpath</code> 維持 404）</td></tr>
+    <tr><td>集合過大拖慢詳情頁或擠爆 localStorage</td><td><span class="badge-low">低</span></td><td>A-7 報告印出各集合大小；超過 1 MB 再評估 Worker 單文件端點</td></tr>
+    <tr><td>觸發器型別出現新種類，增援時程錯或漏</td><td><span class="badge-med">中</span></td><td>對不到一律 ⬜＋前台「特定條件觸發」，不猜</td></tr>
+    <tr><td>人工校對被重新匯入洗掉</td><td><span class="badge-med">中</span></td><td>人工資料只存在 <code>raidTerms</code>／<code>raidAnomalies.json</code>；發布文件一律由腳本產生（決策八）</td></tr>
+    <tr><td>強敵圖鑑與關卡組對不齊</td><td><span class="badge-low">低</span></td><td>以戰場、模板、名字三者交叉比對，不一致列 ⚠（目前已知 1 筆：第 14 期梅利圖斯）</td></tr>
+    <tr><td>逸聞校對量大（約 330 篇長文）</td><td><span class="badge-med">中</span></td><td>上線先標「待校」；校對交給故事館協作編輯（PLAN-042-H 的角色），已校篇章加鎖不被覆蓋</td></tr>
+    <tr><td>首領頭像沒有來源（資料包機師模板無圖檔鍵）</td><td><span class="badge-low">低</span></td><td>同名可抽機師沿用站上圖，其餘佔位；E-4 實作前再查戰鬥 HUD／模型表是否有可用鍵</td></tr>
+    <tr><td>正式部署被 auto mode 擋</td><td><span class="badge-low">低</span></td><td>rules／Worker／CF 部署交站長，開發端先把本機與唯讀驗證做完</td></tr>
+  </table>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label red">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-064 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-019_實體引用與模擬基礎_總綱/計畫書.html">
+      <div class="doc-tag">Origin</div>
+      <h4>◆ PLAN-019 總綱</h4>
+      <p>Layer 3 bosses／stages 原始設計與 2026-06-28 descope 紀錄</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042_故事館_總綱/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-042 故事館總綱</h4>
+      <p>強敵逸聞的呈現與協作校對將另開子計畫（決策十四）</p>
+    </a>
+    <a class="doc-item" href="../PLAN-010_攻略系統/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-010 攻略系統</h4>
+      <p>首領／關卡的打法攻略仍由攻略 CMS 承接</p>
+    </a>
+  </div>
+  <p style="font-size:13px;color:var(--text-dim);margin-top:12px;">
+    盤點報告與附件在本機 <code>_local-notes/2026-10/</code>（不進版控、不發布），見「計畫概要」的依據欄。
+    前台樣式預覽（第 21 期真實資料、可切難度與手機寬度）：<code>_local-notes/2026-10/2026-10-24_武裝討伐頁_樣式預覽.html</code>。公告審核管線（PLAN-048）是本計畫 staging → 後台審核 → 合併 這套流程的先例。
+  </p>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-064 — <a href="../index.html" style="color:var(--accent-red);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

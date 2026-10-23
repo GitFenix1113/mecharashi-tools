@@ -1,0 +1,18 @@
+{
+  "_說明": [
+    "PLAN-064 決策六：首領推算面板的回歸基準。每次匯入都拿這幾隻的推算結果比對（容差 1），不符就在報告標 ⚠。",
+    "來源：2026-10-24 盤點時兩次獨立推算（子代理 calc_boss.py 與 scripts/lib/raid_estimate.py）的一致結果，皆未經遊戲內實測。",
+    "日後遊戲內實測對上（F-5），把 source 改成 measured 並換成實測值。key 是「戰場 ID:戰術單位模板 ID」。"
+  ],
+  "source": "estimate-2026-10-24",
+  "cases": {
+    "8535:853501": { "who": "第 21 期 盧克 初試", "parts": { "torso": [109131, 2312] }, "hpTotal": 300623, "attack": 2612, "defense": 8338 },
+    "8536:853501": { "who": "第 21 期 盧克 磨鍊", "parts": { "torso": [122694, 2391] }, "hpTotal": 337986, "attack": 2795, "defense": 8505 },
+    "8537:853501": { "who": "第 21 期 盧克 死境", "parts": { "torso": [155433, 2640] }, "hpTotal": 428173, "attack": 2978, "defense": 8838 },
+    "8538:853501": { "who": "第 21 期 盧克 煉獄", "parts": { "torso": [261290, 3061] }, "hpTotal": 719777, "attack": 3187, "defense": 9172 },
+    "8321:832101": { "who": "第 9 期 皮普 初試", "hpTotal": 215179, "torsoArmor": 708, "attack": 2853, "defense": 7587 },
+    "8322:832201": { "who": "第 9 期 皮普 磨鍊", "hpTotal": 243980, "torsoArmor": 732, "attack": 2746, "defense": 7739 },
+    "8323:832301": { "who": "第 9 期 皮普 死境", "hpTotal": 379708, "torsoArmor": 809, "attack": 2996, "defense": 8042 },
+    "8324:832401": { "who": "第 9 期 皮普 煉獄", "hpTotal": 604488, "torsoArmor": 938, "attack": 3281, "defense": 8346 }
+  }
+}
