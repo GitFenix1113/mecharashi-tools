@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>raids — 武裝討伐 Schema — Firebase 資料庫設計 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../../index.html">技術文件</a>
+    <span>›</span>
+    <a href="Firebase資料庫設計文件.html">Firebase 資料庫設計</a>
+    <span>›</span>
+    <span class="current">raids — 武裝討伐</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ COLLECTION SCHEMA</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-red) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    raids — 武裝討伐
+    <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-064</span>
+  </h1>
+  <p class="hero-sub">raidSeasons／stages／bosses 三個公開集合＋raidDrafts／raidTerms 兩個後台限定集合 · 文件一律由匯入腳本產生、後台按「發布」寫入 · 不進 SPECS</p>
+  <div class="version-badge" style="background:var(--accent-red);color:#fff;">PLAN-064 — 2026-10-24（集合已接線、資料待首次匯入與發布）</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label red">01 — 資料從哪裡來</div>
+  <div class="section-title">匯入管線（決策一）</div>
+  <div class="info-block">
+    <strong>📌 這五個集合沒有人工建檔的入口</strong><br>
+    ① <code>scripts/extract-raid-dungeons.py</code> 唯讀陸版遊戲參數資料包 → 中性 JSON（簡中原文＋ID＋結構）<br>
+    ② <code>scripts/import-raid-dungeons.mjs</code> 套譯名、判定台版開放、組成三個公開集合的文件；預設 dry-run，出照抄清單報告；<code>--write</code> 只寫 <code>raidDrafts</code><br>
+    ③ 後台 <code>/admin/raids</code>：看差異、校譯名（寫 <code>raidTerms</code>）、看異常 → 按「發布」，一個 batch 寫入 <code>raidSeasons</code>／<code>stages</code>／<code>bosses</code> 並 bump 三個版本<br>
+    人工資料只存在 <code>raidTerms</code>（與 <code>scripts/lib/raidAnomalies.json</code>）；發布文件是套表的結果，重跑匯入可以重生。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label red">02 — 公開集合</div>
+  <div class="section-title">raidSeasons — 一期</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td><code>raid-21</code>（期 ID 兩位數）</td></tr>
+      <tr><td>seq / name / nameCn / subtitleEn</td><td>number / string / string / string?</td><td>期號、台版期名（時間線有就取時間線）、陸版原名（譯名對照表的鍵）、陸版英文副標</td></tr>
+      <tr><td>faction</td><td>{ name, emblemKey? }?</td><td>強敵圖鑑的勢力；<code>emblemKey</code> 是官方 <code>Icon_logo_00xx</code>（PLAN-059 徽章庫）</td></tr>
+      <tr><td>difficulties / difficultyNames</td><td>RaidDifficulty[] / Record</td><td>這期實際有的難度（第 1 期只有 normal、第 2–5 期無 d4）與顯示名（走對照表）</td></tr>
+      <tr><td>cnOpenDate</td><td>string?</td><td>陸版開放日 YYYY-MM-DD</td></tr>
+      <tr><td>twVersion / twDate / twStatus</td><td>string? / string? / 'open'|'planned'</td><td>依期名對上時間線 <code>armamentRaids</code>：twDate 已過＝台版已開放，未到＝預計開放（決策九）</td></tr>
+      <tr><td>groups</td><td>{ stageId, group, name, isFinal, bosses[] }[]</td><td>四個關卡組摘要，列表頁不必載 stages 就能畫首領名</td></tr>
+      <tr><td>weekBuffs</td><td>{ week, name, desc?, effects[], difficulties[] }[]</td><td>支援協議Ⅰ～Ⅲ（第 4／5／6 週、只對初試與磨鍊有效）；effects 是屬性翻成的人讀文字</td></tr>
+      <tr><td>published</td><td>boolean</td><td>公開開關：false＝已寫入但前台不列出（D-3）</td></tr>
+      <tr><td>parserVersion / sourceBuild / i18nPending</td><td>number / string / string[]?</td><td>擷取規則版本、資料包 BuildNum、待校欄位</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">🗃️ stages — 關卡組（Stage，category '討伐'）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td><code>raid-21-g1</code>：一個關卡組＝同一關的四個難度（四個獨立戰場，戰場 ID 連號）</td></tr>
+      <tr><td>name / category / bossIds</td><td>string / '討伐' / string[]</td><td>沿用 PLAN-019 的 Stage 欄位</td></tr>
+      <tr><td>raid.seasonId / group / order / isFinal</td><td></td><td>所屬期、關卡組 1–4、遊戲顯示順序、是否最終關</td></tr>
+      <tr><td>raid.variants[難度]</td><td>RaidStageVariant</td><td>關卡名、戰場名、勝敗文字、回合上限、首領 ID、關卡特性、地形、難度強化文字、開場陣容、<strong>增援時程</strong>、固定事件、懸賞與線索、最終關線索門檻、異常註記</td></tr>
+      <tr><td>raid.unitDict</td><td>Record&lt;模板 ID, RaidUnitEntry&gt;</td><td>開場陣容、增援與條件句共用的單位字典（載具鍵加 <code>v</code> 前綴，避免與戰術單位撞號）</td></tr>
+      <tr><td>raid.refDict</td><td>Record&lt;'buf:ID'…, { name, desc? }&gt;</td><td>文字內 <code>⟦buf:…⟧</code>／<code>⟦main:…⟧</code>／<code>⟦terrain:…⟧</code> 引用的名稱與說明</td></tr>
+    </table>
+  </div>
+
+  <div class="sub-h">🗃️ bosses — 首領（Boss）</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
+      <tr><td>id</td><td>string</td><td><code>raid-21-g1-b1</code>；雙首領關有 <code>b1</code>／<code>b2</code>（戰場 ref 為 BOSS1／#BOSS2）</td></tr>
+      <tr><td>name / nameCn / seasonId / stageId</td><td></td><td>台版名、陸版原名、所屬期與關卡組</td></tr>
+      <tr><td>variants[難度]</td><td>BossVariant</td><td>實際模板 ID（戰場 ref=BOSS，不是關卡表的 BossID）、等級、機體、武器、<strong>推算面板</strong>（四部位耐久與裝甲、抗暴、閃避、機師屬性）、依難度完整的技能、難度強化文字、「未計入」清單、<code>estimated</code>、異常註記</td></tr>
+      <tr><td>skills / parts</td><td></td><td>沿用 PLAN-019 的頂層欄位：取最低難度的那份</td></tr>
+      <tr><td>refDict</td><td>RaidRefDict</td><td>技能說明內引用的名稱與說明</td></tr>
+      <tr><td>atlasId / quote / anecdoteCount / alsoIn</td><td></td><td>強敵圖鑑（人物層，決策十三）：條目 ID、台詞、逸聞篇數（全文交故事館，決策十四）、同一角色其他期的出場</td></tr>
+    </table>
+  </div>
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 首領面板是推算值</strong>：依陸版資料推算、未經遊戲內實測；推算方式不公開（開放問題 ① 選 A，推算段不進 repo）。
+    回歸基準在 <code>scripts/lib/raidRegression.json</code>，每次匯入都比對。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label red">03 — 後台限定集合</div>
+  <div class="section-title">raidDrafts／raidTerms</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>集合</th><th>文件</th><th>內容</th></tr>
+      <tr><td>raidDrafts</td><td><code>raid-21</code>（同期 ID）</td><td>三個集合的待發布內容（season／stages／bosses）＋逸聞全文與原文雜湊＋待校清單（kind／原文／草稿譯文）＋異常＋與已發布的差異摘要＋解析器版本＋最近一次發布摘要（<code>lastPublished</code>）。一期約 200–260 KB</td></tr>
+      <tr><td>raidTerms</td><td>種類名（<code>unit</code>、<code>skill</code>、<code>buff</code>、<code>text</code>、<code>anecdote</code>…）</td><td><code>{ kind, entries: { [termHash(原文)]: { cn, tw, status, source, firstSeason?, updatedAt?, updatedBy? } } }</code>。
+        鍵是原文 sha1 前 16 碼（原文可能含 <code>.</code> <code>/</code> 等欄位路徑字元）。<strong>只存人工校對或來源匯入的條目</strong>，機轉結果不落地——重新匯入不會洗掉校對（決策八）</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label red">04 — 規則、讀取與刻意不做的連動</div>
+  <div class="section-title">安全規則與快取</div>
+  <div class="info-block">
+    <strong>🔒 規則</strong>：五個集合都是 <code>read, write: if isAdmin()</code>。前台經 Cloudflare Worker 代理三個公開集合（<code>/api/data/raidSeasons</code>、<code>stages</code>、<code>bosses</code>）；
+    <code>raidDrafts</code>／<code>raidTerms</code> 不代理。<code>LORE_EDITOR</code> 碰不到任何一個（<code>npm run emu:test-rules</code> 有驗）。匯入腳本用 admin SDK，繞過規則。<br><br>
+    <strong>💾 快取</strong>：三個公開集合走版本 gate；<code>stages</code>／<code>bosses</code> 在 <code>NO_LOCAL_CACHE_KEYS</code>（各約 1.3 MB、四個難度都存一次，只有點進某期才用得到）。
+    列表頁只載 <code>raidSeasons</code>，期詳情頁才載 stages＋bosses。
+  </div>
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 不進 entityRefs SPECS、不走 saveWithHistory</strong>（理由同步寫在 <code>src/lib/api/raids.ts</code> 檔頭）：
+    文件由腳本產生、後台整批覆寫，沒有級聯要跑；進 SPECS 會讓級聯刪除與引用掃描自動連帶讀這些集合，rules 晚一步部署時全站刪除會一起 permission-denied。
+    說明文字用 <code>⟦…⟧</code> 記號＋文件內字典，不寫 <code>descriptionRefs</code>。日後若要引用站上實體，必須先補 SPECS 並部署規則。
+  </div>
+  <div class="warning-block" style="margin-top:12px;">
+    <strong>⚠ 部署順序</strong>：<code>firestore.rules</code> → Worker（<code>ARRAY_COLLECTIONS</code>）→ 匯入 <code>--write</code> → 後台發布 → 網站。
+    新頂層路由 <code>/raids</code> 還要補 Cloudflare SPA fallback 白名單（CLAUDE.md §3）。三處硬性守衛由 <code>src/lib/collectionKeys.test.ts</code> 斷言。
+  </div>
+</section>
+
+</main>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-10-24 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+
+</body>
+</html>

@@ -64,6 +64,8 @@ const ARRAY_COLLECTIONS = new Set<string>([
   'factionEmblems',
   // PLAN-042-B：機甲故事館與機甲廠商
   'mechLore', 'mechMakers',
+  // PLAN-064：武裝討伐（後台限定的 raidDrafts／raidTerms 刻意不代理）
+  'raidSeasons', 'stages', 'bosses',
   // PLAN-029 Phase 3-1：原本前台仍直讀的兩個公開集合，一併代理以便 Phase 3-2 收緊。
   'pilotResearch', 'patchVersions',
 ])

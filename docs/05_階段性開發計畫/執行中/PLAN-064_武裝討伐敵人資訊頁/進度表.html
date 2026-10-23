@@ -177,7 +177,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">15</div>
+      <div class="summary-num" style="color:var(--accent-green)">18</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -185,7 +185,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">24</div>
+      <div class="summary-num" style="color:var(--text-dim)">21</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-red);">15 / 41</span>
+      <span style="color:var(--accent-red);">18 / 41</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 37%"></div>
+      <div class="progress-bar-fill" style="width: 44%"></div>
     </div>
   </div>
 
@@ -225,6 +225,10 @@
   <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
     <strong style="color:var(--accent-green);">2026-10-24 開工（分支 claude/plan-064-raids）：</strong>
     站長拍板：① 選 <b>A 只給結果</b>（推算段 <code>scripts/lib/raid_estimate.py</code> 進 .gitignore，備份在 <code>E:\Mecharashi_Data\script-archive\2026-10-11\_本機獨有的保留檔備份\</code>）；② <b>先探測 infodata</b>，缺的再截圖；路由用 <b><code>/raids</code></b>。<br>Phase A 完成：擷取 21 期／307 關／斷鏈 0、首領面板 318 筆、回歸基準 8／8；增援 994 筆中 39 筆推不出時點（前台顯示「特定條件觸發」）；強敵圖鑑對接只剩已知的梅利圖斯 1 筆。<br>設計微調：Python 只擷取、保留原始結構；轉人讀文字（標籤、條件句、增援時程、強化文字）改在 Node 的 <code>scripts/lib/raidRender.mjs</code>，才能用 <code>npm test</code> 測（21 項）。機轉沿用既有爬蟲的 opencc-js <code>cn→tw</code>＋<code>textFixes</code>（不用 <code>twp</code>：詞彙轉換可能和遊戲台版用字不合，反正全標待校）。<code>raidTerms</code> 只存人工校對或來源匯入的條目，機轉不落地，重新匯入不會洗掉校對。<br>更正：台版目前只開到第 18 期，第 19–21 期在時間線上是推估日期，匯入判定為「台版預計開放」。
+  </div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
+    <strong style="color:var(--accent-green);">2026-10-24 Phase B（集合接線）：</strong>
+    <code>raidSeasons</code>／<code>stages</code>／<code>bosses</code> 接上 collectionKeys、Worker <code>ARRAY_COLLECTIONS</code>、rules、GameDataContext、<code>bump-data-version.mjs</code> 的 KNOWN_KEYS（已更新封存夾備份）、hooks <code>useRaidSeasons()</code>／<code>useRaidSeason(id)</code>；stages／bosses 進 <code>NO_LOCAL_CACHE_KEYS</code>（各約 1.3 MB）。<code>raidDrafts</code>／<code>raidTerms</code> 只開規則；<code>emu:test-rules</code> 58／58（新增 LORE_EDITOR 碰不到兩個後台集合的三項）。發布前套譯名的純函式在 <code>src/utils/raidDraft.ts</code>（6 項測試）。docs：新增 <code>02_資料模型/bosses_stages.html</code>、<code>04_Firebase/資料庫設計文件/raids.html</code>，更新 enums、security-rules、資料庫設計索引；<code>系統架構.html</code> 等元件資料夾建好再補（B-4 剩這項）。⚠ <b>上線前要先部署 rules 與 Worker（F-2）</b>，否則正式站 404。
   </div>
 </section>
 
@@ -429,7 +433,7 @@
         <div class="task-file">src/types/enums.ts · src/types/boss.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -442,7 +446,7 @@
         <div class="task-file">src/lib/api/raids.ts · src/contexts/GameDataContext.tsx · src/hooks/useFirestore.ts · workers/src/index.ts · firestore.rules</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -453,7 +457,7 @@
         <div class="task-file">firestore.rules · src/lib/api/raids.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -465,7 +469,7 @@
         <div class="task-file">docs/02_技術文件/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 </section>

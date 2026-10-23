@@ -150,6 +150,29 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
+    // PLAN-064 武裝討伐：三個公開集合同其他遊戲資料（前台經 Worker、後台按「發布」整批寫入）
+    match /raidSeasons/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    match /stages/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    match /bosses/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+    // 後台限定：匯入草稿（腳本以 admin SDK 寫入，繞過規則）與譯名對照表（後台校對頁寫入）。
+    // 不走 Worker、不進 CollectionKey——只有 /admin/raids 讀，不該整包進前台快取。
+    match /raidDrafts/{docId} {
+      allow read:  if isAdmin();
+      allow write: if isAdmin();
+    }
+    match /raidTerms/{docId} {
+      allow read:  if isAdmin();
+      allow write: if isAdmin();
+    }
     // 系統 meta（PLAN-017 遊戲資料版本號；Phase 3-2 收緊為 isAdmin 可讀，Worker 走 /api/versions 代讀，管理員可 bump）
     match /meta/{docId} {
       allow read: if isAdmin();

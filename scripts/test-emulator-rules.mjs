@@ -175,6 +175,10 @@ async function loreEditorSuite(adminTok, plainTok) {
   check('寫 pilots（應被擋）', await st(put(tok, 'pilots/rules_test', { name: '越權' })), 403)
   check('讀 pilots（應被擋，前台走 Worker）', await st(get(tok, 'pilots/rules_test')), 403)
   check('寫 buffs（應被擋）', await st(put(tok, 'buffs/rules_test', { name: '越權' })), 403)
+  // PLAN-064：武裝討伐的譯名對照表與草稿只給管理者（決策：審核頁權限只開 ADMIN，不放行 LORE_EDITOR）
+  check('寫 raidTerms（應被擋）', await st(put(tok, 'raidTerms/rules_test', { kind: '越權' })), 403)
+  check('讀 raidDrafts（應被擋）', await st(get(tok, 'raidDrafts/rules_test')), 403)
+  check('管理者寫 raidTerms（對照：應可寫）', await st(put(adminTok, 'raidTerms/rules_test', { kind: '規則測試' })), 200)
 
   // ③ 稽核記錄：只能寫 lore 兩類、只能署自己的名、不能讀 ─────────────────────
   const log = (target, actorUid) => fetch(`${FS}/changeHistory`, {
@@ -262,7 +266,7 @@ async function loreEditorSuite(adminTok, plainTok) {
 
   // 清理：用繞過規則的憑證收掉測試文件（changeHistory／systemLog 是 append-only，留著無妨）
   await Promise.all([
-    ...['mechLore', 'factionEmblems', 'mechMakers'].map((c) => fetch(`${FS}/${c}/rules_test`, { method: 'DELETE', headers: BYPASS })),
+    ...['mechLore', 'factionEmblems', 'mechMakers', 'raidTerms'].map((c) => fetch(`${FS}/${c}/rules_test`, { method: 'DELETE', headers: BYPASS })),
     fetch(`${FS}/pilotLore/rules_tx`, { method: 'DELETE', headers: BYPASS }),
   ])
 }

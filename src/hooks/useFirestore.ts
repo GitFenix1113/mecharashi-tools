@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import type {
   Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component,
   GlobalResearch, GameBuff, PilotSkillDoc, MechForm, NeuralDriveAbility, LoreDoc, FactionEmblem,
-  MechLoreDoc, MechMaker, GlossaryTerm,
+  MechLoreDoc, MechMaker, GlossaryTerm, RaidSeason, Stage, Boss,
 } from '../types'
 import { mechModuleSet, type MechModuleSet } from '../utils/mechModules'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
@@ -297,6 +297,45 @@ export function useMechMakers(): HookResult<MechMaker[]> {
   const { mechMakers } = useGameData()
   const { loading, error } = useCollections(['mechMakers'])
   return { data: mechMakers, loading, error }
+}
+
+// ── 武裝討伐（PLAN-064）──────────────────────────────────────────────────────
+//
+// 列表頁只載 raidSeasons（小）；進某一期才載 stages＋bosses（大、不落 localStorage）。
+// 前台只顯示 published 的期——未公開的期「找不到」與「不存在」同樣處理，不洩漏。
+
+export function useRaidSeasons(): HookResult<RaidSeason[]> {
+  const { raidSeasons } = useGameData()
+  const { loading, error } = useCollections(['raidSeasons'])
+  const data = useMemo(
+    () => raidSeasons.filter((s) => s.published).sort((a, b) => b.seq - a.seq),
+    [raidSeasons],
+  )
+  return { data, loading, error }
+}
+
+export interface RaidSeasonDetail {
+  season: RaidSeason
+  /** 依關卡組排序 */
+  stages: Stage[]
+  /** id → 首領 */
+  bosses: Record<string, Boss>
+}
+
+/** 一期的完整資料。查無或未公開 → null。 */
+export function useRaidSeason(id: string | undefined): HookResult<RaidSeasonDetail | null> {
+  const { raidSeasons, stages, bosses } = useGameData()
+  const { loading, error } = useCollections(['raidSeasons', 'stages', 'bosses'])
+  const data = useMemo(() => {
+    const season = id ? raidSeasons.find((s) => s.id === id && s.published) : undefined
+    if (!season) return null
+    return {
+      season,
+      stages: stages.filter((st) => st.raid?.seasonId === id).sort((a, b) => (a.raid!.group - b.raid!.group)),
+      bosses: Object.fromEntries(bosses.filter((b) => b.seasonId === id).map((b) => [b.id, b])),
+    }
+  }, [id, raidSeasons, stages, bosses])
+  return { data, loading, error }
 }
 
 // ── 元件 ──────────────────────────────────────────────────────────────────────

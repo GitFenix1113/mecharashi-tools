@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
-import type { Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm, NeuralDriveAbility, MechForm, LoreDoc, FactionEmblem, MechLoreDoc, MechMaker } from '../types'
+import type { Pilot, Mech, Module, Weapon, Backpack, BackpackSkillDoc, Component, GlobalResearch, GrayOpsRoster, GameBuff, PilotSkillDoc, GlossaryTerm, NeuralDriveAbility, MechForm, LoreDoc, FactionEmblem, MechLoreDoc, MechMaker, RaidSeason, Stage, Boss } from '../types'
 import {
   getPilots, getMechs, getModules, getWeapons, getBackpacks, getBackpackSkills, getComponents, getBuffs, getPilotSkills, getGlossaryTerms,
-  getNeuralDriveAbilities, getForms, getPilotLore, getFactionEmblems, getMechLore, getMechMakers, getGlobalResearch, getGrayOpsRoster, getDataVersions, type DataVersions,
+  getNeuralDriveAbilities, getForms, getPilotLore, getFactionEmblems, getMechLore, getMechMakers, getRaidSeasons, getStages, getBosses, getGlobalResearch, getGrayOpsRoster, getDataVersions, type DataVersions,
 } from '../lib/firestoreApi'
 // PLAN-029 Phase 2-3：flag 開時，公開資料與版本改走 Cloudflare Worker 代理（可灰度／回退）
 import { WORKER_ENABLED, getWorkerDataVersions, fetchWorkerCollection } from '../lib/api/workerData'
@@ -95,6 +95,12 @@ export interface GameDataState {
   mechLore:       MechLoreDoc[]
   /** PLAN-042-B 機甲廠商（文件 ID＝官方舞台背景鍵） */
   mechMakers:     MechMaker[]
+  /** PLAN-064 武裝討伐：期（小，照常快取） */
+  raidSeasons:    RaidSeason[]
+  /** PLAN-064 關卡組（category '討伐'）。**不落 localStorage**（NO_LOCAL_CACHE_KEYS），四個難度都存、體積大 */
+  stages:         Stage[]
+  /** PLAN-064 首領。**不落 localStorage**，理由同 stages */
+  bosses:         Boss[]
   globalResearch: GlobalResearch
   grayOpsRoster:  GrayOpsRoster | null
   loadedKeys:     ReadonlySet<CollectionKey>
@@ -136,6 +142,9 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
   const [factionEmblems, setFactionEmblems] = useState<FactionEmblem[]>([])
   const [mechLore,       setMechLore]       = useState<MechLoreDoc[]>([])
   const [mechMakers,     setMechMakers]     = useState<MechMaker[]>([])
+  const [raidSeasons,    setRaidSeasons]    = useState<RaidSeason[]>([])
+  const [stages,         setStages]         = useState<Stage[]>([])
+  const [bosses,         setBosses]         = useState<Boss[]>([])
   const [globalResearch, setGlobalResearch] = useState<GlobalResearch>(EMPTY_GLOBAL_RESEARCH)
   const [grayOpsRoster,  setGrayOpsRoster]  = useState<GrayOpsRoster | null>(null)
   const [loadedKeys,     setLoadedKeys]     = useState<Set<CollectionKey>>(new Set())
@@ -173,6 +182,9 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'factionEmblems': setFactionEmblems(data as FactionEmblem[]); break
       case 'mechLore':       setMechLore(data as MechLoreDoc[]); break
       case 'mechMakers':     setMechMakers(data as MechMaker[]); break
+      case 'raidSeasons':    setRaidSeasons(data as RaidSeason[]); break
+      case 'stages':         setStages(data as Stage[]); break
+      case 'bosses':         setBosses(data as Boss[]); break
       case 'globalResearch': setGlobalResearch(data as GlobalResearch); break
       case 'grayOpsRoster':  setGrayOpsRoster(data as GrayOpsRoster | null); break
     }
@@ -203,6 +215,9 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'factionEmblems': return getFactionEmblems()
       case 'mechLore':       return getMechLore()
       case 'mechMakers':     return getMechMakers()
+      case 'raidSeasons':    return getRaidSeasons()
+      case 'stages':         return getStages()
+      case 'bosses':         return getBosses()
       case 'globalResearch': return (await getGlobalResearch()) ?? EMPTY_GLOBAL_RESEARCH
       case 'grayOpsRoster':  return getGrayOpsRoster()
     }
@@ -289,6 +304,9 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'factionEmblems': setFactionEmblems(upsert); break
       case 'mechLore':      setMechLore(upsert);      break
       case 'mechMakers':    setMechMakers(upsert);    break
+      case 'raidSeasons':   setRaidSeasons(upsert);   break
+      case 'stages':        setStages(upsert);        break
+      case 'bosses':        setBosses(upsert);        break
       default: break // singleton / 無 id 集合不走此路徑
     }
   }, [])
@@ -325,6 +343,9 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
       case 'factionEmblems': setFactionEmblems(drop); break
       case 'mechLore':      setMechLore(drop);      break
       case 'mechMakers':    setMechMakers(drop);    break
+      case 'raidSeasons':   setRaidSeasons(drop);   break
+      case 'stages':        setStages(drop);        break
+      case 'bosses':        setBosses(drop);        break
       default: break // singleton / 無 id 集合不走此路徑
     }
   }, [])
@@ -342,6 +363,7 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
   return (
     <GameDataContext.Provider value={{
       pilots, mechs, weapons, backpacks, backpackSkills, modules, components, buffs, pilotSkills, neuralDriveAbilities, glossaryTerms, forms, pilotLore, factionEmblems, mechLore, mechMakers,
+      raidSeasons, stages, bosses,
       globalResearch, grayOpsRoster,
       loadedKeys, errorMap, reloadTick,
       ensureLoaded, reload, patchCollectionItem, removeCollectionItem, patchSingleton,

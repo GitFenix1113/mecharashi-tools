@@ -22,6 +22,8 @@ export const ARRAY_COLLECTION_KEYS = [
   'factionEmblems',
   // PLAN-042-B：機甲故事館（mechLore 暫不進 SPECS、等 H-6；mechMakers 刻意不進，同 factionEmblems）
   'mechLore', 'mechMakers',
+  // PLAN-064：武裝討伐（stages／bosses 沿用 PLAN-019 Layer 3 的集合名）。刻意不進 SPECS，見 lib/api/raids.ts
+  'raidSeasons', 'stages', 'bosses',
 ] as const
 
 /** 單一文件（singleton）集合；Worker 代理與快取層都走另一條分支。 */
@@ -57,8 +59,11 @@ export const ALL_COLLECTION_KEYS: CollectionKey[] = [
  *
  * mechLore（PLAN-042-B）理由相同：92 台介紹約 20 KB 起跳，之後逐台加 PART 章節，成長曲線與 pilotLore 一樣陡。
  * mechMakers 只有十幾筆短欄位，照常落 localStorage。
+ *
+ * stages／bosses（PLAN-064 武裝討伐）：21 期合計各約 650–700 K 字元（UTF-16 存放約 1.3 MB），
+ * 而且每份文件都把四個難度完整存一次；只有點進某一期才用得到。raidSeasons 只有約 30 K 字元，照常快取。
  */
-export const NO_LOCAL_CACHE_KEYS: readonly CollectionKey[] = ['pilotLore', 'mechLore']
+export const NO_LOCAL_CACHE_KEYS: readonly CollectionKey[] = ['pilotLore', 'mechLore', 'stages', 'bosses']
 
 /** 該集合是否跳過 localStorage 層。 */
 export const skipsLocalCache = (key: CollectionKey): boolean =>

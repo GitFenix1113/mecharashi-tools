@@ -82,6 +82,12 @@
           <td>PLAN-029 Phase 3-2。原本是 <code>read: if true</code>，等於任何人都能直打 Firestore REST 白嫖／整包爬走。收緊後 client 直讀一律 permission-denied，前台改走 Worker <code>/api/data/:collection</code>（service account 本就繞過規則）；管理員後台仍以 client SDK 直讀，故後台零改動。<strong>這取代了退場的 App Check</strong>——票可以被繞，規則不行。</td>
         </tr>
         <tr>
+          <td>武裝討伐<br><span style="color:var(--text-dim);font-size:12px;">raidSeasons / stages / bosses（公開）・raidDrafts / raidTerms（後台限定）</span></td>
+          <td><code>isAdmin()</code></td>
+          <td><code>isAdmin()</code></td>
+          <td>PLAN-064（2026-10-24）。三個公開集合同遊戲資料，前台經 Worker；草稿與譯名對照表不走 Worker、只給管理者——審核頁權限只開 ADMIN，<strong>不放行 <code>LORE_EDITOR</code></strong>（<code>emu:test-rules</code> 有驗）。匯入腳本用 admin SDK 寫草稿，繞過規則。見 <a href="raids.html" style="color:var(--accent-cyan);">raids</a>。</td>
+        </tr>
+        <tr>
           <td>故事館<br><span style="color:var(--text-dim);font-size:12px;">pilotLore / mechLore / factionEmblems / mechMakers</span></td>
           <td><code>canEditLore()</code></td>
           <td><code>create, update</code>：<code>canEditLore()</code>；<br><code>delete</code>：<code>isAdmin()</code></td>

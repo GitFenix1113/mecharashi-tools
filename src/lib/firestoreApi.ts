@@ -22,6 +22,7 @@ export * from './api/pilotLore'       // getPilotLore / getPilotLoreDoc / update
 export * from './api/factionEmblems'  // getFactionEmblems / updateFactionEmblem（PLAN-042-F 陣營徽章註記）
 export * from './api/mechLore'        // getMechLore / updateMechLore（PLAN-042-B 機甲故事館）
 export * from './api/mechMakers'      // getMechMakers / updateMechMaker（PLAN-042-B 機甲廠商）
+export * from './api/raids'           // 武裝討伐：raidSeasons／stages／bosses＋後台草稿與對照表（PLAN-064）
 export * from './api/grayOps'         // getGrayOpsRoster / updateGrayOpsRoster
 // PLAN-030 變更歷史：後台專用稽核 log。不進 CollectionKey / GameDataContext（見計畫書決策一）
 export * from './api/changeHistory'   // logChange / logChangeOrThrow / getChangeHistoryPage / saveWithRevision（故事館的衝突檢查）

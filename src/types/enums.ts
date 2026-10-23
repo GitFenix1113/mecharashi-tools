@@ -327,6 +327,18 @@ export const StageCategory = {
 } as const;
 export type StageCategory = typeof StageCategory[keyof typeof StageCategory];
 
+// 武裝討伐難度（PLAN-064 決策四）：穩定代碼，對應遊戲列舉 RaidDungeonLevelDifficulty 1–4。
+// 顯示名不寫死在這裡——走譯名對照表，存在 RaidSeason.difficultyNames（陸版：初试／磨炼／死境／炼狱）。
+export const RaidDifficulty = {
+  NORMAL: 'normal', // 1 Simple
+  HARD:   'hard',   // 2 Hard
+  HELL:   'hell',   // 3 Hell
+  D4:     'd4',     // 4 Difficult4（第 6 期起才有）
+} as const;
+export type RaidDifficulty = typeof RaidDifficulty[keyof typeof RaidDifficulty];
+/** 由易到難；前台畫難度分頁時照這個順序，只畫該期實際有的。 */
+export const RAID_DIFFICULTY_ORDER: readonly RaidDifficulty[] = ['normal', 'hard', 'hell', 'd4'];
+
 // ─── 元件 ────────────────────────────────────────────────────────────────────
 
 // 對應 WIKI mQuery ModuleType

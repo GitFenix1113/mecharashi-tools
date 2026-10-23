@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bosses / stages — 首領與關卡 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 規劃書</a>
+    <span>›</span>
+    <a href="../index.html">技術文件</a>
+    <span>›</span>
+    <span>資料模型</span>
+    <span>›</span>
+    <span class="current">bosses / stages</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge">◆ Data Model</div>
+  <h1>bosses / stages<span>首領與關卡 · RAID DUNGEON</span></h1>
+  <p class="hero-sub">PLAN-019 Layer 3 的型別，由 PLAN-064 以腳本匯入武裝討伐的方式復用：難度是第一級維度、增援時程結構化、首領面板是推算值</p>
+  <div class="version-badge">PLAN-064 · 2026-10-24</div>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label">設計說明</div>
+  <div class="section-title">三層：期 → 關卡組 → 首領</div>
+  <div class="section-desc">型別在 <code>src/types/boss.ts</code>（經 <code>types/index.ts</code> barrel）；難度列舉 <code>RaidDifficulty</code> 在 <code>src/types/enums.ts</code>。Firestore 欄位細節見 <a href="../04_Firebase/資料庫設計文件/raids.html">raids</a>。</div>
+
+  <div class="info-block">
+    <strong>📋 關係</strong><br>
+    <code>RaidSeason</code>（一期）── <code>groups[].stageId</code> ──▶ <code>Stage</code>（一個關卡組，<code>category: '討伐'</code>、<code>raid: RaidStageInfo</code>）
+    ── <code>raid.variants[難度].bossIds</code> ──▶ <code>Boss</code>（一位首領，<code>variants[難度]: BossVariant</code>）<br>
+    一個關卡組＝同一關的四個難度；四個難度是四個獨立戰場，所以每個難度一份 <code>RaidStageVariant</code>。雙首領關有兩份 Boss 文件。
+  </div>
+
+  <div class="warning-block" style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-left:3px solid var(--accent-yellow);border-radius:0 10px 10px 0;padding:16px 20px;margin:12px 0;">
+    <strong style="color:var(--accent-yellow);">⚠ 難度是型別上的第一級維度（決策四）</strong><br>
+    技能文字、懸賞條件、線索詳情都會隨難度改變（皮普的天賦「无畏前行Ⅰ」初試 3 格、死境 4 格；第 21 期「小心翼翼」初試／磨鍊是護盾不超過 4 層、死境起 3 層），
+    所以每個變體存完整內容、不做跨難度去重；「此難度與初試不同」的提示由前端比對文字產生。<br><br>
+    <strong style="color:var(--accent-yellow);">⚠ 首領＝戰場 ref 為 BOSS／BOSS1／#BOSS2 的單位，不是關卡表的 BossID（決策六）</strong><br>
+    307 關中有 14 關的 BossID 指向別的難度的同名首領，只拿來顯示。<code>BossVariant.templateId</code> 是戰場實際放的模板。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label">型別</div>
+  <div class="section-title">主要介面</div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <tr><th>介面</th><th>重點欄位</th><th>說明</th></tr>
+      <tr><td>BossVariant</td><td>templateId、level、mech、weapons、parts、hpTotal、antiCrit、dodge、pilotStats、skills、difficultyText、notCounted、estimated、anomaly</td><td>首領在某個難度的樣子。面板是推算值（<code>estimated</code>），沒有面板時整組省略</td></tr>
+      <tr><td>RaidStageVariant</td><td>levelId、battleId、name、winText、loseText、turnLimit、bossIds、features、terrain、difficultyText、units、reinforcements、events、bounties、clueGate、anomalies</td><td>關卡組在某個難度的樣子</td></tr>
+      <tr><td>RaidReinforcement</td><td>when、also、warn、units</td><td>增援：觸發時點、附帶條件、增援預警時點、單位 ×N</td></tr>
+      <tr><td>RaidWhen</td><td>start／turn（turns、timing）／everyTurn（timing、from）／condition（text）／unknown</td><td>由觸發器的結構化條件推出，不用企劃備註（決策五）。unknown 前台顯示「特定條件觸發」</td></tr>
+      <tr><td>RaidUnit／RaidUnitEntry</td><td>unit（鍵）、count、level、ally／name、kind、mech、weapons、pending</td><td>陣容一列與單位字典；載具鍵加 <code>v</code> 前綴</td></tr>
+      <tr><td>RaidRefDict</td><td>'buf:ID'／'main:ID'／'passive:ID'／'active:ID'／'terrain:ID' → { name, desc? }</td><td>文字內 <code>⟦…⟧</code> 引用記號的字典；<code>⟦em:…⟧</code> 是遊戲以顏色強調的字</td></tr>
+      <tr><td>RaidSeason／RaidWeekBuff</td><td>faction、difficulties、difficultyNames、twStatus、groups、weekBuffs、published</td><td>一期與支援協議</td></tr>
+      <tr><td>RaidDraft／RaidTermDoc／RaidTermEntry／RaidPendingTerm／RaidAnecdoteDraft</td><td></td><td>後台限定：匯入草稿、譯名對照表、待校清單、逸聞草稿</td></tr>
+    </table>
+  </div>
+  <div class="info-block">
+    <strong>📋 與 PLAN-019 原型別的相容</strong><br>
+    <code>Boss.skills</code>／<code>Boss.parts</code>、<code>Stage.bossIds</code> 等原欄位都保留：匯入時取最低難度那份填頂層，舊的讀法照樣能用。
+    <code>Stage.raid.kind</code> 目前只有 <code>'dungeon'</code>，預留 <code>'activity'</code> 給重裝征伐（另案，結構不同）。
+  </div>
+</section>
+
+</main>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-10-24 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+
+</body>
+</html>
