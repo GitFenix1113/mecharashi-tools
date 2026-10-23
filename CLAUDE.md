@@ -232,8 +232,11 @@ barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `
 報告的「下一步」是標 ✅／⬜ 的照抄清單，**整套歸檔流程設計成站長不靠 AI 也能跑**（`public/images/game/README.md`），改腳本時別破壞這點。
 技能／BUFF／武器／背包圖示走扁平圖庫 `public/images/game/icons/`，**DB 只存官方檔名 key**（PLAN-055／056），新版本的匯入與指定流程見 `data-patch` skill。
 
-- **唯一仍在運作的擷取是活動**：`scripts/scrape-tw-announcements.mjs`（台版官方公告 → `announcementDrafts`／`pendingActivities` staging → 後台 `/admin/announcements` 審核後合併進 `patchVersions`），
+- **唯一仍在運作的爬蟲是活動**：`scripts/scrape-tw-announcements.mjs`（台版官方公告 → `announcementDrafts`／`pendingActivities` staging → 後台 `/admin/announcements` 審核後合併進 `patchVersions`），
   由 `.github/workflows/scrape-announcements.yml` 每週排程執行。改解析器的慣例見 PLAN-048。
+- **武裝討伐（PLAN-064）讀陸版參數資料包、不是爬蟲**：`node scripts/import-raid-dungeons.mjs`（擷取過期會自己呼叫 `extract-raid-dungeons.py`）→ `--write` 只寫 `raidDrafts` →
+  後台 `/admin/raids` 校譯名、看差異後發布到 `raidSeasons`／`stages`／`bosses`（發布會自己 bump 三個版本）。**別用腳本直接改這三個集合**——下次發布會被草稿蓋回；
+  要修就改匯入腳本或譯名表 `raidTerms` 再重跑。照抄清單在匯入報告與 `public/images/game/README.md`。
 - **官網爬蟲已退場（2026-10-11）**：`scrape-pilots-v3.js`、`scrape-mechs.js`、`scrape-weapons.js`、`scrape-modules.js`、`scrape-components.js`、`scrape-backpacks.js`、`scrape-skill-icons.mjs`
   與 `package.json` 的 `scrape:*`／`migrate*` 指令都已移出 repo。原檔封存在 `E:\Mecharashi_Data\script-archive\2026-10-11\`（多數本來就被 `.gitignore` 擋著、git 裡沒有），
   清單與理由見該夾的 `README.md`。**不要主動提議用爬蟲補資料，也不要把它們搬回來。**
@@ -247,6 +250,7 @@ barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `
   `backup-firestore.mjs`（本節與 data-patch skill）、`enable-nd-buff-upgrades.mjs`（data-patch 的一次性腳本範本）、`repair-fffd-descriptions.mjs`（data-patch）、
   `extract-lore-source.mjs`（`AdminLorePage`）、`fix-nd-minsum-typos.mjs`（`neuralDriveLevels.ts`）。
 - ⚠ **`scripts/bump-data-version.mjs` 與 `scripts/check-nd-minsum-drift.mjs` 也被 `.gitignore` 擋著（防線 C）**：換電腦或重新 clone 會不見，封存夾的 `_本機獨有的保留檔備份/` 有一份。
+  `scripts/lib/raid_estimate.py`（PLAN-064 首領面板推算，刻意不公開）同理；不在時匯入照跑，但首領面板整組空白，報告會列 ⬜。
 - 其他現役腳本：`generate-image-manifest.mjs`（build/dev 前置）掃 `public/images/` 產出可用圖片清單；
   `copy-docs.mjs` 依白名單把 `docs/` 複製進 `dist/`（route 為 `/documents`）。
 
