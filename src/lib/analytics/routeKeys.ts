@@ -33,6 +33,9 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/backpacks',
   '/modules',
   '/components',
+  // 武裝討伐（PLAN-064）。單期頁參數叫 :seasonId，不進 analyticsEntity（要先在 Worker 的 ENTITY_TYPES 登記）
+  '/raids',
+  '/raids/:seasonId',
   // 版本情報三分頁（PLAN-050 A-1）。'/versions' 本身只是導向 quick 的 index route，
   // 但樣板存在就要登記 —— 直接輸入網址的人會命中它。
   '/versions',
@@ -67,6 +70,7 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/admin/system-log',
   '/admin/analytics',
   '/admin/announcements',
+  '/admin/raids',
   '/admin/lore',
   '*',
 ]
@@ -134,6 +138,8 @@ export const ROUTE_LABELS: Record<string, string> = {
   backpacks:             '背包圖鑑',
   modules:               '模組圖鑑',
   components:            '元件圖鑑',
+  raids:                 '武裝討伐列表',
+  raids_detail:          '武裝討伐（單期）',
   versions_quick:        '版本速覽',
   versions_grayops:      '灰燼行動',
   versions_timeline:     '版本時間線',

@@ -45,6 +45,7 @@ const catalogNavItems: ContentNavItem[] = [
   { to: '/backpacks', label: '背包', icon: 'backpack' },
   { to: '/modules', label: '模組', icon: 'module' },
   { to: '/components', label: '元件', icon: 'component' },
+  { to: '/raids', label: '武裝討伐', icon: 'target' },
 ]
 
 // 「版本情報」的子項（PLAN-050 A-3）。

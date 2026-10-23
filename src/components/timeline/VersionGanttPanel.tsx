@@ -1,5 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { useRaidSeasons } from '../../hooks/useFirestore'
 import type { PatchVersion, PatchHalf, VisibleActivity } from '../../data/patchVersions/types'
 import { activitiesOfHalf } from '../../data/patchVersions/legacyActivities'
 import { normalizeNotes } from '../../data/patchVersions/notes'
@@ -139,8 +141,24 @@ function VersionInfoRows({
   const mechsU = (upper.mechs ?? []).join('、')
   const mechsL = (lower.mechs ?? []).join('、')
 
-  const raidNamesU = (upper.armamentRaids ?? []).map(r => r.name).join('、')
-  const raidNamesL = (lower.armamentRaids ?? []).map(r => r.name).join('、')
+  // 武裝關卡的名字連到 /raids/:seasonId（PLAN-064 E-7）：以台版期名對上已公開的 raidSeasons；對不到就照舊純文字
+  const { data: raidSeasons } = useRaidSeasons()
+  const norm = (x: string) => x.replace(/s+/g, '')
+  const raidNames = (h: PatchHalf): ReactNode => {
+    const list = h.armamentRaids ?? []
+    if (!list.length) return ''
+    return list.map((r, i) => {
+      const season = raidSeasons.find((x) => norm(x.name) === norm(r.name))
+      return (
+        <Fragment key={i}>
+          {i > 0 && '、'}
+          {season ? <Link to={`/raids/${season.id}`} className="text-accent-orange hover:underline">{r.name}</Link> : r.name}
+        </Fragment>
+      )
+    })
+  }
+  const raidNamesU = raidNames(upper)
+  const raidNamesL = raidNames(lower)
   const weaponsU = (upper.armamentRaids ?? [])
     .filter(r => r.weapons?.length)
     .map(r => r.weapons!.join('/'))

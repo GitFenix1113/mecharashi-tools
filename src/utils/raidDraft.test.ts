@@ -65,3 +65,19 @@ test('diffDraft：新期／欄位差異細到難度／被拿掉的文件', () =>
     { id: 'raid-21-g9', kind: 'stage', status: 'removed', fields: [] },
   ])
 })
+
+test('applyTermOverrides：已校（含照原樣確認）的名稱拿掉待校標記', () => {
+  const pendingBoss = { ...boss, i18nPending: ['name'] } as Boss
+  const pendingStage = JSON.parse(JSON.stringify(stage))
+  pendingStage.raid.unitDict['853501'].pending = true
+  pendingStage.raid.unitDict['2203012'].pending = true
+  const terms = indexTerms([{ kind: 'unit', entries: { h: { cn: '卢克', tw: '盧克', status: 'verified', source: 'manual' } } }])
+  const r = applyTermOverrides({ season: { ...season, i18nPending: ['name'] }, stages: [pendingStage], bosses: [pendingBoss], pending: [
+    { kind: 'unit', cn: '卢克', tw: '盧克', source: 'machine', count: 3 },
+    { kind: 'unit', cn: '老练佣兵', tw: '老練傭兵', source: 'machine', count: 5 },
+  ] }, terms)
+  assert.equal(r.bosses[0].i18nPending, undefined)
+  assert.equal(r.stages[0].raid!.unitDict['853501'].pending, undefined)
+  assert.equal(r.stages[0].raid!.unitDict['2203012'].pending, true)
+  assert.deepEqual(r.season.i18nPending, ['name'])
+})

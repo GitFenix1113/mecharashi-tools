@@ -177,15 +177,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">18</div>
+      <div class="summary-num" style="color:var(--accent-green)">32</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">2</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">21</div>
+      <div class="summary-num" style="color:var(--text-dim)">9</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-red);">18 / 41</span>
+      <span style="color:var(--accent-red);">32 / 41</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 44%"></div>
+      <div class="progress-bar-fill" style="width: 78%"></div>
     </div>
   </div>
 
@@ -229,6 +229,10 @@
   <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
     <strong style="color:var(--accent-green);">2026-10-24 Phase B（集合接線）：</strong>
     <code>raidSeasons</code>／<code>stages</code>／<code>bosses</code> 接上 collectionKeys、Worker <code>ARRAY_COLLECTIONS</code>、rules、GameDataContext、<code>bump-data-version.mjs</code> 的 KNOWN_KEYS（已更新封存夾備份）、hooks <code>useRaidSeasons()</code>／<code>useRaidSeason(id)</code>；stages／bosses 進 <code>NO_LOCAL_CACHE_KEYS</code>（各約 1.3 MB）。<code>raidDrafts</code>／<code>raidTerms</code> 只開規則；<code>emu:test-rules</code> 58／58（新增 LORE_EDITOR 碰不到兩個後台集合的三項）。發布前套譯名的純函式在 <code>src/utils/raidDraft.ts</code>（6 項測試）。docs：新增 <code>02_資料模型/bosses_stages.html</code>、<code>04_Firebase/資料庫設計文件/raids.html</code>，更新 enums、security-rules、資料庫設計索引；<code>系統架構.html</code> 等元件資料夾建好再補（B-4 剩這項）。⚠ <b>上線前要先部署 rules 與 Worker（F-2）</b>，否則正式站 404。
+  </div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
+    <strong style="color:var(--accent-green);">2026-10-24 Phase D／E（後台審核＋前台頁）：</strong>
+    後台 <code>/admin/raids</code>（入口在 <code>/admin</code> 子頁捷徑）：每期一列＋差異／譯名校對／預覽／逸聞／異常五分頁，發布＝套已校譯名 → 一個 batch 寫三集合、刪這期已不存在的文件、bump 三個版本、草稿記發布摘要；公開開關（D-3 的驗證結論先只顯示 <code>raidAnomalies.json</code> 與通用偵測，未另存）。前台 <code>/raids</code>（時間線有收錄的期畫卡片、更早的收成精簡列）與 <code>/raids/:seasonId</code>（難度寫進 <code>?d=</code>、關卡選單、首領卡、開場陣容、增援回合格、懸賞線索、每週規則與支援協議），預覽與前台共用 <code>RaidSeasonView</code>；版本情報甘特圖的「武裝關卡」列已連到對應期（E-7）。<br>E-4 實作取捨：首領頭像先用名字首字佔位（資料包機師模板沒有圖檔鍵，待查）；「也出現在：第 N 期」<b>改在前台以同名推導</b>、不存 <code>Boss.alsoIn</code>——資料包每期的圖鑑條目 ID 都不同（曼恩在第 1／16／20 期是三個條目），能串的只有名字，存成欄位的話每新增一期都得重發布舊期；「逸聞 N 篇 → 故事館」入口等故事館子計畫。推算方式不上前台（① 選 A）。<br>驗收：模擬器端到端（匯入 <code>--write</code> → 後台發布 7 期 → 改譯名看差異 → 前台列表／詳情／手機版），<code>npm test</code>、<code>tsc -b</code> 全綠。docs：新增 <code>03_頁面規劃/14_武裝討伐</code>，更新頁面規劃索引、管理後台、系統架構（B-4 完成）。<br>⚠ 尚未 push：上線前站長要先做 F-2（部署 rules＋Worker）、F-3（CF 白名單加 <code>/raids</code>）、F-1（正式庫匯入與發布），順序見計畫書。
   </div>
 </section>
 
@@ -420,7 +424,7 @@
     <div class="task-group-header">
       <div class="task-group-title">B-1～B-4 &nbsp; 型別、集合接線、文件</div>
       <div class="task-group-meta">src/types/ · src/lib/api/ · workers/ · firestore.rules</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -469,7 +473,7 @@
         <div class="task-file">docs/02_技術文件/</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -527,7 +531,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">待拍板</span>
+      <span class="status pending">待開始</span>
     </div>
     <div class="task-row">
       <div>
@@ -552,7 +556,7 @@
     <div class="task-group-header">
       <div class="task-group-title">D-1～D-4 &nbsp; 審核頁</div>
       <div class="task-group-meta">src/pages/admin/AdminRaidsPage.tsx · src/components/admin/</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -563,7 +567,7 @@
         <div class="task-file">src/App.tsx · src/pages/admin/AdminRaidsPage.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -573,7 +577,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -583,7 +587,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -593,7 +597,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -608,7 +612,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1～E-8 &nbsp; 前台</div>
       <div class="task-group-meta">src/pages/raids/ · src/components/raids/ · src/lib/seo.ts</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -619,7 +623,7 @@
         <div class="task-file">src/App.tsx · src/lib/seo.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -630,7 +634,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -640,7 +644,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -653,7 +657,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">待拍板</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -663,7 +667,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -673,7 +677,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -684,7 +688,7 @@
         <div class="task-file">src/components/versions/VersionQuickTable.tsx · src/components/timeline/VersionGanttPanel.tsx</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -694,7 +698,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status blocked">待拍板</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
@@ -798,7 +802,7 @@
         </div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>

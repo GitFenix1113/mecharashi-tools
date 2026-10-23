@@ -50,6 +50,7 @@ const DIFF_ORDER = ['normal', 'hard', 'hell', 'd4']
 /** 時間線上不是 RaidDungeon 的條目（決策十）：報告標「略過」，不算未對上 */
 const SKIP_TIMELINE = { '重裝征伐': '略過：RaidActivity（重裝征伐），不在 PLAN-064' }
 const PART_MAP = { body: 'torso', larm: 'leftArm', rarm: 'rightArm', leg: 'legs' }
+const KIND_LABEL = { main: '主動', passive: '被動', talent: '天賦', mech: '機體固有', weapon: '武器', level: '等級加成' }
 const SLOT_LABEL = { main: 'main', passive: 'passive', talent: 'talent', mech: 'mech', weapon: 'weapon', level: 'level' }
 const DOC_SOFT_LIMIT = 900_000
 
@@ -136,6 +137,8 @@ async function loadSite() {
   const { default: admin } = await import('firebase-admin')
   admin.initializeApp({ credential: admin.credential.cert(JSON.parse(fs.readFileSync(key, 'utf8'))) })
   const db = admin.firestore()
+  // admin SDK 看到 FIRESTORE_EMULATOR_HOST 會改打模擬器；印出來，免得以為在測試、其實寫進正式庫（或反過來）
+  console.log(`  Firestore：${process.env.FIRESTORE_EMULATOR_HOST ? `模擬器 ${process.env.FIRESTORE_EMULATOR_HOST}` : '正式庫'}${WRITE ? '（--write：會寫入 raidDrafts）' : '（唯讀）'}`)
   const all = async (c) => (await db.collection(c).get()).docs.map((d) => ({ id: d.id, ...d.data() }))
   const toMap = (docs) => Object.fromEntries(docs.map((d) => [d.id, d]))
   const [patchVersions, terms, seasons, stages, bosses, drafts, mechs, pilots, weapons, backpacks] = await Promise.all(
@@ -169,6 +172,19 @@ const stripUndefined = (o) => JSON.parse(JSON.stringify(o))
 const firstLevel = (lv) => { const n = parseInt(String(lv || '').split('/')[0], 10); return Number.isFinite(n) && n > 0 ? n : undefined }
 const bossSlot = (ref) => { const m = /(\d+)$/.exec(ref || ''); return m ? Number(m[1]) : 1 }
 const bossDocsInStage = (bossMap, stageId) => [...bossMap.values()].filter((x) => x.stageId === stageId).length
+
+/**
+ * 每週規則（站上自己的台版用字；數字取自遊戲設定，遊戲改了重跑匯入就跟著變）。
+ * 來源：ConfigableConst RaidDungeonSelectGroupMaxCount、StringTable 1116／1129／1333（擷取段 meta.rules）。
+ */
+function raidRules(rules = {}) {
+  const out = []
+  if (rules.selectGroupMax) out.push(`每週可把 ${rules.selectGroupMax} 個關卡組設為目標；領取戰鬥獎勵時才消耗挑戰機會。`)
+  if (rules.finalNeedsWeek) out.push('最終關要先在本週完成同難度的其他關卡，才能進入戰鬥。')
+  out.push('選擇較高難度時，同時取得較低難度的關卡獎勵。')
+  if (rules.freeFirstPass) out.push('新解鎖的關卡組，首次戰鬥不消耗挑戰機會。')
+  return out
+}
 
 class Assembler {
   constructor(ex, tr, report) {
@@ -392,9 +408,13 @@ class Assembler {
           }))
           const notCounted = []
           if (panel) {
+            // 條件式 Buff 的名字多半是內部代號（「BOSS3天賦」），改用掛它的那個技能的名字（玩家看得到的）
             for (const cb of panel.conditionalBuffs || []) {
-              const x = this.buff(cb)
-              if (x && x.name && !x.devnote) notCounted.push(tr.name('buff', x.name, seq))
+              const owner = (u.skills || []).find((x) => (this.ex.skills[x.ref]?.buffs || []).includes(cb))
+              const sk = owner && this.ex.skills[owner.ref]
+              const xb = this.buff(cb)
+              if (sk?.name) notCounted.push(`${KIND_LABEL[owner.slot] || '技能'}「${tr.name('skill', sk.name, seq)}」的條件效果`)
+              else if (xb && xb.visible && xb.name && !xb.devnote) notCounted.push(tr.name('buff', xb.name, seq))
             }
             if ((panel.notCounted || []).includes('pilotAdapt')) notCounted.push('機師適性')
           }
@@ -443,8 +463,10 @@ class Assembler {
         for (const u of list) {
           const nm = unitDict[u.unit]?.name ?? u.unit
           const hit = out.find((x) => (unitDict[x.unit]?.name ?? x.unit) === nm && (x.level ?? null) === (u.level ?? null) && !!x.ally === !!u.ally)
-          if (hit) hit.count += u.count
-          else out.push({ ...u })
+          if (hit) {
+            hit.count += u.count
+            if (u.unit !== hit.unit && !(hit.merged || []).includes(u.unit)) hit.merged = [...(hit.merged || []), u.unit]
+          } else out.push({ ...u })
         }
         return out
       }
@@ -530,6 +552,7 @@ class Assembler {
       cnOpenDate: R.parseCnOpen(s.cnOpen),
       twVersion: tl.versionId || undefined, twDate: tl.twDate || undefined, twStatus: tl.status,
       groups: groupsOut, weekBuffs,
+      rules: raidRules(this.ex.meta.rules),
       published: true,
       parserVersion: this.ex.meta.parserVersion, sourceBuild: this.ex.meta.build.buildNum,
       i18nPending: [nameRes.pending && 'name', factionRes?.pending && 'faction'].filter(Boolean),

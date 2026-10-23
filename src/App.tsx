@@ -47,6 +47,9 @@ const AdminHistoryPage         = lazy(() => import('./pages/admin/AdminHistoryPa
 const AdminSystemLogPage       = lazy(() => import('./pages/admin/AdminSystemLogPage'))
 const AdminAnalyticsPage       = lazy(() => import('./pages/admin/AdminAnalyticsPage'))
 const AdminAnnouncementsPage   = lazy(() => import('./pages/admin/AdminAnnouncementsPage'))
+const AdminRaidsPage           = lazy(() => import('./pages/admin/AdminRaidsPage'))
+const RaidsPage                = lazy(() => import('./pages/raids/RaidsPage'))
+const RaidSeasonPage           = lazy(() => import('./pages/raids/RaidSeasonPage'))
 const RainbowMechPlannerPage   = lazy(() => import('./pages/guides/tools/RainbowMechPlannerPage'))
 const ComponentDropsPage       = lazy(() => import('./pages/guides/tools/ComponentDropsPage'))
 const StorageDebugPage         = lazy(() => import('./pages/debug/StorageDebugPage'))
@@ -74,6 +77,9 @@ function App() {
             <Route path="backpacks" element={<BackpacksPage />} />
             <Route path="modules" element={<ModulesPage />} />
             <Route path="components" element={<ComponentsPage />} />
+            {/* 武裝討伐（PLAN-064）。新頂層路徑：上線前要到 Cloudflare 把 /raids 加進 SPA fallback 白名單（CLAUDE.md §3、PLAN-064 F-3） */}
+            <Route path="raids" element={<Suspense fallback={null}><RaidsPage /></Suspense>} />
+            <Route path="raids/:seasonId" element={<Suspense fallback={null}><RaidSeasonPage /></Suspense>} />
 
             {/* 版本情報三分頁（PLAN-050 A-1）。共用一個 layout route：tab bar 放在
                 VersionsLayout 裡，切換檢視時不重新掛載，Timeline 走 lazy 也只有內容區進 Suspense。
@@ -146,6 +152,11 @@ function App() {
               element={<AdminRoute><Suspense fallback={null}><AdminAnnouncementsPage /></Suspense></AdminRoute>}
             />
             {/* 使用統計（PLAN-046）。ADMIN 即可看——內容是站務彙總數字，不含個人行為資料 */}
+            {/* 武裝討伐草稿審核（PLAN-064 Phase D）：只開 ADMIN，不放行 LORE_EDITOR */}
+            <Route
+              path="admin/raids"
+              element={<AdminRoute><Suspense fallback={null}><AdminRaidsPage /></Suspense></AdminRoute>}
+            />
             <Route
               path="admin/analytics"
               element={<AdminRoute><Suspense fallback={null}><AdminAnalyticsPage /></Suspense></AdminRoute>}

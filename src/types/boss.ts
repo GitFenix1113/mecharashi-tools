@@ -108,8 +108,6 @@ export interface Boss {
   quote?: string
   /** 逸聞篇數；全文在故事館（決策十四），討伐頁只放入口 */
   anecdoteCount?: number
-  /** 同一角色其他期的出場（只做互連、不合併），值是 raidSeasons 的 id */
-  alsoIn?: string[]
   /** 待校欄位（前台在名稱旁標「待校」） */
   i18nPending?: string[]
 }
@@ -220,6 +218,8 @@ export interface RaidUnit {
   level?: number
   /** 友軍（我方 NPC）；未填＝敵方 */
   ally?: boolean
+  /** 同名同等級合併進這一列的其他模板（例：五種機體的「老練傭兵」）；機體名從 unitDict 取 */
+  merged?: string[]
 }
 
 /** 觸發時點（決策五：由觸發器的結構化條件推出，不用企劃備註） */
@@ -288,6 +288,8 @@ export interface RaidSeason {
   twStatus: 'open' | 'planned'
   groups: RaidSeasonGroup[]
   weekBuffs: RaidWeekBuff[]
+  /** 每週規則（可設為目標的關卡組數等，數字取自遊戲設定，匯入時寫入） */
+  rules?: string[]
   /** 公開開關：發布但先不在前台列出（D-3） */
   published: boolean
   parserVersion: number

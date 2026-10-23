@@ -85,7 +85,8 @@
       <tr><td>variants[難度]</td><td>BossVariant</td><td>實際模板 ID（戰場 ref=BOSS，不是關卡表的 BossID）、等級、機體、武器、<strong>推算面板</strong>（四部位耐久與裝甲、抗暴、閃避、機師屬性）、依難度完整的技能、難度強化文字、「未計入」清單、<code>estimated</code>、異常註記</td></tr>
       <tr><td>skills / parts</td><td></td><td>沿用 PLAN-019 的頂層欄位：取最低難度的那份</td></tr>
       <tr><td>refDict</td><td>RaidRefDict</td><td>技能說明內引用的名稱與說明</td></tr>
-      <tr><td>atlasId / quote / anecdoteCount / alsoIn</td><td></td><td>強敵圖鑑（人物層，決策十三）：條目 ID、台詞、逸聞篇數（全文交故事館，決策十四）、同一角色其他期的出場</td></tr>
+      <tr><td>atlasId / quote / anecdoteCount</td><td></td><td>強敵圖鑑（人物層，決策十三）：條目 ID、台詞、逸聞篇數（全文交故事館，決策十四）。
+      「同一角色其他期的出場」<strong>不存</strong>：前台以同名首領推導（<code>utils/raidView.ts</code> 的 <code>relatedSeasons</code>）——資料包每期的圖鑑條目 ID 都不同，能串起來的只有名字；存成欄位的話，每新增一期都得重發布舊期</td></tr>
     </table>
   </div>
   <div class="warning-block" style="margin-top:12px;">

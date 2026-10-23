@@ -5,6 +5,7 @@ import type {
   MechLoreDoc, MechMaker, GlossaryTerm, RaidSeason, Stage, Boss,
 } from '../types'
 import { mechModuleSet, type MechModuleSet } from '../utils/mechModules'
+import { relatedSeasons, type RaidSeasonLink } from '../utils/raidView'
 import { useGameData, EMPTY_GLOBAL_RESEARCH, type CollectionKey } from '../contexts/GameDataContext'
 
 // ── 通用型別 ──────────────────────────────────────────────────────────────────
@@ -320,6 +321,8 @@ export interface RaidSeasonDetail {
   stages: Stage[]
   /** id → 首領 */
   bosses: Record<string, Boss>
+  /** 首領 id → 同名首領出現的其他已公開期（E-4「也出現在」） */
+  related: Record<string, RaidSeasonLink[]>
 }
 
 /** 一期的完整資料。查無或未公開 → null。 */
@@ -333,6 +336,7 @@ export function useRaidSeason(id: string | undefined): HookResult<RaidSeasonDeta
       season,
       stages: stages.filter((st) => st.raid?.seasonId === id).sort((a, b) => (a.raid!.group - b.raid!.group)),
       bosses: Object.fromEntries(bosses.filter((b) => b.seasonId === id).map((b) => [b.id, b])),
+      related: relatedSeasons(id!, bosses, raidSeasons),
     }
   }, [id, raidSeasons, stages, bosses])
   return { data, loading, error }

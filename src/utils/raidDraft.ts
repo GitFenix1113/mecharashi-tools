@@ -53,6 +53,8 @@ export function applyTermOverrides(draft: Pick<RaidDraft, 'season' | 'stages' | 
   const conflict = new Set<string>()
   const applied: TermOverrideResult['applied'] = []
   const stillPending: RaidPendingTerm[] = []
+  /** 已校條目的草稿譯文（含「照原樣確認」）：這些值的「待校」標記要拿掉 */
+  const verifiedFrom = new Set<string>()
   for (const p of draft.pending || []) {
     const t = terms.get(termKey(p.kind, p.cn))
     if (!t || t.status !== 'verified') {
@@ -63,6 +65,7 @@ export function applyTermOverrides(draft: Pick<RaidDraft, 'season' | 'stages' | 
       }
       continue
     }
+    verifiedFrom.add(p.tw)
     if (t.tw === p.tw) continue
     if (map.has(p.tw) && map.get(p.tw) !== t.tw) conflict.add(p.tw)
     else {
@@ -74,13 +77,42 @@ export function applyTermOverrides(draft: Pick<RaidDraft, 'season' | 'stages' | 
     map.delete(c)
     for (const p of draft.pending) if (p.tw === c && !stillPending.includes(p)) stillPending.push(p)
   }
+  for (const c of conflict) verifiedFrom.delete(c)
+  const { season, stages, bosses } = clearPending(draft, verifiedFrom)
   return {
-    season: replaceDeep(draft.season, map),
-    stages: replaceDeep(draft.stages, map),
-    bosses: replaceDeep(draft.bosses, map),
+    season: replaceDeep(season, map),
+    stages: replaceDeep(stages, map),
+    bosses: replaceDeep(bosses, map),
     applied: applied.filter((a) => !conflict.has(a.from)),
     stillPending,
   }
+}
+
+/** 已校的名稱拿掉「待校」標記：期名／勢力（i18nPending）、首領名（i18nPending）、單位字典（pending） */
+function clearPending(draft: Pick<RaidDraft, 'season' | 'stages' | 'bosses'>, verified: Set<string>) {
+  const dropFrom = (list: string[] | undefined, field: string, value: string | undefined) =>
+    list && value && verified.has(value) ? list.filter((x) => x !== field) : list
+  const tidy = <T extends { i18nPending?: string[] }>(doc: T, list: string[] | undefined): T => {
+    const out = { ...doc, i18nPending: list }
+    if (!list?.length) delete out.i18nPending
+    return out
+  }
+  let sl = draft.season.i18nPending
+  sl = dropFrom(sl, 'name', draft.season.name)
+  sl = dropFrom(sl, 'faction', draft.season.faction?.name)
+  const season = tidy(draft.season, sl)
+  const bosses = draft.bosses.map((b) => tidy(b, dropFrom(b.i18nPending, 'name', b.name)))
+  const stages = draft.stages.map((st) => {
+    if (!st.raid) return st
+    const unitDict = Object.fromEntries(Object.entries(st.raid.unitDict).map(([k, u]) => {
+      if (!u.pending || !verified.has(u.name)) return [k, u]
+      const rest = { ...u }
+      delete rest.pending
+      return [k, rest]
+    }))
+    return { ...st, raid: { ...st.raid, unitDict } }
+  })
+  return { season, stages, bosses }
 }
 
 // ── 草稿 vs 已發布 ─────────────────────────────────────────────────────────────
