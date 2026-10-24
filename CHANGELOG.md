@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-20
+## [Unreleased] - 2026-10-24
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,8 @@
 
 ### ✨ 新功能
 
+- **raids**: PLAN-064 Phase H 審核後修正（譯名全條目、點字修改、欄位覆寫） (`5f57a92`)
+- **raids**: PLAN-064 Phase D／E 武裝討伐頁與後台審核 (`cdf54d5`)
 - **admin**: 詞條圖示底色支援選擇 BUFF 色系 (`061cc8b`)
 - **admin**: 詞條支援白色字形與固定粉紫底圖示 (`51cacf8`)
 - **admin**: 機師招募插畫改選（Pilot.cardKey，比照機甲）＋摩根娜招募插畫上站 (`404e991`)
@@ -328,6 +330,8 @@
 
 ### 📚 文件
 
+- **raids**: PLAN-064 F-3 Cloudflare 白名單已加 /raids（36／41） (`9e530de`)
+- **raids**: PLAN-064 例行流程文件與關聯計畫補註（C-4／F-4／F-6） (`5eb735e`)
 - **plan**: PLAN-063 已合併回 main 並推送（15／19），剩站長資料作業 (`833f1e7`)
 - **plan**: PLAN-063 記下站長確認自選池算卡池 (`8a98e61`)
 - **plan**: PLAN-063 註記梅莉莎正名已修正正式庫 (`386be88`)
@@ -471,6 +475,8 @@
 
 ### 🔧 維護
 
+- **raids**: PLAN-064 Phase B 武裝討伐集合接線與型別 (`278408b`)
+- **raids**: PLAN-064 Phase A 武裝討伐擷取與組裝腳本 (`16bde19`)
 - **scripts**: 機師卡判定認得 NPC 轉正的 5 碼卡號（差異報告、--other-icons） (`c7202e5`)
 - **scripts**: 卡池 prefab 匯出改用正規式比對——彌造者的官方檔名拼成 Pooll（PLAN-042-B J-1） (`23e5eeb`)
 - **lore**: 卡池動態流動圖層照 shader 規格補預設貼圖、遮罩與捲動（PLAN-042-B J-1） (`b0ffc17`)
