@@ -177,7 +177,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">35</div>
+      <div class="summary-num" style="color:var(--accent-green)">36</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -185,7 +185,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-num" style="color:var(--text-dim)">5</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-red);">35 / 41</span>
+      <span style="color:var(--accent-red);">36 / 41</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 85%"></div>
+      <div class="progress-bar-fill" style="width: 88%"></div>
     </div>
   </div>
 
@@ -237,6 +237,10 @@
   <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
     <strong style="color:var(--accent-green);">2026-10-24 C-4 infodata 探測、F-4／F-6 文件：</strong>
     C-4：台版 infodata 只有 6 種資料（<code>pilot_data</code>／<code>aircraft_data</code>／<code>weapon_data</code>／<code>backpack_data</code>／<code>module_props</code>／<code>component_props</code>，取自社群站前端 bundle 的完整清單；未知 target 一律回空陣列），<b>沒有敵人、首領、關卡、BUFF</b>。3,618 筆待校只有 1 筆（維娜·盧諾）對得上它的名稱，而且站上本來就有——<b>不寫匯入腳本</b>，補譯改走候選二：後台譯名校對＋遊戲內「強敵圖鑑 → 武裝討伐」截圖（期名、勢力、英文副標、首領名一頁就有；台版已有 130 位）。探測紀錄在 <code>_local-notes/2026-10/2026-10-24_infodata探測_武裝討伐譯名.md</code>。<br>F-4：<code>public/images/game/README.md</code> 加「新一期武裝討伐」照抄清單；CLAUDE.md 6.5 補武裝討伐匯入一條（與「別用腳本直接改三個集合」）、<code>raid_estimate.py</code> 併入 gitignore 警示；data-patch skill 加「武裝討伐不走這個 skill」一節（bump 交叉引用）。F-6：PLAN-019 Layer 3 descope 區塊與 PLAN-010 承接條目各補一句。
+  </div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
+    <strong style="color:var(--accent-green);">2026-10-24 F-3 Cloudflare 白名單：</strong>
+    站長已在既有規則的 GET 守衛內加 <code>/raids</code>（不進 UA 排除：討伐頁沒有 OG Worker route）。複驗：<code>/raids</code>、<code>/raids/raid-18</code>、<code>/lore</code>、<code>/versions</code> 200，<code>/notarealpath</code> 404；Discordbot 抓海莉絲拿到 <code>Pilot_10103174A_half.jpg</code>、抓故事館卡夏拿到專屬 og:title。完整運算式（由歷次紀錄重建並經實測核對）存在 <code>_local-notes/2026-10/2026-10-24_CF_SPA白名單_完整運算式.md</code>。
   </div>
 </section>
 
@@ -748,7 +752,7 @@
         </div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
