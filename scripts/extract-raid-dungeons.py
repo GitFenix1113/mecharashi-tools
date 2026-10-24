@@ -41,7 +41,8 @@ except ImportError:
 
 # 解析規則一改就 +1（比照公告管線 PLAN-048）；草稿記下版本，報告能分辨「資料變了」與「解析器變了」。
 # v2（2026-10-24）：條件裡引用的 Buff／地形也收進字典。
-PARSER_VERSION = 2
+# v3（2026-10-24）：機體名改取外觀模型（ModelTemplateInfo），不再用軀幹部件名（遊戲內實測：黛博拉＝暮色之牙）。
+PARSER_VERSION = 3
 DEFAULT_OUT_DIR = Path('E:/Mecharashi_Data/raid-extract')
 
 # 四個難度：清單欄位、站上代碼、StringTable 難度名、遊戲列舉 RaidDungeonLevelDifficulty
@@ -246,7 +247,11 @@ class Extractor:
                 for ps in p.get('PassiveSkillIds', []):
                     if (k := self.skill('passive', ps)):
                         u['skills'].append({'ref': k, 'slot': 'mech'})
-            u['mech'] = (u['parts'].get('body') or {}).get('name')
+            # 機體名＝外觀模型（ModelTemplateInfo.MechaNameStrKey），遊戲面板顯示的就是它（黛博拉＝暮色之牙）；
+            # 部件名多半是敵方共用的通用部件（都卜勒／XR／百夫長），只在沒有模型時退回（2026-10-24 遊戲內實測更正）
+            mt = gd.rec('ConfigDataModelTemplateInfo', wt.get('ModelTemplateId')) if wt.get('ModelTemplateId') else None
+            model_name = self.text(mt.get('MechaNameStrKey'), 'mech.name') if mt and mt.get('MechaNameStrKey') else None
+            u['mech'] = model_name or (u['parts'].get('body') or {}).get('name')
             for w in (t.get('ReplaceWapWeapon') or wt.get('WapWeapon') or []):
                 wi = gd.rec('ConfigDataWeaponInfo', w.get('WeaponId'))
                 if not wi:

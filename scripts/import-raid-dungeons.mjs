@@ -571,8 +571,13 @@ function checkRegression(ex) {
     const p = ex.panels[key]
     if (!p) { out.push({ key, who: want.who, ok: false, detail: '找不到推算結果' }); continue }
     const diffs = []
-    const cmp = (label, got, exp) => { if (exp != null && Math.abs((got ?? NaN) - exp) > 1) diffs.push(`${label} ${got} ≠ ${exp}`) }
+    // 遊戲內實測的案例（measured）一位都不能差；推算互比的舊案例容差 1
+    const tol = want.measured ? 0 : 1
+    const cmp = (label, got, exp) => { if (exp != null && Math.abs((got ?? NaN) - exp) > tol) diffs.push(`${label} ${got} ≠ ${exp}`) }
     cmp('四部位耐久', p.hpTotal, want.hpTotal)
+    for (const [k, part, label] of [['torso', 'body', '軀幹'], ['leftArm', 'larm', '左臂'], ['rightArm', 'rarm', '右臂'], ['legs', 'leg', '腿部']]) {
+      cmp(`${label}耐久`, p.parts[part]?.hp, want.hp?.[k])
+    }
     if (want.parts?.torso) { cmp('軀幹耐久', p.parts.body?.hp, want.parts.torso[0]); cmp('軀幹裝甲', p.parts.body?.armor, want.parts.torso[1]) }
     cmp('軀幹裝甲', p.parts.body?.armor, want.torsoArmor)
     cmp('武器攻擊', p.weapons[0]?.attack, want.attack)
