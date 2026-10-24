@@ -3,6 +3,8 @@ import type { Boss, BossVariant } from '../../types/boss'
 import type { RaidDifficulty } from '../../types/enums'
 import { SkillIcon } from '../icons/SkillIcon'
 import { RaidRichText, PendingName } from './RaidRichText'
+import { Tx } from './RaidTx'
+import { RaidManualNote } from './RaidManualNote'
 import { sortBossSkills, skillChangedFromNormal, SKILL_KIND_LABEL, type RaidSeasonLink } from '../../utils/raidView'
 
 // ─── 首領卡（PLAN-064 E-4）────────────────────────────────────────────────────
@@ -68,12 +70,12 @@ export function RaidBossCard({ boss, difficulty, normal, alsoIn }: {
           <div className="flex items-center gap-2 flex-wrap">
             <PendingName pending={boss.i18nPending?.includes('name')} className="text-lg font-bold text-text-primary">{boss.name}</PendingName>
             <span className="px-1.5 py-px text-[10.5px] rounded border border-accent-red/40 text-accent-red bg-accent-red/10">首領</span>
-            {v.mech && <span className="px-1.5 py-px text-[10.5px] rounded border border-border text-text-secondary">{v.mech}</span>}
+            {v.mech && <span className="px-1.5 py-px text-[10.5px] rounded border border-border text-text-secondary"><Tx text={v.mech} /></span>}
           </div>
           <div className="grid grid-cols-[3.5em_1fr] gap-x-2 text-[12.5px] mt-1 text-text-secondary">
             <span className="text-text-dim">等級</span><span>Lv {v.level}</span>
-            {weapon && (<><span className="text-text-dim">武器</span><span>{v.weapons.map((w) => w.name).join('、')}</span></>)}
-            {talent && (<><span className="text-text-dim">天賦</span><span>{talent.name}</span></>)}
+            {weapon && (<><span className="text-text-dim">武器</span><span>{v.weapons.map((w, i) => <span key={i}>{i > 0 && '、'}<Tx text={w.name} /></span>)}</span></>)}
+            {talent && (<><span className="text-text-dim">天賦</span><span><Tx text={talent.name} /></span></>)}
           </div>
           {boss.quote && (
             <p className="text-[12px] text-text-dim italic mt-1.5">「<RaidRichText text={boss.quote} refDict={refDict} />」</p>
@@ -123,7 +125,7 @@ export function RaidBossCard({ boss, difficulty, normal, alsoIn }: {
 
       {v.difficultyText && v.difficultyText.length > 0 && (
         <div className="px-3 py-2 border-t border-border/60 text-[12px] text-text-secondary">
-          <span className="text-text-dim mr-1.5">難度強化</span>{v.difficultyText.join('・')}
+          <span className="text-text-dim mr-1.5">難度強化</span>{v.difficultyText.map((x, i) => <span key={i}>{i > 0 && '・'}<Tx text={x} /></span>)}
         </div>
       )}
 
@@ -136,7 +138,7 @@ export function RaidBossCard({ boss, difficulty, normal, alsoIn }: {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="px-1.5 py-px text-[10.5px] rounded border border-border text-text-dim">{SKILL_KIND_LABEL[s.kind ?? 'passive']}</span>
-                  <span className="text-[13.5px] font-bold text-text-primary">{s.name}</span>
+                  <span className="text-[13.5px] font-bold text-text-primary"><Tx text={s.name} /></span>
                   {s.ap && s.ap !== '0' && <span className="text-[11px] text-accent-cyan">AP {s.ap}</span>}
                   {changed && (
                     <span className={`px-1.5 py-px text-[10px] rounded border ${changed === 'new' ? 'border-accent-orange/40 text-accent-orange' : 'border-accent-yellow/40 text-accent-yellow'}`}>
@@ -152,6 +154,7 @@ export function RaidBossCard({ boss, difficulty, normal, alsoIn }: {
           )
         })}
       </ul>
+      <RaidManualNote paths={boss.manualPaths} difficulty={difficulty} className="px-3 py-2 border-t border-border/60" />
     </div>
   )
 }

@@ -22,8 +22,8 @@ export const TERM_KINDS = [
   'season', 'faction', 'level', 'battle', 'unit', 'mech', 'weapon', 'backpack',
   'skill', 'buff', 'terrain', 'bounty', 'clue', 'quote', 'ui', 'text', 'anecdote',
 ]
-/** 會出現在長文裡、值得先替換的名詞種類（長文本身、介面字串不算） */
-const NAME_KINDS = new Set(['season', 'faction', 'level', 'battle', 'unit', 'mech', 'weapon', 'backpack', 'skill', 'buff', 'terrain'])
+/** 會出現在長文裡、值得先替換的名詞種類（長文本身、介面字串不算）。前台 src/utils/raidDraft.ts 有同一份 */
+export const NAME_KINDS = new Set(['season', 'faction', 'level', 'battle', 'unit', 'mech', 'weapon', 'backpack', 'skill', 'buff', 'terrain'])
 
 export const termHash = (cn) => crypto.createHash('sha1').update(String(cn), 'utf8').digest('hex').slice(0, 16)
 
@@ -45,11 +45,32 @@ export class Translator {
     }
     this.knownTw = knownTw
     this.pending = new Map()
+    this.used = new Map()
     this.siteHits = new Map()
     // 長文替換用：對照表裡「機轉會轉錯」的名詞，長的先換
     this.nameSubs = [...this.entries.values()]
       .filter((e) => NAME_KINDS.has(e.kind) && e.cn.length >= 2 && e.tw !== machine(e.cn))
       .sort((a, b) => b.cn.length - a.cn.length)
+  }
+
+  /** 每一次查表都記下來（含已校）＝草稿的 terms：後台才能搜尋、改正已經確認過的條目 */
+  _use(kind, cn, tw, status, source, season) {
+    const k = `${kind}\u0000${cn}`
+    const u = this.used.get(k) || { kind, cn, tw, status, source, count: 0, seasons: new Set() }
+    u.count++
+    if (season != null) u.seasons.add(season)
+    this.used.set(k, u)
+  }
+
+  /** 不經查表、直接採用的官方譯名（期名取自時間線）：terms 裡記成已校，後台照樣能改 */
+  pin(kind, cn, tw, source, season) {
+    if (cn == null || cn === '') return
+    const k = `${kind}\u0000${cn}`
+    const u = this.used.get(k) || { kind, cn, count: 0, seasons: new Set() }
+    Object.assign(u, { tw, status: 'verified', source })
+    u.count++
+    if (season != null) u.seasons.add(season)
+    this.used.set(k, u)
   }
 
   _pend(kind, cn, tw, source, season) {
@@ -67,14 +88,17 @@ export class Translator {
     if (e) {
       const pending = e.status !== 'verified'
       if (pending) this._pend(kind, cn, e.tw, e.source || 'table', season)
+      this._use(kind, cn, e.tw, pending ? 'pending' : 'verified', e.source || 'table', season)
       return { tw: e.tw, pending }
     }
     const tw = machine(cn)
     if (this.knownTw[kind]?.has(tw)) {
       this.siteHits.set(`${kind}\u0000${cn}`, { kind, cn, tw })
+      this._use(kind, cn, tw, 'verified', 'site', season)
       return { tw, pending: false }
     }
     this._pend(kind, cn, tw, 'machine', season)
+    this._use(kind, cn, tw, 'pending', 'machine', season)
     return { tw, pending: true }
   }
 
@@ -96,6 +120,7 @@ export class Translator {
     const e = this.entries.get(`${kind}\u0000${cn}`)
     if (e) {
       if (e.status !== 'verified') this._pend(kind, cn, e.tw, e.source || 'table', season)
+      this._use(kind, cn, e.tw, e.status === 'verified' ? 'verified' : 'pending', e.source || 'table', season)
       return e.tw
     }
     const slots = []
@@ -106,10 +131,16 @@ export class Translator {
     }
     s = machine(s).replace(/\u0001(\d+)\u0001/g, (_, i) => slots[Number(i)])
     this._pend(kind, cn, s, 'machine', season)
+    this._use(kind, cn, s, 'pending', 'machine', season)
     return s
   }
 
-  /** 待校清單（報告與草稿用）：[{ kind, cn, tw, source, count, seasons: number[] }] */
+  /** 用到的全部條目（草稿的 terms）：[{ kind, cn, tw, status, source, count, seasons: number[] }] */
+  usedList() {
+    return [...this.used.values()].map((u) => ({ ...u, seasons: [...u.seasons].sort((a, b) => a - b) }))
+  }
+
+  /** 待校清單（報告用）：[{ kind, cn, tw, source, count, seasons: number[] }] */
   pendingList() {
     return [...this.pending.values()].map((p) => ({ ...p, seasons: [...p.seasons].sort((a, b) => a - b) }))
   }

@@ -5,6 +5,8 @@ import { DIFFICULTY_TONE, type RaidSeasonLink } from '../../utils/raidView'
 import { FactionLogo } from '../icons/FactionLogo'
 import { PendingName, RaidRichText } from './RaidRichText'
 import { RaidStageSection } from './RaidStageSection'
+import { Tx } from './RaidTx'
+import { RaidManualNote } from './RaidManualNote'
 
 // ─── 一期武裝討伐（PLAN-064 E-3）：/raids/:seasonId 與後台預覽共用 ─────────────────
 //
@@ -55,7 +57,7 @@ export function RaidSeasonView({ season, stages, bosses, related, rewards, diffi
           <h1 className="text-3xl font-bold mt-1">
             <PendingName pending={season.i18nPending?.includes('name')}>{season.name}</PendingName>
           </h1>
-          {season.subtitleEn && <div className="text-[11px] tracking-[3px] uppercase text-text-dim font-[Orbitron,sans-serif] mt-0.5">{season.subtitleEn}</div>}
+          {season.subtitleEn && <div className="text-[11px] tracking-[3px] uppercase text-text-dim font-[Orbitron,sans-serif] mt-0.5"><Tx text={season.subtitleEn} /></div>}
           <div className="flex items-center gap-1.5 flex-wrap mt-2 text-[11px]">
             {season.twVersion && <span className="px-1.5 py-px rounded border border-border text-text-secondary">{season.twVersion}</span>}
             {twStatusChip(season)}
@@ -102,7 +104,7 @@ export function RaidSeasonView({ season, stages, bosses, related, rewards, diffi
               }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} />
-              {season.difficultyNames[d] ?? d}
+              <Tx text={season.difficultyNames[d] ?? d} />
             </button>
           )
         })}
@@ -133,7 +135,7 @@ export function RaidSeasonView({ season, stages, bosses, related, rewards, diffi
               <div className={`text-[9.5px] tracking-[2px] font-[Orbitron,sans-serif] uppercase ${raid.isFinal ? 'text-accent-orange' : 'text-text-dim'}`}>
                 {raid.isFinal ? 'Final・最終關' : `Stage ${raid.group}`}
               </div>
-              <div className="text-[13.5px] font-bold text-text-primary truncate">{v?.name ?? st.name}</div>
+              <div className="text-[13.5px] font-bold text-text-primary truncate"><Tx text={v?.name ?? st.name} /></div>
               <div className="text-[11.5px] text-text-secondary truncate">{(g?.bosses ?? []).map((b) => b.name).join('、')}</div>
             </button>
           )
@@ -164,7 +166,7 @@ export function RaidSeasonView({ season, stages, bosses, related, rewards, diffi
             <div>
               <div className="text-[13px] font-bold text-text-primary mb-1">每週規則</div>
               <ul className="list-disc pl-5 text-[12.5px] text-text-secondary space-y-0.5">
-                {season.rules!.map((r) => <li key={r}>{r}</li>)}
+                {season.rules!.map((r) => <li key={r}><Tx text={r} /></li>)}
               </ul>
             </div>
           )}
@@ -176,9 +178,9 @@ export function RaidSeasonView({ season, stages, bosses, related, rewards, diffi
               <ul className="space-y-1 text-[12.5px] text-text-secondary">
                 {season.weekBuffs.map((w) => (
                   <li key={w.week}>
-                    <span className="text-text-primary">第 {w.week} 週起「{w.name}」</span>
+                    <span className="text-text-primary">第 {w.week} 週起「<Tx text={w.name} />」</span>
                     {w.desc && <span>：<RaidRichText text={w.desc} /></span>}
-                    {w.effects.length > 0 && <div className="text-[11.5px] text-text-dim">{w.effects.join('・')}</div>}
+                    {w.effects.length > 0 && <div className="text-[11.5px] text-text-dim">{w.effects.map((x, i) => <span key={i}>{i > 0 && '・'}<Tx text={x} /></span>)}</div>}
                   </li>
                 ))}
               </ul>
@@ -187,6 +189,7 @@ export function RaidSeasonView({ season, stages, bosses, related, rewards, diffi
         </div>
       )}
 
+      <RaidManualNote paths={season.manualPaths} />
       <p className="text-[11px] text-text-dim">
         資料來源：依陸版遊戲資料整理・譯名尚在校對，簡轉繁暫譯的名稱以虛線底線標示
       </p>

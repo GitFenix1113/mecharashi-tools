@@ -26,7 +26,7 @@
     raids — 武裝討伐
     <span>MECHARASHI — FIRESTORE SCHEMA · PLAN-064</span>
   </h1>
-  <p class="hero-sub">raidSeasons／stages／bosses 三個公開集合＋raidDrafts／raidTerms 兩個後台限定集合 · 文件一律由匯入腳本產生、後台按「發布」寫入 · 不進 SPECS</p>
+  <p class="hero-sub">raidSeasons／stages／bosses 三個公開集合＋raidDrafts／raidTerms／raidOverrides 三個後台限定集合 · 文件一律由匯入腳本產生、後台按「發布」寫入 · 不進 SPECS</p>
   <div class="version-badge" style="background:var(--accent-red);color:#fff;">PLAN-064 — 2026-10-24（集合已接線、資料待首次匯入與發布）</div>
 </header>
 
@@ -36,11 +36,11 @@
   <div class="section-label red">01 — 資料從哪裡來</div>
   <div class="section-title">匯入管線（決策一）</div>
   <div class="info-block">
-    <strong>📌 這五個集合沒有人工建檔的入口</strong><br>
+    <strong>📌 這六個集合沒有人工建檔的入口</strong><br>
     ① <code>scripts/extract-raid-dungeons.py</code> 唯讀陸版遊戲參數資料包 → 中性 JSON（簡中原文＋ID＋結構）<br>
     ② <code>scripts/import-raid-dungeons.mjs</code> 套譯名、判定台版開放、組成三個公開集合的文件；預設 dry-run，出照抄清單報告；<code>--write</code> 只寫 <code>raidDrafts</code><br>
-    ③ 後台 <code>/admin/raids</code>：看差異、校譯名（寫 <code>raidTerms</code>）、看異常 → 按「發布」，一個 batch 寫入 <code>raidSeasons</code>／<code>stages</code>／<code>bosses</code> 並 bump 三個版本<br>
-    人工資料只存在 <code>raidTerms</code>（與 <code>scripts/lib/raidAnomalies.json</code>）；發布文件是套表的結果，重跑匯入可以重生。
+    ③ 後台 <code>/admin/raids</code>：看差異、校譯名（寫 <code>raidTerms</code>）、修正非文字欄位（寫 <code>raidOverrides</code>）、看異常 → 按「發布」，一個 batch 寫入 <code>raidSeasons</code>／<code>stages</code>／<code>bosses</code> 並 bump 三個版本<br>
+    人工資料只存在 <code>raidTerms</code>、<code>raidOverrides</code>（與 <code>scripts/lib/raidAnomalies.json</code>）；發布文件＝草稿 → 已校譯名 → 欄位覆寫，重跑匯入可以重生，人工的部分不會被洗掉。
   </div>
 </section>
 
@@ -60,6 +60,7 @@
       <tr><td>weekBuffs</td><td>{ week, name, desc?, effects[], difficulties[] }[]</td><td>支援協議Ⅰ～Ⅲ（第 4／5／6 週、只對初試與磨鍊有效）；effects 是屬性翻成的人讀文字</td></tr>
       <tr><td>published</td><td>boolean</td><td>公開開關：false＝已寫入但前台不列出（D-3）</td></tr>
       <tr><td>parserVersion / sourceBuild / i18nPending</td><td>number / string / string[]?</td><td>擷取規則版本、資料包 BuildNum、待校欄位</td></tr>
+      <tr><td>manualPaths</td><td>string[]?</td><td>後台覆寫過的欄位路徑（三個公開集合都有這欄，PLAN-064 H）；前台列成「人工修正（與陸版資料不同）」。只在發布時由覆寫產生，不要手寫</td></tr>
     </table>
   </div>
 
@@ -97,13 +98,16 @@
 
 <section class="section">
   <div class="section-label red">03 — 後台限定集合</div>
-  <div class="section-title">raidDrafts／raidTerms</div>
+  <div class="section-title">raidDrafts／raidTerms／raidOverrides</div>
   <div class="data-table-wrap">
     <table class="data-table">
       <tr><th>集合</th><th>文件</th><th>內容</th></tr>
-      <tr><td>raidDrafts</td><td><code>raid-21</code>（同期 ID）</td><td>三個集合的待發布內容（season／stages／bosses）＋逸聞全文與原文雜湊＋待校清單（kind／原文／草稿譯文）＋異常＋與已發布的差異摘要＋解析器版本＋最近一次發布摘要（<code>lastPublished</code>）。一期約 200–260 KB</td></tr>
+      <tr><td>raidDrafts</td><td><code>raid-21</code>（同期 ID）</td><td>三個集合的待發布內容（season／stages／bosses）＋逸聞全文與原文雜湊＋譯名清單 <code>terms</code>（這一期用到的全部譯名：kind／原文／草稿譯文／已校或待校／來源；2026-10-24 前的草稿只有待校清單 <code>pending</code>，後台兩種都讀）＋異常＋與已發布的差異摘要＋解析器版本＋最近一次發布摘要（<code>lastPublished</code>）。一期約 200–260 KB</td></tr>
       <tr><td>raidTerms</td><td>種類名（<code>unit</code>、<code>skill</code>、<code>buff</code>、<code>text</code>、<code>anecdote</code>…）</td><td><code>{ kind, entries: { [termHash(原文)]: { cn, tw, status, source, firstSeason?, updatedAt?, updatedBy? } } }</code>。
-        鍵是原文 sha1 前 16 碼（原文可能含 <code>.</code> <code>/</code> 等欄位路徑字元）。<strong>只存人工校對或來源匯入的條目</strong>，機轉結果不落地——重新匯入不會洗掉校對（決策八）</td></tr>
+        鍵是原文 sha1 前 16 碼（原文可能含 <code>.</code> <code>/</code> 等欄位路徑字元）。<strong>只存人工校對或來源匯入的條目</strong>，機轉結果不落地——重新匯入不會洗掉校對（決策八）。名詞改了，含這個名詞、自己沒有條目的長文在預覽與發布時跟著換（<code>applyTermOverrides</code>）</td></tr>
+      <tr><td>raidOverrides</td><td><code>raid-21</code>（同期 ID）</td><td><code>{ seasonId, entries: { [termHash(doc:docId:path)]: { doc, docId, path, base, value, note?, updatedAt, updatedBy } } }</code>（PLAN-064 H）。
+        審核後發現的非文字錯誤（回合、陣容、數值…）或只改一處的文字；<code>path</code> 點分隔、陣列用索引。發布時疊在「草稿＋已校譯名」上（<code>buildRaidDocs</code>）。
+        <code>base</code>＝建立當下的草稿值：重跑匯入後草稿的值不同 → 這筆<strong>暫停套用</strong>、後台標 ⚠ 等站長確認，舊修改不會默默蓋在新資料上</td></tr>
     </table>
   </div>
 </section>
@@ -112,8 +116,8 @@
   <div class="section-label red">04 — 規則、讀取與刻意不做的連動</div>
   <div class="section-title">安全規則與快取</div>
   <div class="info-block">
-    <strong>🔒 規則</strong>：五個集合都是 <code>read, write: if isAdmin()</code>。前台經 Cloudflare Worker 代理三個公開集合（<code>/api/data/raidSeasons</code>、<code>stages</code>、<code>bosses</code>）；
-    <code>raidDrafts</code>／<code>raidTerms</code> 不代理。<code>LORE_EDITOR</code> 碰不到任何一個（<code>npm run emu:test-rules</code> 有驗）。匯入腳本用 admin SDK，繞過規則。<br><br>
+    <strong>🔒 規則</strong>：六個集合都是 <code>read, write: if isAdmin()</code>。前台經 Cloudflare Worker 代理三個公開集合（<code>/api/data/raidSeasons</code>、<code>stages</code>、<code>bosses</code>）；
+    <code>raidDrafts</code>／<code>raidTerms</code>／<code>raidOverrides</code> 不代理。<code>LORE_EDITOR</code> 碰不到任何一個（<code>npm run emu:test-rules</code> 有驗）。匯入腳本用 admin SDK，繞過規則。<br><br>
     <strong>💾 快取</strong>：三個公開集合走版本 gate；<code>stages</code>／<code>bosses</code> 在 <code>NO_LOCAL_CACHE_KEYS</code>（各約 1.3 MB、四個難度都存一次，只有點進某期才用得到）。
     列表頁只載 <code>raidSeasons</code>，期詳情頁才載 stages＋bosses。
   </div>

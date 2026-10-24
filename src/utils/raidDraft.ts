@@ -1,12 +1,17 @@
-// PLAN-064 D：武裝討伐草稿的純函式（後台審核頁用；node:test 可直接測）。
+// PLAN-064 D／H：武裝討伐草稿的純函式（後台審核頁用；node:test 可直接測）。
 //
 // 譯名校對怎麼生效（決策八）：
-//   · 草稿裡的名稱是匯入當下套表的結果；pending 清單記著「哪個簡中原文、當時用了什麼譯文」。
+//   · 草稿裡的名稱是匯入當下套表的結果；terms 清單記著「每個簡中原文、當時用了什麼譯文、已校或待校」。
 //   · 站長在後台改了某條譯名（寫進 raidTerms）之後，發布前用 applyTermOverrides 把草稿裡
 //     「整個字串等於當時譯文」的值換成新譯名——名稱、整段長文都是整字串，換得到。
-//   · 長文裡夾帶的名詞換不到（要重跑匯入，匯入端會先替換已校名詞再機轉），審核頁會提醒。
+//   · 名詞改了，含這個名詞的長文跟著換（H-2）：只換「原文確實含這個名詞、譯文含舊譯名」的長文，
+//     長文自己有對照表條目的不動（那是站長親手寫的版本）。不必再為了名詞重跑匯入。
 
-import type { Boss, RaidDraft, RaidPendingTerm, RaidSeason, RaidTermEntry, Stage } from '../types/boss'
+import type { Boss, RaidDraft, RaidOverride, RaidSeason, RaidTermEntry, RaidTermUse, Stage } from '../types/boss'
+import { applyFieldOverrides, type FieldOverrideResult } from './raidOverride.ts'
+
+/** 會出現在長文裡的名詞種類——與 scripts/lib/raidI18n.mjs 的 NAME_KINDS 一致 */
+export const NAME_KINDS = new Set(['season', 'faction', 'level', 'battle', 'unit', 'mech', 'weapon', 'backpack', 'skill', 'buff', 'terrain'])
 
 /** termHash：與匯入端 scripts/lib/raidI18n.mjs 相同（sha1 hex 前 16 碼），對照表條目的鍵 */
 export async function termHash(cn: string): Promise<string> {
@@ -24,6 +29,12 @@ export function indexTerms(docs: { kind: string; entries: Record<string, RaidTer
   return out
 }
 
+/** 草稿的譯名清單：新草稿存 terms（含已校），舊草稿只有 pending */
+export function draftTerms(draft: Pick<RaidDraft, 'terms' | 'pending'>): RaidTermUse[] {
+  if (draft.terms) return draft.terms
+  return (draft.pending ?? []).map((p) => ({ ...p, status: 'pending' as const }))
+}
+
 /** 深層替換所有「整個字串等於 from」的值 */
 function replaceDeep<T>(val: T, map: Map<string, string>): T {
   if (typeof val === 'string') return (map.get(val) ?? val) as T
@@ -34,57 +45,98 @@ function replaceDeep<T>(val: T, map: Map<string, string>): T {
   return val
 }
 
+/** 後台看到的一筆譯名（套上對照表與名詞連動之後） */
+export interface RaidTermView {
+  kind: string
+  cn: string
+  /** 草稿裡的譯文（匯入當下） */
+  draftTw: string
+  /** 現在的譯文 */
+  tw: string
+  status: 'verified' | 'pending'
+  source: string
+  count: number
+  /** 對照表裡有這一條（站長校過，或來源匯入） */
+  hasEntry: boolean
+  /** 長文裡的名詞改過、跟著換了 */
+  linked?: boolean
+  /** 同一個草稿譯文對到兩種新譯文，沒有套用（要人工處理） */
+  conflict?: boolean
+}
+
 export interface TermOverrideResult {
   season: RaidSeason
   stages: Stage[]
   bosses: Boss[]
-  /** 已套用的對照（草稿譯文 → 新譯名） */
+  /** 已套用的已校譯名（草稿譯文 → 新譯名；不含名詞連動的長文） */
   applied: { kind: string; cn: string; from: string; to: string }[]
-  /** 仍待校的條目（對照表沒有，或對照表也還是 pending） */
-  stillPending: RaidPendingTerm[]
+  /** 這一期的全部譯名（後台譯名頁） */
+  entries: RaidTermView[]
+  /** 仍待校（含衝突） */
+  stillPending: RaidTermView[]
 }
 
 /**
- * 把後台校對過的譯名套進草稿（發布前呼叫）。只換「整個字串等於草稿當時譯文」的值。
- * 同一個草稿譯文對到兩種新譯名時（不同種類、原文不同但機轉相同）不換，列進 stillPending 讓人工處理。
+ * 把後台校對過的譯名套進草稿（預覽與發布都走這裡）。只換「整個字串等於草稿當時譯文」的值。
+ * 同一個草稿譯文對到兩種新譯文時（不同種類、原文不同但機轉相同）不換，列進 stillPending 讓人工處理。
  */
-export function applyTermOverrides(draft: Pick<RaidDraft, 'season' | 'stages' | 'bosses' | 'pending'>, terms: Map<string, RaidTermEntry>): TermOverrideResult {
+export function applyTermOverrides(draft: Pick<RaidDraft, 'season' | 'stages' | 'bosses' | 'terms' | 'pending'>, terms: Map<string, RaidTermEntry>): TermOverrideResult {
+  const entries: RaidTermView[] = draftTerms(draft).map((p) => {
+    const t = terms.get(termKey(p.kind, p.cn))
+    return {
+      kind: p.kind, cn: p.cn, draftTw: p.tw, tw: t ? t.tw : p.tw,
+      status: t ? t.status : p.status, source: t?.source ?? p.source, count: p.count, hasEntry: !!t,
+    }
+  })
+
+  // 名詞 → 長文連動（長的名詞先換，避免「科斯蒂」吃掉「科斯蒂利亞」）
+  const changed = entries
+    .filter((v) => NAME_KINDS.has(v.kind) && v.cn.length >= 2 && v.tw !== v.draftTw)
+    .sort((a, b) => b.draftTw.length - a.draftTw.length)
+  if (changed.length) {
+    for (const v of entries) {
+      if (NAME_KINDS.has(v.kind) || v.hasEntry) continue
+      const slots: string[] = []
+      let s = v.draftTw
+      for (const n of changed) {
+        if (!v.cn.includes(n.cn) || !s.includes(n.draftTw)) continue
+        s = s.split(n.draftTw).join(`\u0001${slots.push(n.tw) - 1}\u0001`)
+      }
+      if (!slots.length) continue
+      // 佔位是「\u0001序號\u0001」：切開後奇數段就是序號（換完的新譯名不會再被後面較短的名詞誤換）
+      v.tw = s.split('\u0001').map((x, i) => (i % 2 ? slots[Number(x)] : x)).join('')
+      v.linked = true
+    }
+  }
+
+  // 草稿譯文 → 新譯文；同一個草稿譯文對到兩種新譯文＝衝突，整組不換
   const map = new Map<string, string>()
   const conflict = new Set<string>()
-  const applied: TermOverrideResult['applied'] = []
-  const stillPending: RaidPendingTerm[] = []
+  for (const v of entries) {
+    if (v.tw === v.draftTw) continue
+    if (map.has(v.draftTw) && map.get(v.draftTw) !== v.tw) conflict.add(v.draftTw)
+    else map.set(v.draftTw, v.tw)
+  }
+  for (const c of conflict) map.delete(c)
+  for (const v of entries) {
+    if (conflict.has(v.draftTw) && v.tw !== v.draftTw) {
+      v.conflict = true
+      v.tw = v.draftTw
+    }
+  }
+
   /** 已校條目的草稿譯文（含「照原樣確認」）：這些值的「待校」標記要拿掉 */
-  const verifiedFrom = new Set<string>()
-  for (const p of draft.pending || []) {
-    const t = terms.get(termKey(p.kind, p.cn))
-    if (!t || t.status !== 'verified') {
-      stillPending.push(t ? { ...p, tw: t.tw } : p)
-      if (t && t.tw !== p.tw) { // 來源匯入但未校：仍採用它的譯文（優先於機轉）
-        if (map.has(p.tw) && map.get(p.tw) !== t.tw) conflict.add(p.tw)
-        else map.set(p.tw, t.tw)
-      }
-      continue
-    }
-    verifiedFrom.add(p.tw)
-    if (t.tw === p.tw) continue
-    if (map.has(p.tw) && map.get(p.tw) !== t.tw) conflict.add(p.tw)
-    else {
-      map.set(p.tw, t.tw)
-      applied.push({ kind: p.kind, cn: p.cn, from: p.tw, to: t.tw })
-    }
-  }
-  for (const c of conflict) {
-    map.delete(c)
-    for (const p of draft.pending) if (p.tw === c && !stillPending.includes(p)) stillPending.push(p)
-  }
-  for (const c of conflict) verifiedFrom.delete(c)
+  const verifiedFrom = new Set(entries.filter((v) => v.status === 'verified' && !v.conflict).map((v) => v.draftTw))
   const { season, stages, bosses } = clearPending(draft, verifiedFrom)
   return {
     season: replaceDeep(season, map),
     stages: replaceDeep(stages, map),
     bosses: replaceDeep(bosses, map),
-    applied: applied.filter((a) => !conflict.has(a.from)),
-    stillPending,
+    applied: entries
+      .filter((v) => v.status === 'verified' && !v.linked && v.tw !== v.draftTw)
+      .map((v) => ({ kind: v.kind, cn: v.cn, from: v.draftTw, to: v.tw })),
+    entries,
+    stillPending: entries.filter((v) => v.status !== 'verified' || v.conflict),
   }
 }
 
@@ -172,4 +224,19 @@ export function diffDraft(
   for (const s of pubStages) if (!draft.stages.some((x) => x.id === s.id)) out.push({ id: s.id, kind: 'stage', status: 'removed', fields: [] })
   for (const b of pubBosses) if (!draft.bosses.some((x) => x.id === b.id)) out.push({ id: b.id, kind: 'boss', status: 'removed', fields: [] })
   return out
+}
+
+// ── 發布用的完整文件：草稿 → 已校譯名 → 欄位覆寫（預覽與發布同一條路）────────────────
+
+export interface RaidBuildResult extends TermOverrideResult {
+  /** 套用了的欄位覆寫 */
+  overrides: RaidOverride[]
+  /** 暫停套用的欄位覆寫（草稿的值與建立時不同，等站長確認） */
+  suspended: FieldOverrideResult['suspended']
+}
+
+export function buildRaidDocs(draft: Pick<RaidDraft, 'season' | 'stages' | 'bosses' | 'terms' | 'pending'>, terms: Map<string, RaidTermEntry>, overrides: RaidOverride[] = []): RaidBuildResult {
+  const t = applyTermOverrides(draft, terms)
+  const f = applyFieldOverrides(draft, t, overrides)
+  return { ...t, season: f.season, stages: f.stages, bosses: f.bosses, overrides: f.active, suspended: f.suspended }
 }

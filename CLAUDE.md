@@ -236,7 +236,7 @@ barrel 按領域拆檔（`pilot` / `mech` / `weapon` / `module` / `backpack` / `
   由 `.github/workflows/scrape-announcements.yml` 每週排程執行。改解析器的慣例見 PLAN-048。
 - **武裝討伐（PLAN-064）讀陸版參數資料包、不是爬蟲**：`node scripts/import-raid-dungeons.mjs`（擷取過期會自己呼叫 `extract-raid-dungeons.py`）→ `--write` 只寫 `raidDrafts` →
   後台 `/admin/raids` 校譯名、看差異後發布到 `raidSeasons`／`stages`／`bosses`（發布會自己 bump 三個版本）。**別用腳本直接改這三個集合**——下次發布會被草稿蓋回；
-  要修就改匯入腳本或譯名表 `raidTerms` 再重跑。照抄清單在匯入報告與 `public/images/game/README.md`。
+  譯名錯到後台「譯名校對」（`raidTerms`）、回合／陣容／數值錯到後台「修正」（`raidOverrides`），兩者重跑匯入都不會洗掉；整批同類的錯才改匯入腳本。照抄清單在匯入報告與 `public/images/game/README.md`。
 - **官網爬蟲已退場（2026-10-11）**：`scrape-pilots-v3.js`、`scrape-mechs.js`、`scrape-weapons.js`、`scrape-modules.js`、`scrape-components.js`、`scrape-backpacks.js`、`scrape-skill-icons.mjs`
   與 `package.json` 的 `scrape:*`／`migrate*` 指令都已移出 repo。原檔封存在 `E:\Mecharashi_Data\script-archive\2026-10-11\`（多數本來就被 `.gitignore` 擋著、git 裡沒有），
   清單與理由見該夾的 `README.md`。**不要主動提議用爬蟲補資料，也不要把它們搬回來。**

@@ -173,6 +173,11 @@ service cloud.firestore {
       allow read:  if isAdmin();
       allow write: if isAdmin();
     }
+    // PLAN-064 H：審核後的欄位覆寫（一期一份；發布時疊在草稿上，重跑匯入不會洗掉）
+    match /raidOverrides/{docId} {
+      allow read:  if isAdmin();
+      allow write: if isAdmin();
+    }
     // 系統 meta（PLAN-017 遊戲資料版本號；Phase 3-2 收緊為 isAdmin 可讀，Worker 走 /api/versions 代讀，管理員可 bump）
     match /meta/{docId} {
       allow read: if isAdmin();

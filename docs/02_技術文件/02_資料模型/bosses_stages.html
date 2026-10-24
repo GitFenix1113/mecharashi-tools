@@ -63,7 +63,9 @@
       <tr><td>RaidUnit／RaidUnitEntry</td><td>unit（鍵）、count、level、ally／name、kind、mech、weapons、pending</td><td>陣容一列與單位字典；載具鍵加 <code>v</code> 前綴</td></tr>
       <tr><td>RaidRefDict</td><td>'buf:ID'／'main:ID'／'passive:ID'／'active:ID'／'terrain:ID' → { name, desc? }</td><td>文字內 <code>⟦…⟧</code> 引用記號的字典；<code>⟦em:…⟧</code> 是遊戲以顏色強調的字</td></tr>
       <tr><td>RaidSeason／RaidWeekBuff</td><td>faction、difficulties、difficultyNames、twStatus、groups、weekBuffs、published</td><td>一期與支援協議</td></tr>
-      <tr><td>RaidDraft／RaidTermDoc／RaidTermEntry／RaidPendingTerm／RaidAnecdoteDraft</td><td></td><td>後台限定：匯入草稿、譯名對照表、待校清單、逸聞草稿</td></tr>
+      <tr><td>RaidDraft／RaidTermDoc／RaidTermEntry／RaidTermUse／RaidPendingTerm／RaidAnecdoteDraft</td><td>RaidDraft.terms（RaidTermUse：kind、cn、tw、status、source、count）</td><td>後台限定：匯入草稿、譯名對照表、這一期用到的全部譯名（含已校；舊草稿只有待校清單 RaidPendingTerm）、逸聞草稿</td></tr>
+      <tr><td>RaidOverride／RaidOverrideDoc</td><td>doc、docId、path、base、value、note、updatedAt、updatedBy</td><td>後台限定：審核後的欄位覆寫（PLAN-064 H），發布時疊在草稿上；base 與草稿現值不同就暫停套用</td></tr>
+      <tr><td>manualPaths（RaidSeason／Stage／Boss）</td><td>string[]?</td><td>發布時由覆寫產生的「人工修正」欄位路徑，前台依難度列出</td></tr>
     </table>
   </div>
   <div class="info-block">

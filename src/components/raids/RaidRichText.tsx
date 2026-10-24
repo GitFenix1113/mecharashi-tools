@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { RaidRefDict, RaidUnitEntry } from '../../types/boss'
 import { parseRaidText } from '../../utils/raidView'
+import { Tx } from './RaidTx'
 
 // ─── 武裝討伐的說明文字（PLAN-064 決策七）────────────────────────────────────
 //
@@ -11,10 +12,11 @@ import { parseRaidText } from '../../utils/raidView'
 // 敵方 Buff 不在站上 buffs 集合，所以不走 EntityRef（ReferenceContext）：字典就在文件裡，點開即看。
 
 export function PendingName({ children, pending, className = '' }: { children: ReactNode; pending?: boolean; className?: string }) {
-  if (!pending) return <span className={className}>{children}</span>
+  const inner = typeof children === 'string' ? <Tx text={children} /> : children
+  if (!pending) return <span className={className}>{inner}</span>
   return (
     <span className={`border-b border-dashed border-text-dim/70 ${className}`} title="譯名待校（目前是簡轉繁暫譯）">
-      {children}
+      {inner}
     </span>
   )
 }
@@ -23,7 +25,7 @@ function RefChip({ name, desc, refDict, unitDict, depth }: {
   name: string; desc?: string; refDict: RaidRefDict; unitDict?: Record<string, RaidUnitEntry>; depth: number
 }) {
   const [open, setOpen] = useState(false)
-  if (!desc || depth > 1) return <span className="text-accent-purple">[{name}]</span>
+  if (!desc || depth > 1) return <span className="text-accent-purple">[<Tx text={name} />]</span>
   return (
     <span className="relative inline">
       <button
@@ -32,7 +34,7 @@ function RefChip({ name, desc, refDict, unitDict, depth }: {
         aria-expanded={open}
         className="text-accent-purple hover:text-accent-purple/80 underline decoration-dotted decoration-accent-purple/50 underline-offset-2 cursor-help"
       >
-        [{name}]
+        [<Tx text={name} />]
       </button>
       {open && (
         <span className="block my-1 px-2.5 py-1.5 rounded border border-accent-purple/30 bg-bg-tooltip text-[12.5px] leading-relaxed text-text-secondary not-italic">
@@ -53,7 +55,7 @@ export function RaidRichText({ text, refDict = {}, unitDict, depth = 0 }: {
 }) {
   if (!text) return null
   return (
-    <>
+    <Tx text={text}>
       {parseRaidText(text).map((tk, i) => {
         switch (tk.t) {
           case 'text':
@@ -70,6 +72,6 @@ export function RaidRichText({ text, refDict = {}, unitDict, depth = 0 }: {
           }
         }
       })}
-    </>
+    </Tx>
   )
 }

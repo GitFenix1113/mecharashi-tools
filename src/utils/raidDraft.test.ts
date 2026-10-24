@@ -23,7 +23,7 @@ test('applyTermOverrides：已校譯名換掉整字串相符的值；長文裡�
   const r = applyTermOverrides({ season, stages: [stage], bosses: [boss], pending: [{ kind: 'unit', cn: '卢克', tw: '盧克', source: 'machine', count: 3 }] }, terms)
   assert.equal(r.bosses[0].name, '路克')
   assert.equal(r.stages[0].raid!.unitDict['853501'].name, '路克')
-  assert.equal(r.stages[0].raid!.variants.normal!.winText, '擊敗盧克') // 長文：要重跑匯入
+  assert.equal(r.stages[0].raid!.variants.normal!.winText, '擊敗盧克') // 長文不在 terms 裡：不會被連動
   assert.deepEqual(r.applied, [{ kind: 'unit', cn: '卢克', from: '盧克', to: '路克' }])
   assert.deepEqual(r.stillPending, [])
 })
@@ -80,4 +80,35 @@ test('applyTermOverrides：已校（含照原樣確認）的名稱拿掉待校�
   assert.equal(r.stages[0].raid!.unitDict['853501'].pending, undefined)
   assert.equal(r.stages[0].raid!.unitDict['2203012'].pending, true)
   assert.deepEqual(r.season.i18nPending, ['name'])
+})
+
+test('applyTermOverrides（H）：已校條目也能再改；名詞改了，含它的長文跟著換', () => {
+  const st = JSON.parse(JSON.stringify(stage))
+  st.raid.variants.normal.winText = '擊敗科斯蒂莉亞'
+  const draft = { season, stages: [st], bosses: [{ ...boss, name: '科斯蒂莉亞' }], terms: [
+    { kind: 'unit', cn: '科斯蒂利亚', tw: '科斯蒂莉亞', status: 'verified' as const, source: 'manual', count: 2 },
+    { kind: 'text', cn: '击败科斯蒂利亚', tw: '擊敗科斯蒂莉亞', status: 'pending' as const, source: 'machine', count: 1 },
+  ] }
+  const terms = indexTerms([{ kind: 'unit', entries: { h: { cn: '科斯蒂利亚', tw: '科斯蒂利亞', status: 'verified', source: 'manual' } } }])
+  const r = applyTermOverrides(draft, terms)
+  assert.equal(r.bosses[0].name, '科斯蒂利亞')
+  assert.equal(r.stages[0].raid!.variants.normal!.winText, '擊敗科斯蒂利亞')
+  const text = r.entries.find((e) => e.kind === 'text')!
+  assert.equal(text.linked, true)
+  assert.equal(text.status, 'pending') // 連動換字不等於校過
+  assert.deepEqual(r.applied, [{ kind: 'unit', cn: '科斯蒂利亚', from: '科斯蒂莉亞', to: '科斯蒂利亞' }])
+})
+
+test('applyTermOverrides（H）：長文自己校過就不連動（那是站長親手寫的版本）', () => {
+  const draft = { season, stages: [], bosses: [], terms: [
+    { kind: 'unit', cn: '卢克', tw: '盧克', status: 'pending' as const, source: 'machine', count: 1 },
+    { kind: 'text', cn: '击败卢克', tw: '擊敗盧克', status: 'pending' as const, source: 'machine', count: 1 },
+  ] }
+  const terms = indexTerms([
+    { kind: 'unit', entries: { a: { cn: '卢克', tw: '路克', status: 'verified', source: 'manual' } } },
+    { kind: 'text', entries: { b: { cn: '击败卢克', tw: '打倒盧克', status: 'verified', source: 'manual' } } },
+  ])
+  const r = applyTermOverrides(draft, terms)
+  assert.equal(r.entries.find((e) => e.kind === 'text')!.tw, '打倒盧克')
+  assert.equal(r.stillPending.length, 0)
 })

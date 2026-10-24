@@ -4,6 +4,8 @@ import type { RaidDifficulty } from '../../types/enums'
 import { RaidRichText, PendingName } from './RaidRichText'
 import { RaidBossCard } from './RaidBossCard'
 import { RaidTimeline } from './RaidTimeline'
+import { Tx } from './RaidTx'
+import { RaidManualNote } from './RaidManualNote'
 import { unitMechs, type RaidSeasonLink } from '../../utils/raidView'
 
 // ─── 一個關卡組在某個難度（PLAN-064 E-3／E-5／E-6）───────────────────────────
@@ -59,7 +61,7 @@ export function RaidStageSection({ stage, difficulty, bosses, related, defaultOp
             {raid.isFinal ? 'Final Stage' : `Stage ${raid.group}`}
           </div>
           <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
-            {v.name}
+            <Tx text={v.name} />
             {raid.isFinal && <span className="px-1.5 py-px text-[10.5px] rounded bg-accent-orange/15 text-accent-orange border border-accent-orange/40">最終關</span>}
           </h3>
           {v.desc && <p className="text-[12px] text-text-dim italic">「<RaidRichText text={v.desc} refDict={refDict} unitDict={unitDict} />」</p>}
@@ -90,18 +92,18 @@ export function RaidStageSection({ stage, difficulty, bosses, related, defaultOp
             <div className="space-y-1.5">
               {v.features?.map((f, i) => (
                 <div key={`f${i}`} className="px-3 py-1.5 rounded border border-accent-cyan/30 bg-accent-cyan/5 text-[12.5px] text-text-secondary">
-                  <span className="text-accent-cyan font-bold mr-1">關卡特性・{f.name}</span>
+                  <span className="text-accent-cyan font-bold mr-1">關卡特性・<Tx text={f.name} /></span>
                   <RaidRichText text={f.desc} refDict={refDict} unitDict={unitDict} />
                 </div>
               ))}
               {v.terrain?.map((t, i) => (
                 <div key={`t${i}`} className="px-3 py-1.5 rounded border border-border bg-bg-dark/40 text-[12.5px] text-text-secondary">
-                  <span className="text-text-primary font-bold mr-1">地形・{t.name}</span>
+                  <span className="text-text-primary font-bold mr-1">地形・<Tx text={t.name} /></span>
                   <RaidRichText text={t.desc} refDict={refDict} unitDict={unitDict} />
                 </div>
               ))}
               {v.difficultyText && v.difficultyText.length > 0 && (
-                <div className="text-[12px] text-text-dim">難度強化（敵方）：{v.difficultyText.join('・')}</div>
+                <div className="text-[12px] text-text-dim">難度強化（敵方）：{v.difficultyText.map((x, i) => <span key={i}>{i > 0 && '・'}<Tx text={x} /></span>)}</div>
               )}
             </div>
           ) : null}
@@ -129,7 +131,7 @@ export function RaidStageSection({ stage, difficulty, bosses, related, defaultOp
                           </span>
                           <span className="min-w-0 flex-1 truncate text-text-primary">
                             <PendingName pending={e?.pending}>{e?.name ?? '未知單位'}</PendingName>
-                            {unitMechs(u, unitDict).length > 0 && <span className="text-text-dim">・{unitMechs(u, unitDict).join('／')}</span>}
+                            {unitMechs(u, unitDict).length > 0 && <span className="text-text-dim">・{unitMechs(u, unitDict).map((m, j) => <span key={j}>{j > 0 && '／'}<Tx text={m} /></span>)}</span>}
                             {u.count > 1 && <span className="text-text-secondary"> ×{u.count}</span>}
                           </span>
                           {(u.level ?? e?.level) ? <span className="text-[11px] text-text-dim font-[JetBrains_Mono,monospace]">Lv {u.level ?? e?.level}</span> : null}
@@ -144,11 +146,11 @@ export function RaidStageSection({ stage, difficulty, bosses, related, defaultOp
                 <div className="space-y-2">
                   {v.bounties.map((b, i) => (
                     <div key={i} className="rounded border border-border bg-bg-dark/30 px-3 py-2">
-                      <div className="text-[13px]"><span className="font-bold text-accent-yellow mr-1.5">{b.name}</span><span className="text-text-secondary"><RaidRichText text={b.desc} refDict={refDict} unitDict={unitDict} /></span></div>
+                      <div className="text-[13px]"><span className="font-bold text-accent-yellow mr-1.5"><Tx text={b.name} /></span><span className="text-text-secondary"><RaidRichText text={b.desc} refDict={refDict} unitDict={unitDict} /></span></div>
                       {b.clue && (
                         <details className="mt-1 text-[12px]">
                           <summary className="cursor-pointer text-text-dim">
-                            線索 <span className="text-text-secondary font-bold">{b.clue.name}</span>
+                            線索 <span className="text-text-secondary font-bold"><Tx text={b.clue.name} /></span>
                             {b.clue.desc && <span className="italic">「<RaidRichText text={b.clue.desc} />」</span>}
                           </summary>
                           {b.clue.details && <p className="mt-1 leading-relaxed text-text-secondary whitespace-pre-line"><RaidRichText text={b.clue.details} /></p>}
@@ -165,6 +167,7 @@ export function RaidStageSection({ stage, difficulty, bosses, related, defaultOp
             <SectionLabel zh="增援與回合事件" en="Timeline" />
             <RaidTimeline variant={v} refDict={refDict} unitDict={unitDict} />
           </div>
+          <RaidManualNote paths={stage.manualPaths} difficulty={difficulty} />
         </div>
       )}
     </section>

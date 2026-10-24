@@ -532,6 +532,7 @@ class Assembler {
     }))
 
     // 期本身
+    if (tl.name) tr.pin('season', s.name, tl.name, 'timeline', seq)
     const nameRes = tl.name ? { tw: tl.name, pending: false } : tr.lookup('season', s.name || '', seq)
     const factionRes = faction?.name ? tr.lookup('faction', faction.name, seq) : null
     const scope = this.ex.meta.rules?.weekBuffScope || ''
@@ -692,9 +693,11 @@ async function main() {
   const newSeeds = seeds.filter((x) => !site.termDocs[x.kind]?.entries?.[termHash(x.cn)])
 
   const pendingAll = tr.pendingList()
+  const usedAll = tr.usedList()
   const seasonsRep = results.map((r) => {
     const d = diffAgainst(r, site.published)
-    const draft = { id: r.season.id, seq: r.season.seq, ...r, pending: pendingAll.filter((p) => p.seasons.includes(r.season.seq)) }
+    const terms = usedAll.filter((u) => u.seasons.includes(r.season.seq))
+    const draft = { id: r.season.id, seq: r.season.seq, ...r, terms, pending: terms.filter((u) => u.status !== 'verified') }
     const bytes = Buffer.byteLength(JSON.stringify(draft))
     const prev = site.drafts[r.season.id]
     return {
@@ -766,7 +769,8 @@ function buildDraft(d, ex, diff) {
     sourceBuild: ex.meta.build.buildNum, sourcePackage: ex.meta.build.package,
     generatedAt: new Date().toISOString(),
     season: d.season, stages: d.stages, bosses: d.bosses, anecdotes: d.anecdotes,
-    pending: d.pending.map((p) => ({ kind: p.kind, cn: p.cn, tw: p.tw, source: p.source, count: p.count })),
+    // 這一期用到的全部譯名（含已校）：後台搜尋、改正已確認過的條目都靠它；舊草稿只有 pending（待校）
+    terms: d.terms.map((p) => ({ kind: p.kind, cn: p.cn, tw: p.tw, status: p.status, source: p.source, count: p.count })),
     anomalies: d.anomalies,
     diff: { status: diff.status, changed: diff.changed },
   })

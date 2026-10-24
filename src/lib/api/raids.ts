@@ -7,18 +7,20 @@
 // 兩個後台限定集合（只開規則給 ADMIN，不進 Worker／GameDataContext）：
 //   raidDrafts   匯入草稿（scripts/import-raid-dungeons.mjs --write 寫入）
 //   raidTerms    譯名對照表分片（後台校對頁寫入；匯入腳本讀）
+//   raidOverrides 欄位覆寫（一期一份，後台「修正」寫入；發布時疊在草稿上，PLAN-064 H）
 //
 // ⚠ 三個公開集合刻意**不進 entityRefs SPECS**、不走 saveWithHistory：
-//   文件一律由匯入腳本產生、後台按「發布」整批覆寫，人工資料只存在 raidTerms——
+//   文件一律由匯入腳本產生、後台按「發布」整批覆寫，人工資料只存在 raidTerms／raidOverrides——
 //   沒有級聯要跑，也不需要逐筆稽核（重跑匯入就能重生，見 data retention 的「能否再生」判準）。
 //   進 SPECS 會讓級聯刪除與引用掃描自動連帶讀這些集合，rules 晚一步部署時全站刪除會一起 permission-denied。
 
-import { collection, doc, getDocs, query, where, writeBatch, setDoc, updateDoc } from 'firebase/firestore'
+import { collection, deleteField, doc, getDocs, query, where, writeBatch, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import type { Boss, RaidDraft, RaidSeason, RaidTermDoc, RaidTermEntry, Stage } from '../../types'
+import type { Boss, RaidDraft, RaidOverride, RaidOverrideDoc, RaidSeason, RaidTermDoc, RaidTermEntry, Stage } from '../../types'
 import { fetchCollection, stripUndefined } from './firestoreCore'
 import { bumpDataVersion } from './versions'
-import { applyTermOverrides, termHash, type TermOverrideResult } from '../../utils/raidDraft'
+import { buildRaidDocs, termHash, type RaidBuildResult } from '../../utils/raidDraft'
+import { overrideId } from '../../utils/raidOverride'
 
 // ── 前台（GameDataContext 經 Worker 讀；這三支是 dev 直連／後台用）──
 export const getRaidSeasons = () => fetchCollection<RaidSeason>('raidSeasons')
@@ -28,6 +30,20 @@ export const getBosses = () => fetchCollection<Boss>('bosses')
 // ── 後台：草稿與對照表 ──
 export const getRaidDrafts = () => fetchCollection<RaidDraft>('raidDrafts')
 export const getRaidTerms = () => fetchCollection<RaidTermDoc>('raidTerms')
+export const getRaidOverrides = () => fetchCollection<RaidOverrideDoc>('raidOverrides')
+
+/** 寫一筆欄位覆寫（merge 進該期的文件，只動這一筆）。回傳寫入的鍵與內容 */
+export async function saveRaidOverride(seasonId: string, o: Omit<RaidOverride, 'updatedAt' | 'updatedBy'>, by: string): Promise<{ key: string; entry: RaidOverride }> {
+  const entry: RaidOverride = stripUndefined({ ...o, base: o.base ?? null, value: o.value ?? null, updatedAt: new Date().toISOString(), updatedBy: by })
+  const key = await termHash(overrideId(o))
+  await setDoc(doc(db, 'raidOverrides', seasonId), { seasonId, entries: { [key]: entry } }, { merge: true })
+  return { key, entry }
+}
+
+/** 刪一筆欄位覆寫（還原成草稿的值） */
+export async function deleteRaidOverride(seasonId: string, key: string): Promise<void> {
+  await updateDoc(doc(db, 'raidOverrides', seasonId), { [`entries.${key}`]: deleteField() })
+}
 
 /**
  * 寫一筆譯名（站長在校對頁填的）。merge 寫入該種類的分片，只動這一條。
@@ -44,18 +60,18 @@ export async function saveRaidTerm(kind: string, cn: string, tw: string, by: str
 }
 
 /** 發布結果（給審核頁顯示） */
-export interface PublishResult extends TermOverrideResult {
+export interface PublishResult extends RaidBuildResult {
   written: number
   deleted: string[]
 }
 
 /**
- * 發布一期（D-4）：草稿套上已校譯名 → 一個 batch 寫入 raidSeasons／stages／bosses，
+ * 發布一期（D-4）：草稿套上已校譯名與欄位覆寫（H）→ 一個 batch 寫入 raidSeasons／stages／bosses，
  * 刪掉這一期已發布、但草稿裡已經沒有的關卡與首領 → bump 三個集合 → 在草稿記一筆發布摘要。
  * published＝公開開關（false＝寫入但前台不列出，D-3）。
  */
-export async function publishRaidDraft(draft: RaidDraft, terms: Map<string, RaidTermEntry>, by: string, published: boolean): Promise<PublishResult> {
-  const r = applyTermOverrides(draft, terms)
+export async function publishRaidDraft(draft: RaidDraft, terms: Map<string, RaidTermEntry>, overrides: RaidOverride[], by: string, published: boolean): Promise<PublishResult> {
+  const r = buildRaidDocs(draft, terms, overrides)
   const now = new Date().toISOString()
   const sid = draft.season.id
   const [oldStages, oldBosses] = await Promise.all([

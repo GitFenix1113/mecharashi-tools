@@ -51,3 +51,22 @@ test('text：有整段條目時直接用條目', () => {
   assert.equal(t.text('text', '原文', 1), '人工譯文')
   assert.equal(t.pendingList().length, 0)
 })
+
+test('usedList：已校、站上既有、機轉都記下（後台要能改已確認過的）；pin 覆蓋成官方譯名', () => {
+  const t = new Translator(
+    { unit: doc([{ cn: '科斯蒂利亚', tw: '科斯蒂莉亞', status: 'verified', source: 'manual' }]) },
+    { mech: new Set(['戴亞斯']) },
+  )
+  t.name('unit', '科斯蒂利亚', 9)
+  t.name('mech', '戴亚斯', 9)
+  t.text('text', '击败戴亚斯', 9)
+  t.name('season', '归途', 19)
+  t.pin('season', '归途', '歸途（時間線）', 'timeline', 19)
+  const used = Object.fromEntries(t.usedList().map((u) => [`${u.kind}:${u.cn}`, `${u.tw}|${u.status}|${u.source}`]))
+  assert.deepEqual(used, {
+    'unit:科斯蒂利亚': '科斯蒂莉亞|verified|manual',
+    'mech:戴亚斯': '戴亞斯|verified|site',
+    'text:击败戴亚斯': '擊敗戴亞斯|pending|machine',
+    'season:归途': '歸途（時間線）|verified|timeline',
+  })
+})

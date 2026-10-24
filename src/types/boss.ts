@@ -2,7 +2,8 @@
 //
 // PLAN-019-D（2026-06-28）把 bosses／stages 降級，理由是「人工建成結構化資料投報率低」。
 // PLAN-064 改由遊戲參數資料包＋腳本產生（scripts/extract-raid-dungeons.py → import-raid-dungeons.mjs），
-// 經後台 /admin/raids 審核發布；人工資料只存在譯名對照表（raidTerms），發布文件一律由腳本產生。
+// 經後台 /admin/raids 審核發布；人工資料只存在譯名對照表（raidTerms）與欄位覆寫（raidOverrides，PLAN-064 H），
+// 發布文件＝腳本產生的草稿 → 已校譯名 → 欄位覆寫。
 //
 // ⚠ 不要把 bosses／stages／raidSeasons 加進 entityRefs 的 SPECS、也不要寫 descriptionRefs：
 //   寫進 SPECS 會自動連動 cascadeDelete 與 useRefScanData，規則沒部署時會弄壞既有的後台刪除。
@@ -110,6 +111,8 @@ export interface Boss {
   anecdoteCount?: number
   /** 待校欄位（前台在名稱旁標「待校」） */
   i18nPending?: string[]
+  /** 後台人工覆寫過的欄位路徑（PLAN-064 H；前台列成「人工修正」） */
+  manualPaths?: string[]
 }
 
 /** 關卡掉落條目（取代 src/data/bossDrops.ts 的靜態索引） */
@@ -143,6 +146,8 @@ export interface Stage {
   updatedAt?: string
   /** 武裝討伐的關卡組（PLAN-064）；category 為 '討伐' 時才有 */
   raid?: RaidStageInfo
+  /** 後台人工覆寫過的欄位路徑（PLAN-064 H；前台列成「人工修正」） */
+  manualPaths?: string[]
 }
 
 // ─── 武裝討伐（PLAN-064）────────────────────────────────────────────────────
@@ -296,6 +301,8 @@ export interface RaidSeason {
   /** 資料包 BuildNum，例 '376_ZiLongA' */
   sourceBuild: string
   i18nPending?: string[]
+  /** 後台人工覆寫過的欄位路徑（PLAN-064 H；前台列成「人工修正」） */
+  manualPaths?: string[]
   updatedAt?: string
 }
 
@@ -311,7 +318,21 @@ export interface RaidSeasonGroup {
 // ─── 後台限定（PLAN-064 B-3）：匯入草稿與譯名對照表 ───────────────────────────────
 // 只開規則（ADMIN 讀寫），不進 Worker、不進 GameDataContext；匯入腳本以 admin SDK 寫入。
 
-/** 一筆待校譯名（機轉或來源匯入、尚未人工確認） */
+/** 草稿用到的一筆譯名（PLAN-064 H：含已校，後台才能改正已確認過的條目） */
+export interface RaidTermUse {
+  /** 對照表種類＝raidTerms 文件 ID（unit、skill、text…） */
+  kind: string
+  /** 簡中原文（對照表的鍵） */
+  cn: string
+  /** 草稿裡用的譯文（匯入當下） */
+  tw: string
+  status: 'verified' | 'pending'
+  /** manual／site／timeline／machine／infodata／screenshot… */
+  source: string
+  count: number
+}
+
+/** 一筆待校譯名（機轉或來源匯入、尚未人工確認）。2026-10-24 前的草稿只存這個 */
 export interface RaidPendingTerm {
   /** 對照表種類＝raidTerms 文件 ID（unit、skill、text…） */
   kind: string
@@ -351,7 +372,10 @@ export interface RaidDraft {
   stages: Stage[]
   bosses: Boss[]
   anecdotes: RaidAnecdoteDraft[]
-  pending: RaidPendingTerm[]
+  /** 這一期用到的全部譯名（含已校） */
+  terms?: RaidTermUse[]
+  /** 舊草稿只有待校清單（新草稿改存 terms） */
+  pending?: RaidPendingTerm[]
   anomalies: { levelId: number; code: string; type: string; registered: boolean }[]
   /** 匯入當下與已發布版本的比較 */
   diff: { status: 'new' | 'changed' | 'same'; changed: string[] }
@@ -370,6 +394,27 @@ export interface RaidTermEntry {
   firstSeason?: number
   updatedAt?: string
   updatedBy?: string
+}
+
+/** 一筆欄位覆寫（PLAN-064 H）：審核後發現的非文字錯誤（回合、陣容、數值…）或只改一處的文字 */
+export interface RaidOverride {
+  doc: 'season' | 'stage' | 'boss'
+  docId: string
+  /** 欄位路徑，點分隔、陣列用索引：'raid.variants.hell.turnLimit'、'variants.d4.parts.torso.durable' */
+  path: string
+  /** 建立時草稿原本的值；重跑匯入後草稿的值不同 → 暫停套用、標 ⚠ 等站長重新確認 */
+  base: unknown
+  value: unknown
+  note?: string
+  updatedAt: string
+  updatedBy: string
+}
+
+/** raidOverrides/{raid-21}：一期的欄位覆寫，鍵是 termHash(doc:docId:path) */
+export interface RaidOverrideDoc {
+  id: string
+  seasonId: string
+  entries: Record<string, RaidOverride>
 }
 
 /** raidTerms/{kind}：一個種類的對照表分片，鍵是 termHash(簡中原文)（原文可能含 . / 等欄位路徑字元） */
