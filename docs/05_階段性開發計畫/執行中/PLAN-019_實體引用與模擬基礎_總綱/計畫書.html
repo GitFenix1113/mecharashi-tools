@@ -237,6 +237,9 @@
     <strong>已 descope（不在本計畫實作）：</strong>BOSS 機制／關卡打法為各關獨特的敘事內容、可重用的結構化引用（重複 BUFF）相對少，把它建成 <code>bosses</code>/<code>stages</code> 結構化集合的投報率低。
     決定整層移交 <a href="../PLAN-010_攻略系統/計畫書.html" style="color:var(--accent-cyan);">PLAN-010 攻略系統</a>——以攻略 CMS 自由圖文撰寫各關打法、用 Phase B 實體嵌入承載偶發 buff 卡片。
     掉落索引 <code>src/data/bossDrops.ts</code> <strong>維持現狀</strong>（續餵 <code>BossDropTooltip</code> 顯示元件掉落來源），不遷移、不建集合。下方原始設計保留作歷史參考。
+    <br><strong>2026-10-24 補註：</strong>Layer 3 的 <code>bosses</code>／<code>stages</code> 型別由
+    <a href="../PLAN-064_武裝討伐敵人資訊頁/計畫書.html" style="color:var(--accent-cyan);">PLAN-064 武裝討伐敵人資訊頁</a>
+    以「陸版參數資料包 → 腳本匯入 → 後台審核發布」的方式復用（補難度維度與增援時程），範圍只有武裝討伐；打法攻略仍歸 PLAN-010，<code>bossDrops.ts</code> 不受影響（首領剿滅日後併元件掉落另案）。
   </div>
   <div class="decision-block">
     <span style="opacity:0.6;">（原始設計，已 descope）</span>現行 <code>src/data/bossDrops.ts</code> 是靜態的 元件→關卡→掉落索引。一般化為 Firestore 集合

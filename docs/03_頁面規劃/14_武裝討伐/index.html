@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>武裝討伐頁面規劃 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../01_規劃書/米赫瑪超吉情豹站_規劃書.html">📋 概要總覽</a>
+    <span>›</span>
+    <a href="../index.html">頁面規劃</a>
+    <span>›</span>
+    <span class="current">武裝討伐</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239,68,68,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge red">◆ Page Design</div>
+  <h1>武裝討伐<span>ARMAMENT RAID · /raids/*</span></h1>
+  <p class="hero-sub">每一期武裝討伐、每個難度的首領（推算面板與技能）、開場陣容、增援時程、勝敗與懸賞線索（PLAN-064）</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label">基本資訊</div>
+  <div class="section-title">頁面規格</div>
+  <table class="spec-table">
+    <tr><th>路由</th><td><code>/raids</code>（期列表）｜<code>/raids/:seasonId</code>（期詳情，難度放查詢字串 <code>?d=hard|hell|d4</code>，初試省略）｜<code>/admin/raids</code>（審核，<code>AdminRoute</code>：只開 ADMIN／OWNER，不放行 LORE_EDITOR）。
+      <strong>新頂層路徑</strong>：上線前要到 Cloudflare 把 <code>/raids</code> 加進 SPA fallback 白名單（CLAUDE.md §3、PLAN-064 F-3）</td></tr>
+    <tr><th>導覽</th><td>「資料圖鑑」群組的第七個成員（<code>Layout.tsx</code> 的 <code>catalogNavItems</code>，圖示 <code>target</code>），所以進到 /raids 時 header 下方常駐圖鑑分頁列</td></tr>
+    <tr><th>開發階段</th><td><a href="../../05_階段性開發計畫/執行中/PLAN-064_武裝討伐敵人資訊頁/計畫書.html">PLAN-064</a> Phase D／E（2026-10-24）</td></tr>
+    <tr><th>登入需求</th><td>前台不需要登入；審核頁 ADMIN／OWNER</td></tr>
+    <tr><th>資料來源</th><td>列表頁只載 <code>raidSeasons</code>（約 30 K 字元，照常快取）＋版本時間線（取每期的專武與背包）；期詳情才載 <code>stages</code>＋<code>bosses</code>（各約 1.3 MB，不落 localStorage）。
+      一律走 <code>useRaidSeasons()</code>／<code>useRaidSeason(id)</code>；只顯示 <code>published</code> 的期，未公開的期與不存在同樣處理。
+      資料由腳本匯入、後台按「發布」寫入，見 <a href="../../02_技術文件/04_Firebase/資料庫設計文件/raids.html">raids 資料庫設計</a></td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <div class="section-label">版面</div>
+  <div class="section-title">期列表 /raids</div>
+  <ul style="line-height:1.9;margin-left:18px;">
+    <li>時間線有收錄的期（v2.8 起）畫成卡片，比照遊戲內強敵圖鑑的分組：浮水印期號、勢力徽章＋勢力名、期名＋英文副標、台版版本與狀態（實線綠＝台版已開放、虛線黃＝台版預計）、難度色條、四個關卡組的首領（最終關強調）、專武與背包。</li>
+    <li>更早的期（台版都已開放）收成精簡列。</li>
+    <li>首領頭像：資料包的機師模板沒有圖檔鍵，先用名字首字佔位（PLAN-064 E-4 待查項）。</li>
+  </ul>
+
+  <div class="section-title" style="margin-top:24px;">期詳情 /raids/:seasonId</div>
+  <ul style="line-height:1.9;margin-left:18px;">
+    <li>頁首：期號、期名、英文副標、版本／台版狀態／陸版開放日／難度數與關數／勢力；右側獎勵卡（取自時間線）。來源說明一句帶過（依陸版資料、推算值、虛線底線＝待校；<strong>不寫推算方式</strong>，開放問題 ① 選 A）。</li>
+    <li>難度分頁：只畫該期實際有的難度，選擇寫進網址方便分享；右側標「每週加成適用／不適用此難度」。</li>
+    <li>關卡選單（四格）→ 點了展開該關並捲過去；各關一次只展開一個（後台預覽全部展開）。</li>
+    <li>每關：勝敗與回合上限、線索門檻（最終關）、關卡特性與地形、難度強化文字；左欄首領卡（推算面板、技能依難度、與初試不同的標註、「未計入」清單、異常註記、「也出現在：第 N 期」互連——同名首領在前台推導，見 <code>relatedSeasons</code>）；右欄開場陣容（同名同等級合成 ×N 並列出所有機體）、懸賞與線索（詳情預設收合）；下方增援與回合事件（回合格＋條件觸發列）；有人工覆寫時在關卡／首領卡底部列「✎ 人工修正（與陸版資料不同）：…」（只列這個難度的欄位）。</li>
+    <li>頁尾：每週規則與支援協議Ⅰ～Ⅲ。</li>
+  </ul>
+</section>
+
+<section class="section">
+  <div class="section-label">元件</div>
+  <div class="section-title">src/components/raids/</div>
+  <table class="spec-table">
+    <tr><th>元件</th><th>用途</th></tr>
+    <tr><td><code>RaidSeasonCard</code></td><td>列表卡片；<code>RaidStatusChip</code> 台版狀態</td></tr>
+    <tr><td><code>RaidSeasonView</code></td><td>期詳情的本體——/raids/:seasonId 與後台預覽<strong>共用同一個元件</strong>，審核時看到的就是上線後的樣子</td></tr>
+    <tr><td><code>RaidStageSection</code></td><td>一個關卡組在某難度（可受控展開）</td></tr>
+    <tr><td><code>RaidBossCard</code></td><td>首領卡；<code>BossPortrait</code> 首字佔位頭像</td></tr>
+    <tr><td><code>RaidTimeline</code></td><td>增援時程與回合事件</td></tr>
+    <tr><td><code>RaidTx</code>／<code>raidEdit</code></td><td>後台預覽的「點字修改」：<code>Tx</code> 包住每段譯名，只有審核頁提供 context 時才畫虛線框、可點；前台原樣輸出（PLAN-064 H）</td></tr>
+    <tr><td><code>RaidManualNote</code></td><td>「人工修正」註記（文件的 <code>manualPaths</code>，依難度篩選）</td></tr>
+    <tr><td><code>RaidRichText</code></td><td>說明文字的 <code>⟦…⟧</code> 記號：Buff／技能／地形畫成可點開說明的 [名稱]、單位名、強調數字；<code>PendingName</code> 待校虛線底線</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-secondary);">純顯示邏輯在 <code>src/utils/raidView.ts</code>（記號解析、時點標籤、回合格、技能差異、時間線獎勵；有 node:test）。</p>
+</section>
+
+<section class="section">
+  <div class="section-label">後台</div>
+  <div class="section-title">審核 /admin/raids</div>
+  <ul style="line-height:1.9;margin-left:18px;">
+    <li>入口：<code>/admin</code> 頂部的子頁捷徑「⚔️ 武裝討伐審核」。</li>
+    <li>左側每期一列：新期／有差異 N／與前台相同、待校數、異常數、台版狀態、未公開標記。</li>
+    <li>右側分頁（PLAN-064 H 加入「修正」與點字修改）：<strong>差異</strong>（草稿 vs 前台，逐文件、逐欄位，細到 <code>raid.variants.&lt;難度&gt;</code>；被拿掉的文件標「將刪除」）／<strong>譯名校對</strong>（待校／已校／全部三種篩選＋跨種類搜尋，改正確認過的條目也在這裡；寫進 <code>raidTerms</code>；名詞改了，含它的說明文字自動跟著換）／<strong>預覽</strong>（<code>RaidSeasonView</code>，套上已校譯名與修正；打開「點字修改」可直接點畫面上的字改譯名）／<strong>修正</strong>（選期資訊／關卡組／首領＋難度，逐欄改回合、陣容、數值，或以 JSON 整段改；存進 <code>raidOverrides</code>，草稿值變了會暫停套用並列在最上面）／<strong>逸聞</strong>（可對照原文；前台呈現交故事館子計畫）／<strong>異常</strong>。</li>
+    <li>發布：確認框列出新增／變動／刪除份數與仍待校數 → 一個 batch 寫三個集合、刪掉這期已不存在的文件、bump 三個版本、在草稿記發布摘要。「發布後在前台列出」與「從前台隱藏」是公開開關。</li>
+    <li>審核佇列是站長的：沒有任何一步會自動發布或自動把待校改成已校。</li>
+  </ul>
+</section>
+
+</main>
+
+<!--LAST-UPDATED-->
+<div class="doc-updated">最後更新：2026-10-24 · 依 git 紀錄自動產生</div>
+<!--/LAST-UPDATED-->
+
+</body>
+</html>
