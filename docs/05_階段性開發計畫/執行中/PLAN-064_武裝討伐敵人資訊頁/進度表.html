@@ -177,15 +177,15 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">40</div>
+      <div class="summary-num" style="color:var(--accent-green)">42</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">6</div>
+      <div class="summary-num" style="color:var(--text-dim)">3</div>
       <div class="summary-lbl">待開始</div>
     </div>
     <div class="summary-card">
@@ -197,10 +197,10 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-red);">40 / 46</span>
+      <span style="color:var(--accent-red);">42 / 46</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 87%"></div>
+      <div class="progress-bar-fill" style="width: 91%"></div>
     </div>
   </div>
 
@@ -245,6 +245,14 @@
   <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
     <strong style="color:var(--accent-green);">2026-10-24 Phase H（審核後修正）：</strong>
     站長要求審核後發現錯誤要有可編輯的畫面，並拍板「非文字錯誤也能改、存成覆寫」。完成：譯名頁涵蓋全部條目（待校／已校／全部＋跨種類搜尋）、名詞改了含它的說明文字自動跟著換、預覽「點字修改」、「修正」分頁（逐欄或 JSON 整段，存 <code>raidOverrides</code>；草稿值變了就暫停套用並列 ⚠）、前台「人工修正（與陸版資料不同）」註記。模擬器驗收：改已校人名 → 16 筆說明文字／逸聞連動；預覽 259 段可點；回合上限與陣容覆寫 → 改草稿原值觸發暫停 → 「仍要覆寫」→ 發布 → 前台 TURN 10、×5 與註記正確；<code>emu:test-rules</code> 61／61、<code>npm test</code> 1,683 全綠。⚠ <b>正式環境要再部署一次 rules</b>（新增 raidOverrides），並重跑一次 <code>--write</code> 讓草稿帶上完整譯名清單（H-5）。
+  </div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
+    <strong style="color:var(--accent-green);">2026-10-24 上線（站長選「先上線、再慢慢發布」）：</strong>
+    站長已部署 rules（含 raidOverrides）與 Worker、正式庫重跑 <code>--write</code>（21 期草稿都帶完整 <code>terms</code>，共 5,329 筆、已校 80）；分支 fast-forward 合併回 main 並 push（<code>bf0c08a0</code>，build 通過）。前台 <code>/raids</code> 在發布前顯示「資料整理中」，站長在正式站 <code>/admin/raids</code> 逐期校對後發布（F-1）。
+  </div>
+  <div class="impact-note" style="background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.25);">
+    <strong style="color:var(--accent-green);">2026-10-24 F-5 第一筆遊戲內實測（黛博拉煉獄）：</strong>
+    站長截圖第 18 期黛博拉煉獄：軀幹 298257、手臂 150375、腿部 182763。推算原始值 298257.16／150375.21／<b>182763.63</b>——遊戲取整是<b>無條件捨去</b>，推算段原本四捨五入，腿部多 1。修正：推算段 v2 改捨去（備份已同步）；回歸基準加入這筆實測（<code>measured</code>，零容差、四部位逐一比對），舊推算案例換成捨去後的值，9／9。同時發現<b>機體名取錯</b>：遊戲顯示外觀模型名（<code>ModelTemplateInfo</code>，黛博拉＝暮色之牙），擷取段卻取軀幹部件名（敵方多用通用部件：都卜勒／XR／百夫長），1,258 個單位錯 1,257 個 → 擷取規則 v3 改取模型名，大多自動對上站上機甲名，待校機體只剩 5 台敵方專屬。F-5 剩第 10／13 期兩筆「高難度未強化」異常待查。⚠ 正式庫要重跑一次 <code>--write</code> 草稿才會更新。
   </div>
 </section>
 
@@ -745,7 +753,7 @@
         </div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -777,7 +785,7 @@
         </div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
@@ -842,7 +850,7 @@
     <div class="task-group-header">
       <div class="task-group-title">H-1～H-5 &nbsp; 可編輯的審核頁</div>
       <div class="task-group-meta">raidTerms · raidOverrides · /admin/raids</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -892,7 +900,7 @@
         </div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
