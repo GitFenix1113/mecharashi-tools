@@ -371,6 +371,15 @@ function MechEditPanel({
 
   const set = <K extends keyof Mech>(key: K, value: Mech[K]) => setForm((f) => ({ ...f, [key]: value }))
 
+  // 改名（修錯字）：只動 name，文件 ID 不跟著改。撞名比照新增時的名稱維度（useNewItemCreation），
+  // 但只在**有改名**時擋存檔——既有資料萬一已經同名，不該因此連其他欄位都存不了。
+  const trimmedName = form.name.trim()
+  const renamed     = trimmedName !== mech.name
+  const nameClash   = useMemo(
+    () => (trimmedName ? gd.mechs.find((m) => m.id !== form.id && m.name.trim() === trimmedName) : undefined),
+    [gd.mechs, form.id, trimmedName],
+  )
+
   /**
    * 改品質時，四部位接口依規則一併帶入（2026-08-28）。
    *
@@ -527,8 +536,10 @@ function MechEditPanel({
   }
 
   async function handleSubmit() {
+    if (!trimmedName) { setError('機甲名稱不可空白'); setTab('basic'); return }
+    if (renamed && nameClash) { setError(`名稱「${trimmedName}」已被 ${nameClash.id} 使用`); setTab('basic'); return }
     setSaving(true); setError(null)
-    try { await onSave(form) }
+    try { await onSave({ ...form, name: trimmedName }) }
     catch (e) { setError(e instanceof Error ? e.message : '儲存失敗，請重試'); setSaving(false) }
   }
 
@@ -557,6 +568,19 @@ function MechEditPanel({
         {/* ── 基本數值 ── */}
         {tab === 'basic' && (
           <>
+            <Field label="機甲名稱 name">
+              <input value={form.name} onChange={(e) => set('name', e.target.value)} className="input-field" />
+              <p className={`text-[11px] mt-1 ${!trimmedName || nameClash ? 'text-accent-yellow' : renamed ? 'text-accent-green' : 'text-text-dim'}`}>
+                {!trimmedName
+                  ? '⚠ 名稱不可空白'
+                  : nameClash
+                  ? `⚠ 已有另一台機甲叫「${trimmedName}」（${nameClash.id}）${renamed ? '，換個名稱才能存檔' : ''}`
+                  : renamed
+                    ? `原名「${mech.name}」→ 存檔後全站改顯示新名稱；文件 ID ${form.id} 不變。`
+                    : `文件 ID ${form.id} 不會跟著改名。`}
+                {trimmedName && renamed && !nameClash && ' 版本時間線、灰燼行動名單裡的機甲名稱是各自存的文字，要另外改。'}
+              </p>
+            </Field>
             <div className={`${GRID_AUTO_FIELDS} gap-3`}>
               <Field label="護甲類型 armorType">
                 <select className="input-field" value={form.armorType} onChange={(e) => set('armorType', e.target.value as ArmorType)}>
