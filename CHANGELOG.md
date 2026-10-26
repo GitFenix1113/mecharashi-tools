@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-24
+## [Unreleased] - 2026-10-26
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **admin**: 機甲編輯面板可修改機甲名稱 (`f993318`)
 - **raids**: PLAN-064 Phase H 審核後修正（譯名全條目、點字修改、欄位覆寫） (`5f57a92`)
 - **raids**: PLAN-064 Phase D／E 武裝討伐頁與後台審核 (`cdf54d5`)
 - **admin**: 詞條圖示底色支援選擇 BUFF 色系 (`061cc8b`)
@@ -224,6 +225,7 @@
 
 ### 🐛 修復
 
+- **raids**: 首領面板改用無條件捨去、機體名改取外觀模型 (`cee37c8`)
 - **gacha**: 遊騎兵招募插畫改回 Ranger02、龍雀歸位，後台新增招募插畫改選 (`4ca23c7`)
 - **share**: 分享碼登錄簿補上摩根娜、日蝕與 11 個技能 (`7d801eb`)
 - **gacha**: 戰令不算卡池——卡池橫條只看專屬卡池與自選池（PLAN-063） (`19e6461`)
@@ -330,6 +332,7 @@
 
 ### 📚 文件
 
+- **raids**: PLAN-064 上線紀錄（F-2／H-5 完成，42／46） (`7e17af7`)
 - **raids**: PLAN-064 F-3 Cloudflare 白名單已加 /raids（36／41） (`9e530de`)
 - **raids**: PLAN-064 例行流程文件與關聯計畫補註（C-4／F-4／F-6） (`5eb735e`)
 - **plan**: PLAN-063 已合併回 main 並推送（15／19），剩站長資料作業 (`833f1e7`)
