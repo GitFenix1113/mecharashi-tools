@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-065-B 引擎 A：面板與單擊 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-065-B 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-065-B</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    引擎 A：面板與單擊<span style="-webkit-text-fill-color:var(--text-secondary);"> 資料編譯 · 面板 · 單擊 · /sim/v1/run</span>
+  </h1>
+  <p class="hero-sub">傷害模擬的第一個可計算版本：從遊戲資料編譯引擎資料、算出攻方面板與單次攻擊的期望傷害，經 /sim/v1/run 回傳；先不含任何 Buff 效果。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-065-B</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-29</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">私有 repo（pipeline、engine、worker、tests）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value purple">開發完成（待部署）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-065-A</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+  <div class="info-block">
+    <strong>065-A 把地基鋪好了，接著要有第一個「算得出數字」的引擎</strong><br>
+    站上實體已能對到遊戲記錄、私有 repo 與 Worker 骨架就位；評估階段的 Python 試算原型證明面板與單擊可以精確重現。
+    065-B 把它做成正式引擎：資料由管線編譯、計算在 Worker 執行、結果以契約 v1 回傳，並有自動化測試守住。
+  </div>
+  <div class="problem-block">
+    <strong>第一版刻意不含 Buff</strong><br>
+    天賦、模組、元件、背包、武器被動等效果要等 065-E（常駐效果）與 065-F（條件與攻擊方式）。065-B 的結果會把這些來源全部列進「未計入」，並一律標「推算」。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+  <div class="warning-block">
+    <strong>文件政策</strong><br>
+    本計畫書與進度表公開在 /documents，只寫工作項目、介面與驗收；計算方式、規則與預測值都在私有 repo <code>mecharashi-sim</code>。
+  </div>
+  <div class="decision-block">
+    <strong>決策一：資料在建置期編譯、打包進 Worker</strong><br>
+    私有 pipeline 讀本機遊戲資料包，輸出引擎需要的子集（含版本戳 manifest）；Worker 部署時一起打包，執行期不讀 Firestore。
+    武裝討伐首領與訓練木樁的守方資料也在建置期算好（推算值）。
+  </div>
+  <div class="decision-block">
+    <strong>決策二：引擎是純函式</strong><br>
+    引擎只吃「契約 v1 的請求＋引擎資料」，回傳結果，沒有 I/O；Worker 只負責驗證、預算、呼叫與回應。這讓同一份引擎可以被測試、驗證台與日後的離線工具共用。
+  </div>
+  <div class="decision-block">
+    <strong>決策三：第一版用浮點數，結果標「約」</strong><br>
+    與遊戲結果的差異只在取整邊界（±1）；需要逐位一致時再加精確模式。
+  </div>
+  <div class="decision-block">
+    <strong>決策四：以 Python 原型為對帳基準</strong><br>
+    評估階段的原型已與站上面板逐位一致；正式引擎必須在同樣輸入下與原型逐格相同（每擊整數一致、機率在浮點誤差內）。<br>
+    <span style="color:var(--text-dim);">2026-10-29 補充：與原型一致只證明「一致」，不證明「正確」——原型沒涵蓋或算錯的規則，另以私有 repo 的規則回歸測試守住（審查發現 3 處，已更正並補測試）。</span>
+  </div>
+  <div class="decision-block">
+    <strong>決策五：未計入要說清楚</strong><br>
+    每個沒有算進去的來源（Buff、條件、尚未支援的攻擊方式、未連結的實體）都列在回應的「未計入」清單並附原因，不默默忽略。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>引擎資料編譯 v0（玩家側：機師、仿生電腦、潛能、適性、機甲套裝與部件、武器、改裝、科研、預設攻擊技能；驗證目標：武裝討伐首領、訓練木樁）。</li>
+      <li>攻方面板、守方向量、單次攻擊（命中、暴擊、部位、擊數、取整）與每輪期望值。</li>
+      <li><code>/sim/v1/run</code>：請求驗證、工作量預算、回傳結果與分組小計；ping 回報實際版本。</li>
+      <li>測試：站上面板基準、首領面板基準、與原型逐格對帳、Worker 端到端。</li>
+    </ul>
+  </div>
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>攻方的 Buff 與所有條件式效果（065-E、065-F）。首領面板的計入範圍依私有 repo 規則（2026-10-29 審查後定案）。</li>
+      <li>追擊、連續攻擊、額外打擊等攻擊段（065-F）；固定傷害、濺射等支線（065-H）。</li>
+      <li>逐位一致的精確模式、二進位資料格式（之後視需要）。</li>
+      <li>前台 UI（065-D）；管理者驗證台（065-C）。部署後 run 端點沒有前台入口，不算總綱定義的「對外開放」（見總綱「對外開放時機」）。</li>
+    </ul>
+  </div>
+  <div class="info-block">
+    <strong>驗收</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>站上機師、機甲、武器面板基準全綠（已知例外列白名單並註明原因）。</li>
+      <li>首領面板與評估階段的獨立重算一致（已知例外列白名單）。</li>
+      <li>評估階段原型的預測表（6 組配裝 × 4 個目標）逐格一致。</li>
+      <li>Worker 端到端：合法請求回結果、非法請求被擋、超過預算回 422、kill switch 照常。</li>
+      <li>本機量測單筆與批次的 CPU 時間，記錄在私有 repo。</li>
+      <li>審查發現的規則問題各有回歸測試；一般請求的回應依決策 C1 的公開範圍處理（不回內部欄位、不提供逐點掃描所需的精度）。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-065-B 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-065_傷害模擬_總綱/計畫書.html">
+      <div class="doc-tag">Parent</div>
+      <h4>◆ PLAN-065 總綱</h4>
+      <p>架構決策與子計畫拆分</p>
+    </a>
+    <a class="doc-item" href="../PLAN-065-A_前置資料對照與保護骨架/計畫書.html">
+      <div class="doc-tag">Prev</div>
+      <h4>◆ PLAN-065-A</h4>
+      <p>前置資料對照與保護骨架</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-065-B — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

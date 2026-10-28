@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-065 傷害模擬 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-065 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-065</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    傷害模擬<span style="-webkit-text-fill-color:var(--text-secondary);"> 總綱 · 私有引擎 · 煉獄首領驗證</span>
+  </h1>
+  <p class="hero-sub">在既有配裝模擬器上加「傷害模式」：前端送遊戲 ID 與情境，後端私有引擎回傳結果；以武裝討伐煉獄首領與遊戲內預覽逐步驗證，拆成 A–I 九個子計畫。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-065</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-10-28</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">配裝模擬器、/sim Worker、私有 repo、各實體集合</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value purple">開發中（065-A、065-B）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-052、PLAN-064</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+  <div class="problem-block">
+    <strong>傷害模擬從 2026-05 起就是第一核心模組，但一直沒有做出來</strong><br>
+    結構地基都建好了（實體引用、BUFF 等級化、階覆寫層、配裝模擬器），數值層卻始終是空的：人工填寫的效果數值全庫 0 筆、官方公式未知，站上原則是「不放猜測值」。
+  </div>
+  <div class="info-block">
+    <strong>2026-10-17 的遊戲參數資料包改變了前提</strong><br>
+    設定表與客戶端程式讓傷害計算、攻擊時序與 Buff 判定都有了依據；站上機甲、機師、武器數值與資料包同口徑，不必重建。
+    2026-10-25 完成初步評估（兩輪多代理調查＋私有試算原型），10-28 站長拍板架構決策。
+  </div>
+  <div class="problem-block">
+    <strong>站長列的五個痛點</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>技能觸發 BUFF ID 當初沒完成。</li>
+      <li>攻擊方式（進入對戰、指令、追擊、額外打擊）沒有設計。</li>
+      <li>底層架構不明確，怕套不上遊戲公式。</li>
+      <li>手機難以舒適展開。</li>
+      <li>操作流暢度（元件等希望拖曳與點擊並存）。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+  <div class="warning-block">
+    <strong>文件政策：本計畫書會公開</strong><br>
+    <code>docs/05_階段性開發計畫</code> 會被 copy-docs 發布到 /documents，repo 也是 PUBLIC。所以 PLAN-065 系列<b>只寫工作項目、介面結構與驗收方式</b>；
+    傷害公式、條件判斷規則、實測數值與預測值一律放私有 repo <code>mecharashi-sim</code> 的 <code>docs/</code>，以及站長本機的評估報告（<code>_local-notes/2026-10/2026-10-25_傷害模擬計算機_初步評估.html</code>）。
+    審 PR 時若在 public 檔案看到公式、常數或判斷規則，一律退回。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策一：引擎放後端、程式放私有 repo（站長 10-28 拍板 C2、C3）</strong><br>
+    計算在 Cloudflare Worker <code>/sim/v1/*</code> 執行；引擎、資料編譯管線、測試案例放私有 repo <code>GitFenix1113/mecharashi-sim</code>（10-28 已建立）。
+    前端只送「遊戲 ID＋養成假設＋目標＋情境」，不送展開後的數值；引擎資料在部署時打包進 Worker，Worker 不讀 Firestore、不持有 Firebase secret。
+    路由 <code>mecharashi.wiki/sim/*</code>，不加進 SPA 白名單；傷害模式頁面放在既有 <code>/simulator</code> 之下。
+  </div>
+  <div class="decision-block">
+    <strong>決策二：公開範圍（C1）</strong><br>
+    對一般玩家：最終結果、分組小計、以及「哪些效果有算／沒算」的清單（含原因）。逐 Buff、逐擊明細只給管理者。不提供任意數值的敏感度掃描。
+  </div>
+  <div class="decision-block">
+    <strong>決策三：站上資料只存「遊戲身分鍵」，效果數值由遊戲資料帶出（C6）</strong><br>
+    各實體集合新增 <code>gameRef</code>（武器的 weaponInfoId 最必要），用腳本回填、站長確認少數歧義；不動 doc id 與既有 <code>gameId</code>（那是圖片編號）。
+    人工填寫 Buff 效果數值的欄位凍結（型別保留、前台顯示照舊）。站上顯示層（台版譯名、說明、引用、圖示）維持後台人工維護。
+  </div>
+  <div class="decision-block">
+    <strong>決策四：第一版做「單擊快照＋情境開關」（C7，取代 PLAN-001 決策一）</strong><br>
+    條件式效果不再只是顯示標籤：第一版以單次攻擊為單位計算，條件轉成玩家可切換的情境開關、已觸發狀態宣告與數值輸入；完整回合序列模擬留到第二版。
+    未模擬的條件一律列進「未計入」並可手動強制開關，不默默算錯。
+  </div>
+  <div class="decision-block">
+    <strong>決策五：數字一律標明可信度</strong><br>
+    通過遊戲內實測的武器類別標「已驗證」，其餘標「推算」並加「約」字；結果卡明寫假設（機甲品質、科研進度、改裝）。
+  </div>
+  <div class="decision-block">
+    <strong>決策六：驗證以武裝討伐煉獄首領為主</strong><br>
+    武裝討伐沒有期限、已開放期數都能回頭打，但每週只能選 3 關，站長只能打煉獄 → 驗證排程以週為單位；初試～死境的首領面板維持「推算值」。
+    遊戲內「確認攻擊」畫面的預估數字是主要的對帳來源。實測協定、預測值與案例庫放私有 repo。
+  </div>
+  <div class="warning-block">
+    <strong>尚未拍板（做到相關子計畫前再定）</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>C4 Workers 方案（Free／Paid）與升級時機；C5 zone 限流規則如何涵蓋 <code>/sim/</code>——065-A 的 Worker 對外前。</li>
+      <li>C8 科研輸入方式、C9 改裝資料進分享碼、C10 機率效果預設、C11 版面、C12 手機範圍、C13 是否收玩家實測回報——065-D 動工前。</li>
+      <li>C14 等價武器記錄取哪筆——065-A B-4。C15 公開物處理、C16 21-4 首領面板修正、C17 PLAN-052 決策一④ 註記——065-I 或順手。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">子計畫拆分與驗收</div>
+  <table class="impact-table">
+    <tr><th style="width:12%">子計畫</th><th style="width:34%">產出</th><th style="width:14%">前置</th><th>驗收</th></tr>
+    <tr><td><span class="badge-high">065-A</span><br>前置資料對照與保護骨架</td><td>私有 repo、契約 v1、<code>/sim/v1/ping</code>；各集合 gameRef 欄位與回填；後台顯示遊戲 ID；凍結人工效果欄位；/api 429 退避</td><td>本總綱決策</td><td>可上配裝的實體全部有 gameRef 或列入白名單；ping 部署可回應；<code>/simulator</code> 行為不變；build／test／lint 全綠</td></tr>
+    <tr><td><span class="badge-med">065-B</span><br>引擎 A（面板＋單擊）</td><td>資料編譯管線 v0、面板彙總、單擊計算、Worker run 端點（結果＋分組小計）、golden 測試</td><td>065-A</td><td>golden 全綠；Free 方案冷啟動批次在 CPU 上限內</td></tr>
+    <tr><td><span class="badge-med">065-C</span><br>管理者驗證台＋案例庫</td><td>貼分享碼、選首領、輸入實測、看完整拆解與誤差、匯出私有回歸案例</td><td>065-B</td><td>首批實測入庫，單擊誤差達標或已歸因</td></tr>
+    <tr><td><span class="badge-med">065-D</span><br>傷害模式 UI</td><td>[配裝｜傷害] 分段、目標挑選器、結果列、分組瀑布、情境面板、改裝輸入、面板覆寫；先拆出配裝頁控制器</td><td>065-B（可先接 mock）</td><td>延遲預算達標；舊分享碼照常解碼</td></tr>
+    <tr><td><span class="badge-low">065-E</span><br>引擎 B（常駐效果）</td><td>Buff 展開、第一批條件處理器、元件配對、天賦／神驅／模組／背包／武器被動</td><td>065-C</td><td>常駐效果 0 遺漏；帶常駐效果的實測每擊 ±1</td></tr>
+    <tr><td><span class="badge-low">065-F</span><br>引擎 C（條件＋攻擊方式）</td><td>玩家狀態類條件、已觸發宣告、首擊／連續／追擊／額外打擊、機率列舉</td><td>065-E；C4 拍板</td><td>多數條件可判定；攻擊段發生率落在統計區間；期望值 ±5%</td></tr>
+    <tr><td><span class="badge-low">065-G</span><br>拖曳＋手機快查</td><td>元件／武器拖曳（與點擊共用判定）、手機傷害快查模式、裝置遙測</td><td>065-D</td><td>拖曳 e2e；鍵盤可操作</td></tr>
+    <tr><td><span class="badge-low">065-H</span><br>引擎 D（支線）</td><td>固定傷害、濺射、連帶、盾、保留耐久、擊破所需行動數、協力、再攻擊</td><td>065-F</td><td>支線單擊 ±1；擊破行動數 P50 ±1</td></tr>
+    <tr><td><span class="badge-low">065-I</span><br>上線與文件</td><td>過時公開物處理（社群傷害公式文件加註、配裝頁橫幅、種類係數、/research 入口）、收回門檻、kill switch</td><td>任一階段對外前</td><td>公開檔案中找不到公式與判斷規則</td></tr>
+  </table>
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>在任何公開文件或程式寫出傷害公式、常數與判斷規則（見文件政策）。</li>
+      <li>人工輸入效果數值（決策三凍結）。</li>
+      <li>完整回合序列與首領回合模擬（第二版另議）。</li>
+      <li>武裝討伐以外的玩法驗證（重裝征伐、首領剿滅…）。</li>
+    </ul>
+  </div>
+  <div class="info-block">
+    <strong>對外開放時機</strong><br>
+    065-B＋065-C 完成、首批實測達標後才考慮讓傷害模式對外；在那之前只對管理者開放。開放後依武器類別逐類標「已驗證」。
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-065 進度表</h4>
+      <p>子計畫狀態與待拍板決策</p>
+    </a>
+    <a class="doc-item" href="../PLAN-065-A_前置資料對照與保護骨架/計畫書.html">
+      <div class="doc-tag">Sub-plan</div>
+      <h4>◆ PLAN-065-A</h4>
+      <p>前置資料對照與保護骨架</p>
+    </a>
+    <a class="doc-item" href="../PLAN-065-B_引擎A_面板與單擊/計畫書.html">
+      <div class="doc-tag">Sub-plan</div>
+      <h4>◆ PLAN-065-B</h4>
+      <p>引擎 A：面板與單擊</p>
+    </a>
+    <a class="doc-item" href="../PLAN-052_配裝模擬器改版_總綱/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-052 配裝模擬器</h4>
+      <p>傷害模式的宿主頁面與配裝規則</p>
+    </a>
+    <a class="doc-item" href="../PLAN-064_武裝討伐敵人資訊頁/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-064 武裝討伐</h4>
+      <p>驗證目標與首領資料來源</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-065 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

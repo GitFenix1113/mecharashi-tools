@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-065 傷害模擬 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-065 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-065</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">傷害模擬</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-28</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+  <div class="summary-row">
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">0</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">2</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">7</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">9</div><div class="summary-lbl">工作項</div></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-purple);">0 / 9</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%"></div></div>
+  </div>
+  <div class="impact-note"><strong>目標效果：</strong>玩家在配裝模擬器切到傷害模式，就能對武裝討伐首領看到附可信度標示的傷害預估；引擎與資料留在私有後端。</div>
+</section>
+<section class="section">
+  <div class="section-label purple">Sub-plans</div>
+  <div class="section-title">子計畫</div>
+  <div class="section-desc">一個子計畫＝一個可驗收的出貨物；各自動工時再建文件。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">065-A &nbsp; 前置資料對照與保護骨架</div>
+      <div class="task-group-meta"><a href="../PLAN-065-A_前置資料對照與保護骨架/進度表.html" style="color:var(--accent-purple)">065-A 進度表</a></div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">前置資料對照與保護骨架</div>
+        <div class="task-desc">gameRef 回填、私有 repo、ping Worker、凍結人工效果。<b>2026-10-28 開發者工項完成（11／14）</b>，剩站長的部署量測、待確認筆數寫入、C4／C5 拍板。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status doing">進行中</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">065-B &nbsp; 引擎 A（面板＋單擊）</div>
+      <div class="task-group-meta"><a href="../PLAN-065-B_引擎A_面板與單擊/進度表.html" style="color:var(--accent-purple)">065-B 進度表</a></div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">引擎 A（面板＋單擊）</div>
+        <div class="task-desc">資料編譯管線 v0、面板、單擊、run 端點、golden（2026-10-29 開發完成 13／14；待站長部署與邊緣 CPU 確認）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status doing">進行中</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">065-C &nbsp; 管理者驗證台＋案例庫</div>
+      <div class="task-group-meta">—</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">管理者驗證台＋案例庫</div>
+        <div class="task-desc">實測輸入、完整拆解、回歸案例匯出</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">065-D &nbsp; 傷害模式 UI</div>
+      <div class="task-group-meta">—</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">傷害模式 UI</div>
+        <div class="task-desc">分段、目標挑選器、結果列、瀑布、情境面板、改裝輸入</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">065-E &nbsp; 引擎 B（常駐效果）</div>
+      <div class="task-group-meta">私有 repo</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">引擎 B（常駐效果）</div>
+        <div class="task-desc">Buff 展開、條件處理器第一批、元件配對</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">065-F &nbsp; 引擎 C（條件＋攻擊方式）</div>
+      <div class="task-group-meta">私有 repo；開工前拍板 C4</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">引擎 C（條件＋攻擊方式）</div>
+        <div class="task-desc">玩家狀態條件、已觸發宣告、攻擊段、機率列舉</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">065-G &nbsp; 拖曳＋手機快查</div>
+      <div class="task-group-meta">—</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">拖曳＋手機快查</div>
+        <div class="task-desc">拖曳與點擊並存、手機快查、裝置遙測</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">065-H &nbsp; 引擎 D（支線）</div>
+      <div class="task-group-meta">私有 repo</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">引擎 D（支線）</div>
+        <div class="task-desc">固定傷害、濺射、連帶、盾、擊破行動數</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">065-I &nbsp; 上線與文件</div>
+      <div class="task-group-meta">—</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">上線與文件</div>
+        <div class="task-desc">過時公開物處理、收回門檻、kill switch</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label yellow">Decisions</div>
+  <div class="section-title">待拍板決策</div>
+  <div class="section-desc">10-28 已拍板 C1、C2、C3、C6、C7（見計畫書決策一～四）；以下做到相關子計畫前再定。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">待拍板 &nbsp; 站長決策</div>
+      <div class="task-group-meta">依子計畫時序</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C4 Workers 方案與升級時機</div>
+        <div class="task-desc">Free 或 Paid；建議最晚在 065-F 開工前升 Paid。</div>
+      </div>
+      <div class="task-assignee">065-A 對外前</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C5 限流規則涵蓋 /sim/</div>
+        <div class="task-desc">唯一一條 zone 規則如何同時涵蓋 /api 與 /sim；需先截現有規則。</div>
+      </div>
+      <div class="task-assignee">065-A 對外前</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C8 科研輸入方式</div>
+        <div class="task-desc">三態（無／全滿／自訂）或逐樹；是否必填。</div>
+      </div>
+      <div class="task-assignee">065-D 前</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C9 改裝資料是否進分享碼</div>
+        <div class="task-desc">新增分享碼段落或只存本機。</div>
+      </div>
+      <div class="task-assignee">065-D 前</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C10 機率效果預設呈現</div>
+        <div class="task-desc">期望值／全發／全不發。</div>
+      </div>
+      <div class="task-assignee">065-D 前</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C11 版面</div>
+        <div class="task-desc">/simulator 同頁分段或另開子頁。</div>
+      </div>
+      <div class="task-assignee">065-D 前</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C12 手機範圍</div>
+        <div class="task-desc">只做快查或完整編輯。</div>
+      </div>
+      <div class="task-assignee">065-G 前</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C13 是否收玩家實測回報</div>
+        <div class="task-desc">收的話存放位置與節流。</div>
+      </div>
+      <div class="task-assignee">065-D 前</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C14 等價武器記錄</div>
+        <div class="task-desc">戰鬥欄位相同的多筆記錄取哪筆。</div>
+      </div>
+      <div class="task-assignee">065-A B-4</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">C15–C17 公開物與註記</div>
+        <div class="task-desc">社群公式文件、種類係數、/research 入口、21-4 首領面板、PLAN-052 決策一④。</div>
+      </div>
+      <div class="task-assignee">065-I</div>
+      <span class="status blocked">待拍板</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-065 — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
