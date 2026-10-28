@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-065-B 引擎 A：面板與單擊 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-065-B 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-065-B</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">引擎 A：面板與單擊</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-10-29</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+  <div class="summary-row">
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">13</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">1</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">14</div><div class="summary-lbl">工作項</div></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-purple);">13 / 14</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 93%"></div></div>
+  </div>
+  <div class="impact-note"><strong>目標效果：</strong>第一次能對任一配裝與武裝討伐首領算出「推算」的單擊與期望傷害；之後的 Buff、攻擊方式都疊在這個引擎上。</div>
+  <div class="impact-note"><strong>2026-10-29 現況：</strong>開發者 13 項在私有 repo 完成：引擎測試 664 項、Worker 測試 97 項全綠，打包約 1.5 MB（gzip 150 KB）。
+  正確性與保護兩個角度的審查各抓到數項問題，已全部修正並補測試。剩 D-5 由站長部署並確認邊緣 CPU；部署步驟與前置作業見私有 repo 部署文件。</div>
+</section>
+<section class="section">
+  <div class="section-label purple">Phase A</div>
+  <div class="section-title">引擎資料編譯</div>
+  <div class="section-desc">從本機遊戲資料包產生引擎需要的子集。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 引擎資料編譯 v0</div>
+      <div class="task-group-meta">mecharashi-sim/pipeline/enginedata</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">玩家側資料子集＋manifest</div>
+        <div class="task-desc">機師（潛能模板、仿生電腦、適性）、機甲套裝與部件、武器、改裝、科研、預設攻擊技能與屬性定義；manifest 記資料包版本、列數與雜湊。</div>
+        <div class="task-file">pipeline/enginedata/、data/engine-data/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 驗證目標守方資料</div>
+      <div class="task-group-meta">mecharashi-sim/pipeline/enginedata</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">武裝討伐首領與訓練木樁</div>
+        <div class="task-desc">每一關首領的部位耐久、裝甲與守方屬性（推算值）；與評估階段的獨立重算比對。</div>
+        <div class="task-file">data/engine-data/&lt;資料版本&gt;/targets.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 編譯驗證</div>
+      <div class="task-group-meta">mecharashi-sim/pipeline/enginedata</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">斷鏈與筆數檢查</div>
+        <div class="task-desc">引用全部可解析、gameRef 對照建議（065-A 產出）全部存在於引擎資料；有缺就停止輸出。065-A B-4 寫入站上後要重跑一次。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label purple">Phase B</div>
+  <div class="section-title">引擎核心</div>
+  <div class="section-desc">純函式：請求＋引擎資料 → 結果。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 實體展開</div>
+      <div class="task-group-meta">mecharashi-sim/engine/src</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">機師、機甲、武器</div>
+        <div class="task-desc">潛能、仿生電腦、科研三態、適性；套裝與部位混搭（品質固定 SS）；改裝與預設攻擊技能。未連結或資料缺漏的實體回報原因。（科研輸入方式待總綱 C8 拍板；若選逐樹需要擴充。）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 面板彙總</div>
+      <div class="task-group-meta">mecharashi-sim/engine/src</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">傷害相關屬性</div>
+        <div class="task-desc">攻方面板與守方向量。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 單次攻擊</div>
+      <div class="task-group-meta">mecharashi-sim/engine/src</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">命中、暴擊、部位、擊數、取整</div>
+        <div class="task-desc">每個部位的單擊（含暴擊）、命中率、暴擊率、擊數。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 統計與輸出</div>
+      <div class="task-group-meta">mecharashi-sim/engine/src</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每輪期望、結果與分組小計、未計入</div>
+        <div class="task-desc">解析期望值；分組小計；Buff 等未支援來源全部列入未計入並附原因。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label purple">Phase C</div>
+  <div class="section-title">Worker</div>
+  <div class="section-desc">把引擎接到 /sim/v1/run。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; /sim/v1/run</div>
+      <div class="task-group-meta">mecharashi-sim/worker/src</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗證、預算、呼叫、回應</div>
+        <div class="task-desc">請求依契約 schema 驗證（不支援 eval 的執行環境）；工作量超過上限回 422；回應附版本戳。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; ping 回報實際版本</div>
+      <div class="task-group-meta">mecharashi-sim/worker/src</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">engineVersion／dataVersion 取自打包內容</div>
+        <div class="task-desc">版本號不再由部署設定提供，與回應裡的版本戳一致（前端以它當快取鍵）。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label purple">Phase D</div>
+  <div class="section-title">測試與量測</div>
+  <div class="section-desc">以基準與原型守住正確性。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 面板基準</div>
+      <div class="task-group-meta">mecharashi-sim/tests/golden</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">站上機師、機甲、武器面板；首領面板</div>
+        <div class="task-desc">已知例外列白名單並註明原因。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 與原型逐格對帳</div>
+      <div class="task-group-meta">mecharashi-sim/tests/xref</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">評估階段預測表</div>
+        <div class="task-desc">6 組配裝 × 4 個目標，每擊整數一致。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; Worker 端到端</div>
+      <div class="task-group-meta">mecharashi-sim/worker/test</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">合法／非法請求、預算、kill switch</div>
+        <div class="task-desc">在 Workers 執行環境內跑完整請求路徑，涵蓋來源檢查、body 上限、契約 schema、管理者限定與工作量上限。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; CPU 量測</div>
+      <div class="task-group-meta">mecharashi-sim/docs/measurement.md</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">本機單筆與批次耗時</div>
+        <div class="task-desc">記錄冷、暖兩種情況，作為 Free 方案批次上限的依據。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-5 &nbsp; 部署與邊緣 CPU 確認</div>
+      <div class="task-group-meta">mecharashi-sim/docs/deploy.md</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">部署 Worker、看 Dashboard 的 CPU 時間</div>
+        <div class="task-desc">照私有 repo 部署文件部署並驗收；確認冷啟動批次在方案的 CPU 上限內（總綱 065-B 驗收），數字填回量測紀錄。</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-065-B — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
