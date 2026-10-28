@@ -16,6 +16,8 @@ import { BackpackIcon } from '../../../components/badges/BackpackBadges'
 import { BACKPACK_TYPE_CONFIG, ASSEMBLABLE_ARMOR_CONFIG } from '../../../components/badges/BackpackBadges'
 import { parseBackpackName } from '../../../utils/backpackClassify'
 import { parseBuffRef, formatBuffRef } from '../../../utils/buffRef'
+import { GameRefRow, GameRefBadge } from '../../../components/admin/GameRefField'
+import { withServerGameRef } from './gameRefGuard'
 
 const PAGE_SIZE = 20
 const ALL_RARITIES = ['SS', 'S+', 'S', 'A', 'B']
@@ -247,6 +249,7 @@ function BackpackEditPanel({
         <h3 className="text-lg font-bold">編輯背包</h3>
         <span className="text-text-dim text-sm font-normal ml-1">{form.id}</span>
       </div>
+      <GameRefRow value={form.gameRef} className="-mt-2 mb-3 shrink-0" />
 
       <div className="overflow-y-auto flex-1 space-y-3 pr-1">
         <Field label="背包名稱 name">
@@ -435,7 +438,8 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
 
   const shown = filtered.slice(0, displayCount)
 
-  async function handleSave(updated: Backpack) {
+  async function handleSave(edited: Backpack) {
+    const updated = await withServerGameRef('backpacks', edited)   // gameRef 唯讀：一律用伺服器現值（PLAN-065-A）
     const version = await updateBackpack(updated)
     gd.patchCollectionItem('backpacks', updated, version)   // 列表由 gd.backpacks derive → 存檔即時反映
     draft.commit()   // 存檔成功 → 清除本機草稿，避免下次進頁跳過期提示
@@ -516,6 +520,7 @@ export default function BackpackAdmin({ initialSearch = '' }: { initialSearch?: 
                 <span className="text-[13px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">
                   {BACKPACK_TYPE_CONFIG[bp.type]?.label ?? bp.type}
                 </span>
+                <GameRefBadge value={bp.gameRef} />
                 {bp.craft?.prereqBackpackId && (
                   <span className="text-[13px] px-1.5 py-0.5 rounded bg-accent-orange/10 text-accent-orange border border-accent-orange/30 shrink-0">
                     前置：{gd.backpacks.find(x => x.id === bp.craft?.prereqBackpackId)?.name ?? '?'}

@@ -264,6 +264,8 @@
       <tr><td>name</td><td>string</td><td>武器名稱（如 "昏星繼光"）</td></tr>
       <tr><td>description</td><td>string</td><td>武器背景故事文字（遊戲內裝備說明）<br><small style="color:var(--text-dim)">API: describe；腳本自動轉繁體後寫入；可為空字串</small></td></tr>
       <tr><td>gameId</td><td>string?</td><td>官方圖示編號（PLAN-056）：<code>Icon_weapon_&lt;gameId&gt;</code>，例 <code>'20300501'</code><br><small style="color:var(--text-dim)">外觀編號，EX／改 共用，不是武器身分；圖庫 public/images/game/icons/weapon/。後台以選圖器挑選</small></td></tr>
+      <tr><td>gameRef</td><td>WeaponGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——遊戲設定表的武器記錄 ID，傷害模擬用（私有引擎只吃這組 ID）。選填物件；傷害模擬最必要的一個身分鍵。<br><small style="color:var(--text-dim)">⚠ 與 <code>gameId</code>（圖示編號）是兩回事、<strong>兩欄不互推</strong>，不能拿來當身分。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填（對照建議由私有 repo 產生、站長確認歧義後寫入），後台只唯讀顯示、不手填。未設定＝<strong>未連結</strong>：傷害模擬不把它算進去，後台標「未連結」。型別見 <code>src/types/gameRef.ts</code>。</small></td></tr>
+      <tr><td>&nbsp;└ weaponInfoId</td><td>number</td><td>遊戲武器記錄 ID</td></tr>
       <tr><td>sideGameIds</td><td>{ left?: string; right?: string }?</td><td>固定武裝左右肩的鏡像圖（PLAN-056）<br><small style="color:var(--text-dim)">官方慣例左＝…01、右＝…02；只有 isFixedArmament 的肩部武裝需要</small></td></tr>
       <tr><td>icon</td><td>string?</td><td>自訂圖路徑（站長編輯的非官方圖，放 public/images/weapons/，檔名不以 Icon_ 開頭）<br><small style="color:var(--text-dim)">只在沒有 gameId 時顯示；PLAN-056 C-5 之前還存著官方圖的舊路徑</small></td></tr>
       <tr class="group-header"><td colspan="3">▎分類</td></tr>

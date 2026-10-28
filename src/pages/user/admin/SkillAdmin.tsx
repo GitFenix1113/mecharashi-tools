@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { PilotSkillDoc, SkillEffect } from '../../../types'
+import type { PilotSkillDoc } from '../../../types'
 import { formatWeaponReq } from '../../../types'
 import { SkillType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, useCascadeDelete, ConfirmDeleteDialog, DeleteButton, DraftRestoreBar } from './shared'
@@ -10,9 +10,11 @@ import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker, type RefTextSection } from '../../../components/admin/RefPicker'
 import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
 import { iconKindsForSkillType } from '../../../utils/gameIcons'
-import { SkillEffectItem } from './PilotAdmin'
+import { GameRefRow } from '../../../components/admin/GameRefField'
+import { FrozenEffectsNote } from '../../../components/admin/FrozenEffects'
 import { weaponSkillHolders } from '../../../utils/weaponSkills'
 import { makeDefaultSkill, findServerSkillClash } from './skillLibrary'
+import { withServerGameRef } from './gameRefGuard'
 
 type SkillFilters = { type: string; manual: 'all' | 'manual' | 'auto' }
 
@@ -49,9 +51,7 @@ export function SkillEditPanel({
   function update<K extends keyof PilotSkillDoc>(key: K, value: PilotSkillDoc[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
-  const effects = form.effects ?? []
   const buffIds = form.buffIds ?? []
-  function updateEffects(next: SkillEffect[]) { update('effects', next) }
   function updateBuffIds(val: string) {
     update('buffIds', val.split(/[,\n]/).map((s) => s.trim()).filter(Boolean))
   }
@@ -76,6 +76,13 @@ export function SkillEditPanel({
         </h3>
         {form.manual && <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-orange/40 bg-accent-orange/10 text-accent-orange">手動</span>}
       </div>
+
+      {/* 機師技能與武器技能都會回填 gameRef；沒有任何機師或武器持有的技能不需要連結，未連結的說明裡講清楚 */}
+      <GameRefRow
+        value={form.gameRef}
+        className="-mt-2 mb-3 shrink-0"
+        unlinkedHint="尚未連結遊戲資料。沒有任何機師或武器持有的技能本來就不需要連結；有人持有卻未連結，傷害模擬就不會算它。由回填腳本寫入，後台不能改。"
+      />
 
       {notice && <div className="mb-3 shrink-0">{notice}</div>}
 
@@ -197,33 +204,8 @@ export function SkillEditPanel({
           }))}
         />
 
-        {/* 可計算效果 */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">可計算效果 effects</span>
-            <button
-              onClick={() => updateEffects([...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
-              className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-            >
-              + 新增效果
-            </button>
-          </div>
-          {effects.length === 0 ? (
-            <p className="text-xs text-text-dim py-2 text-center">尚未填入（計算器／模擬器不計此技能）</p>
-          ) : (
-            <div className="space-y-2">
-              {effects.map((eff, i) => (
-                <SkillEffectItem
-                  key={i}
-                  effect={eff}
-                  index={i}
-                  onChange={(updated) => { const next = [...effects]; next[i] = updated; updateEffects(next) }}
-                  onRemove={() => updateEffects(effects.filter((_, idx) => idx !== i))}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* 可計算效果：PLAN-065-A C-1 凍結，只唯讀列出既有值 */}
+        <FrozenEffectsNote label="可計算效果 effects" items={form.effects} />
 
         <Field label="觸發 Buff ID buffIds（逗號分隔）">
           <textarea
@@ -292,7 +274,8 @@ export default function SkillAdmin({ initialSearch = '', domain }: { initialSear
     if (item) setEditing(item)
   }
 
-  async function handleSave(updated: PilotSkillDoc) {
+  async function handleSave(edited: PilotSkillDoc) {
+    const updated = await withServerGameRef('pilotSkills', edited)   // gameRef 唯讀：一律用伺服器現值（PLAN-065-A）
     const version = await updatePilotSkill(updated)
     upsert(updated)
     gd.patchCollectionItem('pilotSkills', updated, version)

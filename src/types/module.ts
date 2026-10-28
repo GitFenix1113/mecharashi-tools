@@ -2,6 +2,7 @@
 
 import type { DescriptionRefs } from './common'
 import type { MechPartPosition } from './enums'
+import type { ModuleGameRef } from './gameRef'
 
 /**
  * 模組的**啟用條件**（PLAN-052-K 決策五）。條件不成立時整顆模組不生效。
@@ -92,6 +93,8 @@ export interface Module {
   boundPart: string[] | null
   /** 可獨立取得：特性/8級/通用 = true；副模組 = false */
   available?: boolean
+  /** 遊戲身分鍵（PLAN-065-A）：效果族 ID（＋選填道具記錄 ID），傷害模擬用。見 types/gameRef.ts。 */
+  gameRef?: ModuleGameRef
   dmg: number
   crit_rate: number
   critDmg: number
@@ -155,7 +158,11 @@ export interface Module {
   managedBy?: string
   /** 各等級資料（特性/8級/通用模組有；副模組為空陣列） */
   levels?: ModuleLevel[]
-  /** 條件效果（傷害模擬器用；無條件效果或副模組為空陣列） */
+  /**
+   * 條件效果（傷害模擬器用；無條件效果或副模組為空陣列）
+   * @deprecated PLAN-065-A 起凍結：人工條件效果不再輸入（全庫從未填過），改由遊戲資料帶出。
+   * 型別保留、讀取端相容；不要新增寫入。
+   */
   conditionalEffects?: ConditionalEffect[]
   /** 模組增加等級（配裝時在插槽中增加的模組等級，預設 1；配裝模擬器累加所有嵌入模組的此值） */
   moduleAddLevel?: number

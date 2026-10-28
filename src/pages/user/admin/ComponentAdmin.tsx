@@ -15,6 +15,8 @@ import { getCollectionPage, updateComponent, docExists } from '../../../lib/fire
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
+import { GameRefRow, GameRefBadge } from '../../../components/admin/GameRefField'
+import { withServerGameRef } from './gameRefGuard'
 import {
   COMPONENT_TYPE_LABEL, CONDITION_TYPE_LABEL, EFFECT_TYPE_LABEL,
   MODULE_SUBTYPE_LABEL, COMPONENT_RARITY_CLASS,
@@ -283,6 +285,7 @@ function ComponentEditPanel({
         {isCondition ? '編輯觸元件' : '編輯應元件'}
         <span className="text-text-dim text-sm font-normal ml-1">{form.id}</span>
       </h3>
+      <GameRefRow value={form.gameRef} className="-mt-2 mb-3 shrink-0" />
 
       <div className="overflow-y-auto flex-1 pr-1 space-y-3">
         <div className="grid grid-cols-2 gap-3">
@@ -474,7 +477,8 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
     if (item) setEditing(item)
   }
 
-  async function handleSave(updated: Component) {
+  async function handleSave(edited: Component) {
+    const updated = await withServerGameRef('components', edited)   // gameRef 唯讀：一律用伺服器現值（PLAN-065-A）
     const version = await updateComponent(updated)
     upsert(updated)
     gd.patchCollectionItem('components', updated, version)
@@ -604,6 +608,7 @@ export default function ComponentAdmin({ initialSearch = '' }: { initialSearch?:
                     <span className="text-[13px] px-1.5 py-0.5 rounded bg-accent-orange/10 text-accent-orange border border-accent-orange/30 shrink-0">W型</span>
                   )}
                   <span className="text-[13px] text-text-dim shrink-0">Lv.{comp.probabilityLevel}</span>
+                  <GameRefBadge value={comp.gameRef} />
                 </div>
                 <div className="text-[14px] mt-0.5 truncate">
                   <span className="text-text-dim mr-2">{MODULE_SUBTYPE_LABEL[comp.moduleSubtype] ?? comp.moduleSubtype}</span>

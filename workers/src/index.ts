@@ -97,7 +97,10 @@ const DATACENTER_ASNS = new Set<number>([
 ])
 
 function getAllowedOrigins(env: Env): string[] {
-  return env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()) ?? DEFAULT_ALLOWED
+  // 過濾空字串：變數設成 "" 或尾巴多一個逗號（"a,b,"）時清單會混進 ''，
+  // 而 origin === '' 對沒帶 Origin 的請求成立、referer.startsWith('') 恆真 → 來源檢查整個失效。
+  const list = env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean)
+  return list && list.length ? list : DEFAULT_ALLOWED
 }
 
 /**

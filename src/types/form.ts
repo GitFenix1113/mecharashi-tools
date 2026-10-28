@@ -10,6 +10,7 @@
 import type { DescriptionRefs } from './common'
 import type { WeaponType } from './enums'
 import type { ArmamentMount } from './slots'
+import type { FormGameRef } from './gameRef'
 
 /**
  * 形態的裝備限制。刻意用 discriminated union（sum type）而非 product：
@@ -96,6 +97,8 @@ export interface MechForm {
   entryNote?: string
   /** 天賦專屬（虛粒子）。今天就有消費端：決定 UI 是否與三個戰鬥形態同排 */
   isSignature?: boolean
+  /** 遊戲身分鍵（PLAN-065-A）：形態被動 ID，傷害模擬用。見 types/gameRef.ts。 */
+  gameRef?: FormGameRef
   /**
    * 這個形態有**自己獨立的一套武器背包配裝**（PLAN-052-A C-3）。
    * 海莉絲的先鋒／突擊／戰術三個形態為 true；曜的兩個形態為 false（共用同一套）。

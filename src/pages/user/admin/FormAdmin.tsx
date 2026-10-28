@@ -12,6 +12,8 @@ import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { GameIconField } from '../../../components/admin/GameIconPicker'
 import { ArmamentMountEditor } from '../../../components/admin/ArmamentMountEditor'
+import { GameRefRow, GameRefBadge } from '../../../components/admin/GameRefField'
+import { withServerGameRef } from './gameRefGuard'
 
 // ─── 機師形態管理（PLAN-041 Phase B）──────────────────────────────────────────
 //
@@ -242,6 +244,7 @@ function FormEditPanel({
         編輯形態
         <span className="text-text-dim text-sm font-normal ml-1">{form.id}</span>
       </h3>
+      <GameRefRow value={form.gameRef} className="-mt-2 mb-3 shrink-0" />
 
       <div className="overflow-y-auto flex-1 pr-1 space-y-3">
         <div className="grid grid-cols-2 gap-3">
@@ -463,7 +466,8 @@ export default function FormAdmin({ initialSearch = '' }: { initialSearch?: stri
     if (item) setEditing(item)
   }
 
-  async function handleSave(updated: MechForm) {
+  async function handleSave(edited: MechForm) {
+    const updated = await withServerGameRef('forms', edited)   // gameRef 唯讀：一律用伺服器現值（PLAN-065-A）
     // 2026-08-12：restrict.lockedSkillIds 已從資料模型移除。從 Firestore 讀回的舊文件仍可能
     // 帶著它（型別看不到、但 `{...doc}` 會原樣帶進來再被 setDoc 寫回去），故存檔前顯式清掉。
     // 全庫確認無殘留後這段可刪。
@@ -563,6 +567,7 @@ export default function FormAdmin({ initialSearch = '' }: { initialSearch?: stri
                 {(f.grantedBuffIds?.length ?? 0) > 0 && (
                   <span className="text-[12px] text-text-dim shrink-0">增益 {f.grantedBuffIds!.length}</span>
                 )}
+                <GameRefBadge value={f.gameRef} />
               </div>
               <p className="text-[13px] text-text-secondary truncate mt-0.5">{f.description || '（無正文）'}</p>
             </div>

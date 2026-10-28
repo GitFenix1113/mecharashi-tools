@@ -39,6 +39,8 @@
       <tr><td>name</td><td>string</td><td>機師顯示名稱</td></tr>
       <tr><td>fullName</td><td>string</td><td>機師全名（完整稱呼）</td></tr>
       <tr><td>gameId</td><td>string?</td><td>🆕 PLAN-054：遊戲 ID ＝ 機師卡 <code>Icon_item_&lt;gameId&gt;A</code> 的編號（如 <code>10103174</code>），只有可抽機師有。官方原檔資料夾 <code>public/images/game/pilots/&lt;gameId&gt;/</code> 以它命名。<br><small style="color:var(--text-dim)"><strong>不可拿來推導 artKey（兩欄不互推）</strong>，例外 5 位：維娜 10103144／<code>Pilot_13019A</code>、貝爾莎 10103145／<code>Pilot_13010A</code>、阿列娜 13037、珂賽特 11021（3D 在 10103184）、瑪阿特 10103180（官方 API 的 10103129 是她的造型卡）。字串不是數字，只拼路徑不運算。未設定＝還沒有機師卡（新角色尚未匯入，或 NPC 轉正、官方還沒出卡）；立繪不受影響，<code>artKey</code> 指到 NPC 圖庫照樣有圖。</small></td></tr>
+      <tr><td>gameRef</td><td>PilotGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——遊戲設定表的機師記錄 ID，傷害模擬用（私有引擎只吃這組 ID）。選填物件。只存推不出來的鍵：天賦、神經驅動槽位、技能掛載層的 ID 由引擎從身分鍵推導，不寫回。<br><small style="color:var(--text-dim)">⚠ 與 <code>gameId</code>（機師卡圖片編號）是兩回事、<strong>兩欄不互推</strong>，不能拿來當身分。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填（對照建議由私有 repo 產生、站長確認歧義後寫入），後台只唯讀顯示、不手填。未設定＝<strong>未連結</strong>：傷害模擬不把它算進去，後台標「未連結」。型別見 <code>src/types/gameRef.ts</code>。</small></td></tr>
+      <tr><td>&nbsp;└ pilotInfoId</td><td>number</td><td>遊戲機師記錄 ID</td></tr>
       <tr><td>artKey</td><td>string?</td><td>🆕 PLAN-054：預設立繪主鍵，與官方檔名逐字相同（如 <code>Pilot_10103174A</code>）；<code>_half</code>（340²）／<code>_head</code>（90²）／<code>_Raw</code>（1240×1080）接在後面。存完整鍵、程式不留拼接規則<br><small style="color:var(--text-dim)">🆕 2026-10-12：找圖順序先 gameId 資料夾、再 <strong>NPC 圖庫</strong> <code>game/npc/&lt;號碼&gt;/</code>——NPC 轉正的機師（官方沿用 NPC 時期立繪）在後台「選取官方立繪」的 NPC 分組點一下就寫入，不必等機師卡。</small></td></tr>
       <tr><td>pairedMechId</td><td>string?</td><td>🆕 PLAN-054：官配機甲的文件 ID（如 <code>mech_014_戴亞斯</code>），61 位有值。<strong>只存機師側</strong>，機甲側一律由 <code>pairedPilotOf()</code>（<code>src/utils/officialPairs.ts</code>）推導——兩邊都存就得兩邊同步，改一邊忘一邊是靜默的不一致。未設定＝沒有官配，畫面不顯示該列<br><small style="color:var(--text-dim)">來源：v1.1 起每版 2 S 機師＋2 S 機甲同上線、「機師執照＝機甲裝甲」唯一配對 47 組，加開服 v1.0 站長指定 14 組。</small></td></tr>
       <tr><td>cardFocus</td><td>number?</td><td>🆕 PLAN-063：招募插畫在機師圖鑑「卡池橫條」收合時的垂直焦點，0＝頂、100＝底（CSS <code>object-position</code> 的 y）；未填＝30。與機甲的 <code>Mech.cardFocus</code> 同一套，由後台機師管理的滑桿調。<br><small style="color:var(--text-dim)">放在 pilots 而不是 pilotLore：圖鑑本來就載入 pilots，且圖鑑不讀 pilotLore（PLAN-042-E 決策二）。</small></td></tr>
@@ -75,8 +77,12 @@
       <tr><td>&nbsp;├ description</td><td>string</td><td>效果描述文字（遊戲原文，含 [xxx] 標記）</td></tr>
       <tr><td>&nbsp;├ descriptionRefs</td><td>DescriptionRefs?</td><td>描述內 [xxx] → 實體引用側錄（PLAN-019 Layer 1）</td></tr>
       <tr><td>&nbsp;├ icon</td><td>string</td><td>官方圖示檔名 key（空字串＝沒有圖示）<br><small style="color:var(--text-dim)">PLAN-055 C（2026-10-11）起 DB 只存官方檔名 key，讀取端以檔名解析（<code>gameIconCandidates</code>，圖庫 <code>public/images/game/icons/</code>）</small></td></tr>
-      <tr><td>&nbsp;├ effects</td><td>SkillEffect[]</td><td>可量化效果列表（空陣列 = 待填入）；計算器加總所有 active 技能的 effects</td></tr>
+      <tr><td>&nbsp;├ effects</td><td>SkillEffect[]</td><td>可量化效果列表（空陣列 = 待填入）；計算器加總所有 active 技能的 effects<br><small style="color:var(--accent-yellow)">⚠ PLAN-065-A 起凍結：不再人工輸入，數值由遊戲資料帶出（型別標 <code>@deprecated</code> 保留，前台讀取與顯示照舊；全庫從未填過）</small></td></tr>
       <tr><td>&nbsp;├ buffIds</td><td>string[]</td><td>技能觸發的 Buff ID 列表（API BufCarried 以 "/" 分割轉換）</td></tr>
+      <tr><td>&nbsp;├ gameRef</td><td>SkillGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——技能記錄的<strong>候選 ID 陣列</strong>，傷害模擬用；選填物件，三個陣列也各自選填。同一份技能文件在不同機師身上可能是不同 ID，實際用哪一個由引擎依機師推導，所以存陣列。<br><small style="color:var(--text-dim)">⚠ 與 doc id、圖示 key（<code>icon</code>）及機師的 <code>gameId</code> 都是兩回事、<strong>不互推</strong>。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填，後台只唯讀顯示、不手填。未設定＝<strong>未連結</strong>：傷害模擬不把它算進去。型別見 <code>src/types/gameRef.ts</code>；集合全貌見 <a href="skills_buffs.html" style="color:var(--accent-cyan)">skills / buffs</a>。</small></td></tr>
+      <tr><td>&nbsp;&nbsp;&nbsp;├ mainSkillIds</td><td>number[]?</td><td>主技能記錄的候選 ID</td></tr>
+      <tr><td>&nbsp;&nbsp;&nbsp;├ passiveSkillIds</td><td>number[]?</td><td>被動技能記錄的候選 ID</td></tr>
+      <tr><td>&nbsp;&nbsp;&nbsp;└ activeSkillIds</td><td>number[]?</td><td>主動技能記錄的候選 ID</td></tr>
       <tr><td>&nbsp;└ manual</td><td>boolean?</td><td>後台手動新增的技能（機師天生自帶、官網查無者）。<strong>true</strong> = 後台可編輯 name / type / ap / cd / description，爬蟲補丁模式不覆寫亦不刪除；未設定 / false = 由爬蟲管理，後台僅能編輯 effects / buffIds</td></tr>
       <tr class="group-header"><td colspan="3">▎天賦列表 talents[] — PilotTalent（PLAN-001）</td></tr>
       <tr><td>&nbsp;├ name</td><td>string</td><td>天賦名稱</td></tr>
@@ -105,6 +111,9 @@
       <tr><td>portrait</td><td>string</td><td>立繪圖片路徑 /images/pilots/{id}/full.webp（2026-08 起全面轉 WebP，原 PNG 已移除）<br><small style="color:var(--text-dim)">🆕 PLAN-054：讀取端改由 <code>gameId</code>／<code>artKey</code> 推官方原檔（<code>pilotGameArt()</code>），本欄降為後備；清舊檔階段會改寫成 game 路徑。</small></td></tr>
       <tr><td>portraitUrl</td><td>string?</td><td>立繪遠端 URL（官方 CDN 來源）；本地 portrait 缺圖時的後備來源</td></tr>
       <tr><td>manual</td><td>boolean?</td><td>🆕 PLAN-025：後台手動新增的機師（官方資料更新前自建）。<strong>true</strong> = 爬蟲補丁模式（scrape-pilots-v3.js）整筆跳過、不覆寫或刪除；純作後端防覆寫，前台不因此顯示標記。語意比照 PilotSkill.manual / PilotTalent.manual</td></tr>
+      <tr class="group-header"><td colspan="3">▎機師形態 forms — MechForm（PLAN-041，獨立集合；本頁只列 PLAN-065-A 新增欄位，全貌見 <a href="../04_Firebase/資料庫設計文件/forms.html" style="color:var(--accent-cyan)">forms</a>）</td></tr>
+      <tr><td>&nbsp;└ gameRef</td><td>FormGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——形態被動的記錄 ID，傷害模擬用；選填物件。<br><small style="color:var(--text-dim)">⚠ 與形態 doc id、機師的 <code>gameId</code> 都是兩回事、<strong>不互推</strong>。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填，後台只唯讀顯示、不手填。未設定＝<strong>未連結</strong>：傷害模擬不把它算進去。型別見 <code>src/types/gameRef.ts</code>。</small></td></tr>
+      <tr><td>&nbsp;&nbsp;&nbsp;└ passiveSkillId</td><td>number</td><td>形態被動 ID</td></tr>
       <tr class="group-header"><td colspan="3">▎已遷出 / 待刪的舊欄位（PLAN-042-E，2026-10-13）— 已不在 <code>Pilot</code> 型別內</td></tr>
       <tr><td colspan="3" style="font-size:12px;color:var(--text-dim);padding:4px 14px;"><strong>新判準（PLAN-042-E 決策一，取代總綱決策二「誰是權威來源」）：與數值、機制有關的欄位留在 pilots，其餘全部歸 <a href="../04_Firebase/資料庫設計文件/pilotLore.html" style="color:var(--accent-cyan)">pilotLore</a>。</strong>
         依賴是單向的：<strong>圖鑑只讀 pilots</strong>；故事館讀 pilotLore ＋ pilots 的身分欄位（<code>name</code>／<code>fullName</code>／<code>faction</code>／<code>class</code>／立繪…）。

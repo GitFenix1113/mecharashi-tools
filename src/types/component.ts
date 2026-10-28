@@ -1,6 +1,7 @@
 // ─── 元件（v1.3 更新）────────────────────────────────────────────────────────
 
 import type { DescriptionRefs } from './common'
+import type { ComponentGameRef } from './gameRef'
 
 /**
  * 元件的 BOSS 掉落關卡（PLAN-025：由靜態 bossDrops.ts 移入 Firestore 各元件文件，後台可編輯）
@@ -28,6 +29,8 @@ export interface ComponentBase {
   componentsWType: 'W' | 'Normal'
   /** BOSS 掉落來源關卡（可空；PLAN-025 移入 Firestore，後台可編輯） */
   dropStages?: StageDrop[]
+  /** 遊戲身分鍵（PLAN-065-A）：元件記錄 ID，傷害模擬用。見 types/gameRef.ts。 */
+  gameRef?: ComponentGameRef
 }
 
 export interface ConditionComponent extends ComponentBase {

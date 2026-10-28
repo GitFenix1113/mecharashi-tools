@@ -72,6 +72,7 @@
       <tr><td>id</td><td>string</td><td>文件 ID。既有 180 筆為官方 API 的數字 ID（API: ID）；<strong>後台新增者為 <code>backpack_&lt;名稱 slug&gt;</code></strong>（2026-08-10 起，站方定調新資料走站內命名規則、不再遷就官方編號）</td></tr>
       <tr><td>name</td><td>string</td><td>背包名稱</td></tr>
       <tr><td>gameId</td><td>string?</td><td>🆕 PLAN-056：官方圖示 <code>Icon_backpack_&lt;gameId&gt;</code> 的編號（例 <code>'60100101'</code>）。<strong>外觀編號、同類共用</strong>，不是背包身分，不可當主鍵；186 筆已回填</td></tr>
+      <tr><td>gameRef</td><td>BackpackGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——背包記錄 ID（<code>backpackInfoId</code>），傷害模擬用。選填；與 <code>gameId</code> 不同、不互推。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填，後台唯讀顯示；未設定＝未連結。型別見 <code>src/types/gameRef.ts</code></td></tr>
       <tr><td>icon</td><td>string?</td><td>自訂圖路徑；只在沒有 <code>gameId</code> 時才會顯示（PLAN-056 C-5 前仍存著舊官方圖的本地路徑）</td></tr>
       <tr><td>type</td><td>BackpackType</td><td>背包種類 Enum（API: BackpackMainType）：Heal / Ammo / Interference / Invisible / BackupEquipment / MovePointAdd / Flow / Radar / EMP / Enhance / PowerAdd</td></tr>
       <tr><td>rarity</td><td>WeaponRarity</td><td>稀有度 Enum（與武器共用）：SS / S+ / S / A / B（API: quality）</td></tr>

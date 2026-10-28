@@ -18,6 +18,7 @@ import { artFolderNames } from '../../../components/admin/artFolderNames'
 import { MechPortraitField } from '../../../components/admin/GameArtPicker'
 import { CardFocusField } from '../../../components/admin/CardFocusField'
 import { CardArtField } from '../../../components/admin/CardArtField'
+import { GameRefRow, GameRefBadge } from '../../../components/admin/GameRefField'
 import { mechGameArt, mechGameIdFromPath } from '../../../utils/gameArt'
 import { ModuleBoundPart } from '../../../components/module/ModuleBoundPart'
 import { updateMech, docExists } from '../../../lib/firestoreApi'
@@ -26,6 +27,7 @@ import { shareIdFloor } from '../../../utils/loadoutCode/shareIdRegistry'
 import { useGameVersions } from '../../../hooks/useGameVersions'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { useAuth } from '../../../contexts/AuthContext'
+import { withServerGameRef } from './gameRefGuard'
 
 type MechFilters = { armorType: string }
 
@@ -140,7 +142,8 @@ export default function MechAdmin({
     if (item) setEditing(item)
   }
 
-  async function handleSave(updated: Mech) {
+  async function handleSave(edited: Mech) {
+    const updated = await withServerGameRef('mechs', edited)   // gameRef 唯讀：一律用伺服器現值（PLAN-065-A）
     const version = await updateMech(updated)
     upsert(updated)
     gd.patchCollectionItem('mechs', updated, version)
@@ -232,6 +235,7 @@ export default function MechAdmin({
                     {hasMissingModule && (
                       <span className="text-[13px] text-accent-red shrink-0">⚠ 模組未對應</span>
                     )}
+                    <GameRefBadge value={mech.gameRef} />
                   </div>
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                     <span className="text-[14px] text-accent-cyan">
@@ -561,6 +565,7 @@ function MechEditPanel({
           型號、廠商、介紹、系譜、塗裝名稱與逸聞在故事館編輯台 →
         </Link>
       )}
+      <GameRefRow value={form.gameRef} className="mb-3 shrink-0" />
 
       <AdminEditTabs tabs={tabs} active={tab} onChange={setTab} />
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { GameBuff, SkillEffect, BuffLevel, BuffIconTone, DescriptionRefs } from '../../../types'
+import type { GameBuff, BuffLevel, BuffIconTone, DescriptionRefs } from '../../../types'
 import { BuffType } from '../../../types/enums'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, GRID_AUTO_FIELDS, useCascadeDelete, ConfirmDeleteDialog, DeleteButton, DraftRestoreBar } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
@@ -10,7 +10,7 @@ import { GameIconField } from '../../../components/admin/GameIconPicker'
 import { BuffGlyph } from '../../../components/icons/BuffGlyph'
 import { BUFF_TONE_LABEL, buffIconTone } from '../../../utils/buffGlyph'
 import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
-import { SkillEffectItem } from './PilotAdmin'
+import { FrozenEffectsNote } from '../../../components/admin/FrozenEffects'
 import { checkBuffLevelName } from '../../../utils/ndOverrides'
 import { findRemovedLevelsInUse, sortLevelsAscending } from '../../../utils/buffLevelRefs'
 import { useRefScanData } from '../../../hooks/useRefScanData'
@@ -98,7 +98,6 @@ function BuffLevelItem({
   function upd<K extends keyof BuffLevel>(key: K, value: BuffLevel[K]) {
     onChange({ ...levelData, [key]: value })
   }
-  const effects = levelData.effects ?? []
   const nameCheck = checkBuffLevelName(buffName, levelData.level, levelData.name)
   // 沒有自己的引用表 → 顯示實際生效的那份（頂層）；一改動就寫成本級自己的一份（copy-on-write）
   const ownRefs = levelData.descriptionRefs && Object.keys(levelData.descriptionRefs).length > 0
@@ -207,32 +206,8 @@ function BuffLevelItem({
             library="buff"
             placeholder="Icon_buff_4012"
           />
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[12px] text-text-dim font-medium uppercase tracking-wider">該級效果 effects</span>
-              <button
-                onClick={() => upd('effects', [...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
-                className="text-[12px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-              >
-                + 新增效果
-              </button>
-            </div>
-            {effects.length === 0 ? (
-              <p className="text-xs text-text-dim py-1 text-center">尚未填入（數值型階梯各級在此填 dmg 等增益）</p>
-            ) : (
-              <div className="space-y-2">
-                {effects.map((eff, i) => (
-                  <SkillEffectItem
-                    key={i}
-                    effect={eff}
-                    index={i}
-                    onChange={(updated) => { const next = [...effects]; next[i] = updated; upd('effects', next) }}
-                    onRemove={() => upd('effects', effects.filter((_, idx) => idx !== i))}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          {/* PLAN-065-A C-1：效果數值凍結，只唯讀列出既有值 */}
+          <FrozenEffectsNote label="該級效果 effects" items={levelData.effects} />
         </div>
       )}
     </div>
@@ -260,9 +235,6 @@ function BuffEditPanel({
   function update<K extends keyof GameBuff>(key: K, value: GameBuff[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
-  const effects = form.effects ?? []
-  function updateEffects(next: SkillEffect[]) { update('effects', next) }
-
   // PLAN-024：flat XOR leveled — 有 levels 即為階梯 buff，能力資料權威來源轉為各級，
   // 頂層 maxStack/duration/effects 停用（避免「頂層 vs 各級」雙來源衝突）。
   const isLeveled = (form.levels?.length ?? 0) > 0
@@ -454,39 +426,9 @@ function BuffEditPanel({
           onChange={(v) => update('termRef', v)}
         />
 
-        {/* 可計算效果（階梯 buff 改由各級提供，頂層停用）*/}
-        {!isLeveled ? (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">可計算效果 effects</span>
-              <button
-                onClick={() => updateEffects([...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
-                className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-              >
-                + 新增效果
-              </button>
-            </div>
-            {effects.length === 0 ? (
-              <p className="text-xs text-text-dim py-2 text-center">尚未填入（計算器／模擬器不計此 BUFF）</p>
-            ) : (
-              <div className="space-y-2">
-                {effects.map((eff, i) => (
-                  <SkillEffectItem
-                    key={i}
-                    effect={eff}
-                    index={i}
-                    onChange={(updated) => { const next = [...effects]; next[i] = updated; updateEffects(next) }}
-                    onRemove={() => updateEffects(effects.filter((_, idx) => idx !== i))}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="rounded-lg border border-border/60 bg-bg-dark/40 px-3 py-2.5 text-[12px] text-text-dim leading-relaxed">
-            可計算效果改由 <span className="text-accent-yellow">各等級</span> 的 effects 提供（階梯 buff，頂層 effects 已停用）。
-          </div>
-        )}
+        {/* 可計算效果：PLAN-065-A C-1 凍結（頂層與各級都是），只唯讀列出既有值。
+            階梯 buff 的頂層殘值照舊在存檔時清空（見 handleSubmit 與上方 hasStaleTop 提示）。 */}
+        <FrozenEffectsNote label="可計算效果 effects" items={form.effects} />
 
         {/* 階梯等級 levels（PLAN-024）：填了即為階梯 buff，各級獨立 maxStack/effects */}
         <div>

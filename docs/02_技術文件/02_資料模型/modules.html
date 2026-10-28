@@ -121,6 +121,9 @@
       <tr><td>boundMechId</td><td>string?</td><td>綁定機甲 ID；null = 可獨立取得（特性/8級/通用）</td></tr>
       <tr><td>boundPart</td><td>MechPartPosition[] (Enum[])?</td><td>綁定部位陣列（<strong>v2.2 改為複數</strong>）："torso" / "leftArm" / "rightArm" / "legs"；<code>null</code> 或 <code>[]</code> = 不限部位；後台以複選核取方塊操作</td></tr>
       <tr><td>available</td><td>boolean</td><td>可獨立取得：特性/8級/通用模組 = true；副模組 = false</td></tr>
+      <tr><td>gameRef</td><td>ModuleGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——遊戲設定表的模組效果族 ID（選填道具記錄 ID），傷害模擬用（私有引擎只吃這組 ID）。選填物件。<br><small style="color:var(--text-dim)">⚠ 本集合沒有 <code>gameId</code>；與 doc id、圖示 key（<code>icon</code>）都是兩回事、<strong>不互推</strong>。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填（對照建議由私有 repo 產生、站長確認歧義後寫入），後台只唯讀顯示、不手填。未設定＝<strong>未連結</strong>：傷害模擬不把它算進去，後台標「未連結」。型別見 <code>src/types/gameRef.ts</code>。</small></td></tr>
+      <tr><td>&nbsp;├ entryId</td><td>number</td><td>遊戲模組效果族 ID</td></tr>
+      <tr><td>&nbsp;└ itemId</td><td>number?</td><td>選填：需要指明同一效果族底下的特定道具記錄時才有值</td></tr>
       <tr><td>source</td><td>ModuleSource[] (Enum[])</td><td>遊戲取得途徑（<strong>陣列，v2.1 改為複數</strong>）："商店" / "拆機甲" / "機甲不可拆"（v2.2 新增）/ "未知"；可同時含多個值；含任何非「未知」值時「未知」自動被排除</td></tr>
       <tr><td>dismantleMechIds</td><td>string[]?</td><td>拆解可得此模組的機甲 ID 陣列（對應 mechs collection）；顯示時 mapping 為機甲 name；僅 source 含 "拆機甲" 時填寫</td></tr>
       <tr><td>managedBy</td><td>ModuleDataSource (Enum)</td><td>後台資料維護標記："auto"（腳本自動擷取）/ "manual"（管理者手動新增）。<strong>與 source 語義不同，勿混用</strong></td></tr>
@@ -168,7 +171,7 @@
       <tr><td>buffIds</td><td>string[]?</td><td>🆕 PLAN-019 Layer 2：此模組可賦予的 Buff ID 列表；模擬器以此建立反向索引（可用 buff = 當前配裝所有實體 buffIds[] 的聯集）</td></tr>
       <tr><td>rarity</td><td>ModuleRarity (Enum)</td><td>模組品質："S" / "A"（副模組繼承機甲品質；其他由管理者填寫）。<br>注意：模組使用獨立的 <code>ModuleRarity</code>，非通用的 <code>ItemRarity</code></td></tr>
       <tr><td>icon</td><td>string?</td><td>官方圖示檔名 key（模組詞條 <code>Icon_entry_*</code> 或技能類 <code>Icon_skill_*</code>）<br><small style="color:var(--text-dim)">PLAN-055 C（2026-10-11）起 DB 只存官方檔名 key，讀取端以檔名解析（<code>gameIconCandidates</code>，圖庫 <code>public/images/game/icons/</code>）</small></td></tr>
-      <tr class="group-header"><td colspan="3">▎條件效果 conditionalEffects[]（傷害模擬器用；無條件效果或副模組為空陣列）</td></tr>
+      <tr class="group-header"><td colspan="3">▎條件效果 conditionalEffects[]（傷害模擬器用；無條件效果或副模組為空陣列）—— <span style="color:var(--accent-yellow)">⚠ PLAN-065-A 起凍結：不再人工輸入，數值由遊戲資料帶出（型別保留，前台讀取與顯示照舊）</span></td></tr>
       <tr><td>&nbsp;├ trigger</td><td>ConditionalTrigger (Enum)</td><td>觸發類型：<code>perBuffHeld</code>（每個增益）/ <code>perCombo</code>（每連擊）/ <code>apSkill</code>（AP技能）/ <code>perAmmoConsumed</code>（每消耗彈藥）/ <code>tacticalWeapon</code>（使用戰術武器）</td></tr>
       <tr><td>&nbsp;├ minCount</td><td>number?</td><td>觸發門檻值（apSkill 時代表最低 AP 數，如 3）</td></tr>
       <tr><td>&nbsp;├ stats</td><td>string[]</td><td>受影響的屬性欄位名稱陣列（如 <code>["dmg"]</code>、<code>["dmg","acc_rate"]</code>）；直接對應 module 頂層欄位名</td></tr>

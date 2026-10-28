@@ -33,7 +33,10 @@ export interface BackpackSkillLevel {
   /** 該級描述；未填時前台回退父層 description */
   description?: string
   descriptionRefs?: DescriptionRefs
-  /** 該級的結構化效果數值（移動力 +1 格、傷害 +5%…）；模擬加總 */
+  /**
+   * 該級的結構化效果數值。
+   * @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入，改由遊戲資料帶出；型別保留、讀取端相容。
+   */
   effects?: SkillEffect[]
   /** 該級賦予的 BUFF（元素格式同 buffIds，可含 `id@N` 指定級） */
   buffIds?: string[]
@@ -56,7 +59,10 @@ export interface BackpackSkillDoc {
   descriptionRefs?: DescriptionRefs
   /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）。（PLAN-043 的「背包技能/」獨立資料夾已由 PLAN-055 改判為扁平圖庫） */
   icon?: string
-  /** 結構化效果數值（管理員手填） */
+  /**
+   * 結構化效果數值。
+   * @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入，改由遊戲資料帶出；型別保留、讀取端相容。
+   */
   effects: SkillEffect[]
   /** 賦予的 BUFF（元素格式 `id` 或 `id@N`） */
   buffIds: string[]

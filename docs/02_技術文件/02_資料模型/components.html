@@ -72,6 +72,8 @@
       <tr><td>outerFrameLocal</td><td>string</td><td>本機外框圖路徑，依 componentType × componentsWType 決定（見下方說明）；由 patch-component-outerframe.mjs 自動填入</td></tr>
       <tr><td>componentsWType</td><td>ComponentsWType (Enum)</td><td>W 類型標記：W = W型元件（僅限 WeaponEquipSlot 為 DUAL_HAND / BACK 的武器可裝備，傷害計算機用）；Normal = 一般元件</td></tr>
       <tr><td>dropStages?</td><td>StageDrop[]</td><td>BOSS 掉落來源關卡（可空）；PLAN-025 由靜態 <code>bossDrops.ts</code> 移入 Firestore，後台可編輯。型別 <code>{ stage: number; bosses: number[] }</code></td></tr>
+      <tr><td>gameRef</td><td>ComponentGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——遊戲設定表的元件記錄 ID，傷害模擬用（私有引擎只吃這組 ID）。選填物件；定義在 <code>ComponentBase</code>，觸／應元件共用；每份元件文件對一筆記錄。<br><small style="color:var(--text-dim)">⚠ 本集合沒有 <code>gameId</code>；與 doc id、圖示 key（<code>icon</code>）都是兩回事、<strong>不互推</strong>。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填（對照建議由私有 repo 產生、站長確認歧義後寫入），後台只唯讀顯示、不手填。未設定＝<strong>未連結</strong>：傷害模擬不把它算進去，後台標「未連結」。型別見 <code>src/types/gameRef.ts</code>。</small></td></tr>
+      <tr><td>&nbsp;└ weaponEntryId</td><td>number</td><td>遊戲元件記錄 ID</td></tr>
     </table>
   </div>
 
@@ -119,6 +121,8 @@
       <tr><td>outerFrameLocal</td><td>string</td><td>本機外框圖路徑，依 componentType × componentsWType 決定；由 patch-component-outerframe.mjs 自動填入</td></tr>
       <tr><td>componentsWType</td><td>ComponentsWType (Enum)</td><td>W 類型標記：W = W型元件（僅限 WeaponEquipSlot 為 DUAL_HAND / BACK 的武器可裝備，傷害計算機用）；Normal = 一般元件</td></tr>
       <tr><td>dropStages?</td><td>StageDrop[]</td><td>BOSS 掉落來源關卡（可空）；PLAN-025 由靜態 <code>bossDrops.ts</code> 移入 Firestore，後台可編輯。型別 <code>{ stage: number; bosses: number[] }</code></td></tr>
+      <tr><td>gameRef</td><td>ComponentGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——遊戲設定表的元件記錄 ID，傷害模擬用。選填物件；與觸元件同一個欄位（<code>ComponentBase</code>），說明見上方觸元件表。</td></tr>
+      <tr><td>&nbsp;└ weaponEntryId</td><td>number</td><td>遊戲元件記錄 ID</td></tr>
     </table>
   </div>
 </section>

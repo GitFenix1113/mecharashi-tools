@@ -2,6 +2,7 @@ import type { BackpackType, MechLicense, WeaponKind } from './enums'
 // ─── 機師 ──────────────────────────────────────────────────────────────────
 
 import type { DescriptionRefs } from './common'
+import type { PilotGameRef, SkillGameRef } from './gameRef'
 import type { WeaponRequirement, SkillEffect } from './buff'
 
 export interface PilotStats {
@@ -31,6 +32,7 @@ export interface PilotSkill {
   descriptionRefs?: DescriptionRefs
   /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）；空字串＝沒有圖示 */
   icon: string
+  /** @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入，改由遊戲資料帶出；型別保留、讀取端相容。 */
   effects:  SkillEffect[]
   buffIds:  string[]
   /**
@@ -48,6 +50,7 @@ export interface SkillVariant {
   /** 此變體引用的技能 refId（skill_xxx） */
   skillRefIds?: string[]
   description?: string
+  /** @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入，改由遊戲資料帶出；型別保留、讀取端相容。 */
   effects?: SkillEffect[]
 }
 
@@ -80,8 +83,14 @@ export interface PilotSkillDoc {
   descriptionRefs?: DescriptionRefs
   /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）；空字串＝沒有圖示 */
   icon: string
+  /**
+   * @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入（全庫從未填過），數值改由遊戲資料帶出。
+   * 型別保留、讀取端相容；不要新增寫入。
+   */
   effects: SkillEffect[]
   buffIds: string[]
+  /** 遊戲身分鍵（PLAN-065-A）：候選技能 ID，傷害模擬用，見 types/gameRef.ts。 */
+  gameRef?: SkillGameRef
   /** 管理者手動新增的技能；爬蟲補丁模式不會覆寫或刪除。詳見 PilotSkill.manual */
   manual?: boolean
   /**
@@ -214,7 +223,9 @@ export interface PilotTalent {
   descriptionRefs?: DescriptionRefs
   /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）；空字串＝沒有圖示 */
   icon: string
+  /** @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入，改由遊戲資料帶出；型別保留、讀取端相容。 */
   effects:          SkillEffect[]
+  /** @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入，改由遊戲資料帶出；型別保留、讀取端相容。 */
   enhancedEffects?: SkillEffect[]
   buffIds:          string[]
   /** 神經驅動算力改寫變體（PLAN-021）；建議依 minSum 升序排列 */
@@ -250,7 +261,7 @@ export interface NeuralDriveAbility {
   descriptionRefs?: DescriptionRefs
   /** 官方圖示檔名 key（如 Icon_skill_passive_5223；PLAN-055 起 DB 只存 key，讀取端走 gameIconCandidates）。PLAN-055 C 起是神經驅動圖示的唯一來源（等級裡的 skillIcon／iconLocal 副本已刪） */
   icon?: string
-  /** 可計算效果（模擬器用；多數待後台 NeuralDriveAdmin 補填） */
+  /** @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入，改由遊戲資料帶出；型別保留、讀取端相容。 */
   effects: SkillEffect[]
   /** 賦予的 buff（id 或 id@N，比照技能／天賦）。會進 buffPool。 */
   buffIds: string[]
@@ -285,6 +296,7 @@ export interface NeuralDriveLevel {
   effect: string
   skillName: string
   // 圖示不在這裡：PLAN-055 C 刪掉了 skillIcon／iconLocal 副本，一律由 abilityId 查 NeuralDriveAbility.icon
+  /** @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入，改由遊戲資料帶出；型別保留、讀取端相容。 */
   effects: SkillEffect[]
   buffIds: string[]
   /** 描述內 [xxx] 引用側錄（PLAN-023 N2-1）；flip 後由 resolve 從 NeuralDriveAbility 帶入。 */
@@ -323,6 +335,8 @@ export interface Pilot {
    *   `Pilot_10103181A_*` 第一次擷取就有，卡號要等 v3.7 的擷取才出現（2026-10-11 補匯入）。
    */
   gameId?: string
+  /** 遊戲身分鍵（PLAN-065-A）：機師記錄 ID，傷害模擬用。與 gameId（機師卡編號）不互推，見 types/gameRef.ts。 */
+  gameRef?: PilotGameRef
   /**
    * 預設立繪主鍵（PLAN-054），與官方檔名逐字相同，例如 'Pilot_10103174A'；
    * `_half`（340²）／`_head`（90²）／`_Raw`（1240×1080）接在它後面。

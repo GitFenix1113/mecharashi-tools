@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { Module, Mech, ConditionalEffect, ModuleLevel, DescriptionRefs, ModuleUnlock } from '../../../types'
+import type { Module, Mech, ModuleLevel, DescriptionRefs, ModuleUnlock } from '../../../types'
 import {
-  ModuleRarity, ModuleSlot, ModuleSource, ModuleDataSource, ConditionalTrigger, MechPartPosition,
+  ModuleRarity, ModuleSlot, ModuleSource, ModuleDataSource, MechPartPosition,
 } from '../../../types/enums'
 import {
   Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton,
@@ -15,8 +15,11 @@ import { markKeywords, extractKeywords } from '../../../utils/refKey'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
-import { SLOT_OPTIONS, SLOT_LABEL, PART_OPTIONS, TRIGGER_LABEL, STAT_OPTIONS } from './constants'
+import { GameRefRow, GameRefBadge } from '../../../components/admin/GameRefField'
+import { FrozenEffectsNote } from '../../../components/admin/FrozenEffects'
+import { SLOT_OPTIONS, SLOT_LABEL, PART_OPTIONS } from './constants'
 import { moduleTopLevel, syncModuleTopFromMaxLevel } from '../../../utils/moduleRules'
+import { withServerGameRef } from './gameRefGuard'
 
 type ModuleFilters = {
   slot: string
@@ -96,106 +99,8 @@ export function moduleHasStats(mod: Module): boolean {
   )
 }
 
-// ─── 條件效果項目 ──────────────────────────────────────────────────────────────
-function ConditionalEffectItem({
-  effect,
-  index,
-  onChange,
-  onRemove,
-}: {
-  effect: ConditionalEffect
-  index: number
-  onChange: (updated: ConditionalEffect) => void
-  onRemove: () => void
-}) {
-  function upd<K extends keyof ConditionalEffect>(key: K, value: ConditionalEffect[K]) {
-    onChange({ ...effect, [key]: value })
-  }
-
-  function toggleStat(stat: string) {
-    const next = effect.stats.includes(stat)
-      ? effect.stats.filter((s) => s !== stat)
-      : [...effect.stats, stat]
-    upd('stats', next)
-  }
-
-  return (
-    <div className="border border-border/60 rounded-lg p-3 space-y-2.5 bg-bg-dark/50">
-      <div className="flex items-center justify-between">
-        <span className="text-[14px] text-text-dim font-medium">條件效果 #{index + 1}</span>
-        <button
-          onClick={onRemove}
-          className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10"
-        >
-          ✕ 移除
-        </button>
-      </div>
-
-      <Field label="觸發類型 trigger">
-        <select value={effect.trigger} onChange={(e) => upd('trigger', e.target.value)} className="input-field">
-          {Object.values(ConditionalTrigger).map((v) => (
-            <option key={v} value={v}>{TRIGGER_LABEL[v] ?? v}</option>
-          ))}
-        </select>
-      </Field>
-
-      {/* 7 個條件效果參數原本拆成 3 組（2/3/2 欄）；併為單一自動格線（PLAN-033 B-3） */}
-      <div className={`${GRID_AUTO_FIELDS} gap-2`}>
-        <Field label="觸發門檻 minCount（選填）">
-          <input
-            type="number"
-            value={effect.minCount ?? ''}
-            onChange={(e) => upd('minCount', e.target.value === '' ? undefined : Number(e.target.value))}
-            className="input-field"
-            placeholder="—"
-          />
-        </Field>
-        <Field label="重置時機 resetOn">
-          <select
-            value={effect.resetOn ?? ''}
-            onChange={(e) => upd('resetOn', (e.target.value || null) as ConditionalEffect['resetOn'])}
-            className="input-field"
-          >
-            <option value="">不重置 (null)</option>
-            <option value="attack">每次攻擊後 (attack)</option>
-            <option value="turn">回合結束 (turn)</option>
-          </select>
-        </Field>
-        <Field label="基礎加成 base（選填）">
-          <input type="number" value={effect.base ?? ''} onChange={(e) => upd('base', e.target.value === '' ? undefined : Number(e.target.value))} className="input-field" placeholder="—" />
-        </Field>
-        <Field label="每單位追加 scale（選填）">
-          <input type="number" value={effect.scale ?? ''} onChange={(e) => upd('scale', e.target.value === '' ? undefined : Number(e.target.value))} className="input-field" placeholder="—" />
-        </Field>
-        <Field label="總加成上限 max（選填）">
-          <input type="number" value={effect.max ?? ''} onChange={(e) => upd('max', e.target.value === '' ? undefined : Number(e.target.value))} className="input-field" placeholder="—" />
-        </Field>
-        <Field label="最大疊加 maxStacks（選填）">
-          <input type="number" value={effect.maxStacks ?? ''} onChange={(e) => upd('maxStacks', e.target.value === '' ? undefined : Number(e.target.value))} className="input-field" placeholder="—" />
-        </Field>
-        <Field label="持續回合 duration（選填，null=永久）">
-          <input type="number" value={effect.duration ?? ''} onChange={(e) => upd('duration', e.target.value === '' ? undefined : Number(e.target.value))} className="input-field" placeholder="— (永久)" />
-        </Field>
-      </div>
-
-      <Field label="影響屬性 stats">
-        <div className="grid grid-cols-2 gap-y-1 gap-x-2 mt-1">
-          {STAT_OPTIONS.map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-1.5 text-[14px] text-text-secondary cursor-pointer hover:text-text-primary">
-              <input
-                type="checkbox"
-                checked={effect.stats.includes(key)}
-                onChange={() => toggleStat(key)}
-                className="accent-accent-orange w-3 h-3"
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-      </Field>
-    </div>
-  )
-}
+// PLAN-065-A C-1：原本這裡有條件效果編輯器 ConditionalEffectItem。條件效果改由遊戲資料帶出、
+// 不再人工輸入（全庫從未填過），「條件效果」分頁改為唯讀 FrozenEffectsNote；欄位與前台讀取照舊。
 
 // ─── 模組等級項目 ──────────────────────────────────────────────────────────────
 function ModuleLevelItem({
@@ -671,6 +576,7 @@ function ModuleEditPanel({
         <span className="text-accent-orange">✎</span> 編輯模組
         <span className="text-text-dim text-sm font-normal ml-1">{form.id}</span>
       </h3>
+      <GameRefRow value={form.gameRef} className="-mt-1 mb-3 shrink-0" />
 
       <AdminEditTabs
         tabs={EDIT_TABS.map((t) => ({
@@ -915,44 +821,9 @@ function ModuleEditPanel({
           </div>
         )}
 
+        {/* PLAN-065-A C-1：條件效果凍結，只唯讀列出既有值（全庫 0 筆） */}
         {editTab === 'conditional' && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-text-dim font-medium tracking-wider uppercase">條件效果 conditionalEffects</span>
-              <button
-                onClick={() =>
-                  update('conditionalEffects', [
-                    ...(form.conditionalEffects ?? []),
-                    { trigger: ConditionalTrigger.PER_BUFF_HELD, stats: [] },
-                  ])
-                }
-                className="text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-              >
-                + 新增條件效果
-              </button>
-            </div>
-            {(form.conditionalEffects ?? []).length === 0 ? (
-              <p className="text-xs text-text-dim py-4 text-center">無條件效果</p>
-            ) : (
-              <div className="space-y-3">
-                {(form.conditionalEffects ?? []).map((ce, idx) => (
-                  <ConditionalEffectItem
-                    key={idx}
-                    effect={ce}
-                    index={idx}
-                    onChange={(updated) => {
-                      const arr = [...(form.conditionalEffects ?? [])]
-                      arr[idx] = updated
-                      update('conditionalEffects', arr)
-                    }}
-                    onRemove={() =>
-                      update('conditionalEffects', (form.conditionalEffects ?? []).filter((_, i) => i !== idx))
-                    }
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          <FrozenEffectsNote label="條件效果 conditionalEffects" items={form.conditionalEffects} />
         )}
       </div>
     </AdminModal>
@@ -1036,7 +907,8 @@ export default function ModuleAdmin({
     if (item) setEditing(item)
   }
 
-  async function handleSave(updated: Module) {
+  async function handleSave(edited: Module) {
+    const updated = await withServerGameRef('modules', edited)   // gameRef 唯讀：一律用伺服器現值（PLAN-065-A）
     const version = await updateModule(updated)
     upsert(updated)
     gd.patchCollectionItem('modules', updated, version)
@@ -1176,6 +1048,7 @@ export default function ModuleAdmin({
                     </span>
                   )
                 })()}
+                <GameRefBadge value={mod.gameRef} />
               </div>
               <p className="text-xs text-text-dim truncate mt-0.5">{(moduleTopLevel(mod)?.description ?? mod.description) || '（無描述）'}</p>
             </div>

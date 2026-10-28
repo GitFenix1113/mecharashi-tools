@@ -1,4 +1,5 @@
 import type { ArmamentMount } from './slots'
+import type { MechGameRef } from './gameRef'
 import type { ArmorType, PartInterface, NoInterface } from './enums'
 
 // ─── 機甲部件（v1.4 新增：獨立部件資料）──────────────────────────────────────
@@ -95,6 +96,8 @@ export interface Mech {
    * ⚠ 首碼 1／2／3 大致對應輕／中／重，但有例外——只當識別碼，不要拿來推導裝甲。
    */
   gameId?: string
+  /** 遊戲身分鍵（PLAN-065-A）：套裝 ID，傷害模擬用。見 types/gameRef.ts。 */
+  gameRef?: MechGameRef
   /**
    * 塗裝本體的文件 ID（PLAN-054）：這台其實是另一台的付費塗裝時才填。目前沒有任何機甲有值。
    * （2026-10-04 更正：v3 對照曾把凜騎士對到遊騎兵的塗裝 wap3132，站長確認凜騎士是新機甲、不是塗裝。）

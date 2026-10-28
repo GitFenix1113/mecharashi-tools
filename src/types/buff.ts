@@ -92,7 +92,11 @@ export interface BuffLevel {
   duration?:    number
   /** 生效次數：效果可觸發 N 次後耗盡（與 maxStack 疊加層數、duration 回合數為獨立維度） */
   maxTriggers?: number
-  /** 數值型各級的數值（傷害提升 5%/10%…）；模擬加總 */
+  /**
+   * 數值型各級的數值（傷害提升 5%/10%…）；模擬加總
+   * @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入（全庫從未填過），數值改由遊戲資料帶出。
+   * 型別保留、讀取端相容；不要新增寫入。
+   */
   effects?:     SkillEffect[]
   /** 該級專屬圖示（選填；不填沿用 buff.icon） */
   icon?:        string
@@ -129,6 +133,10 @@ export interface GameBuff {
   // ⚠ 刻意**沒有** mutexGroup（PLAN-041 移除）：PLAN-019-B 為「虛粒子 ⟷ 實粒子」形態互斥
   //   預留的欄位，實測從上線到刪除為止**全庫 0 筆**填過，其引擎算出來的永遠是 0 組。
   //   形態已改為 forms 集合的獨立實體（見 types/form.ts）。要表達「多階取最高」請用 levels。
+  /**
+   * @deprecated PLAN-065-A 起凍結：人工效果數值不再輸入（全庫從未填過），數值改由遊戲資料帶出。
+   * 型別保留、讀取端相容；不要新增寫入。
+   */
   effects:     SkillEffect[]
   /**
    * 階梯 buff 各等級能力（PLAN-024）。無 = 普通 buff，沿用上方頂層欄位、行為不變。

@@ -52,6 +52,7 @@
     <table class="data-table blue-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>文件 ID。格式 <code>weapon_&lt;3 位流水號&gt;_&lt;名稱 slug&gt;</code>（如 <code>weapon_169_天燼審判</code>）。爬蟲以「API 清單位置 +1」編號；後台新增時由 <code>makeNumberedEntityId</code> 續既有最大號 +1，slug 規則同 <code>idSlug.ts</code></td></tr>
+      <tr><td>gameRef</td><td>WeaponGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——武器記錄 ID（<code>weaponInfoId</code>），傷害模擬用。選填；與 <code>gameId</code> 不同、不互推。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填，後台唯讀顯示；未設定＝未連結。型別見 <code>src/types/gameRef.ts</code></td></tr>
       <tr><td>name</td><td>string</td><td>武器名稱</td></tr>
       <tr><td>category</td><td>WeaponCategory</td><td>武器大類 Enum：射擊 / 格鬥 / 突擊 / 戰術</td></tr>
       <tr><td>type</td><td>string</td><td>武器種類（機槍 / 狙擊步槍 / 重機槍 / 拳套 ...）</td></tr>

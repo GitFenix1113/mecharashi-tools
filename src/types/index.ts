@@ -4,6 +4,7 @@
 // 注意：enums.ts 與 mechUpgrade.ts 不在此 barrel 內，沿用各自的獨立 import 路徑。
 
 export * from './common'      // 實體引用層：RefType / EntityRef / DescriptionRefs / GlossaryTerm
+export * from './gameRef'     // 遊戲身分鍵：PilotGameRef / WeaponGameRef …（PLAN-065-A，傷害模擬引擎的輸入）
 export * from './buff'        // 技能/Buff 共用：WeaponRequirement / formatWeaponReq / SkillEffect / GameBuff
 export * from './pilot'       // 機師：Pilot / PilotSkill(Doc) / PilotTalent / NeuralDrive …
 export * from './module'      // 模組：Module / ModuleLevel / ConditionalEffect

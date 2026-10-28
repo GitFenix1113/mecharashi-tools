@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { NeuralDriveAbility, SkillEffect, Pilot } from '../../../types'
+import type { NeuralDriveAbility, Pilot } from '../../../types'
 import { Field, AdminModal, useNewItemCreation, NewItemDialog, useClientPaged, LoadMoreButton, DraftRestoreBar } from './shared'
 import { useDraftWrite, useDraftRestore } from '../../../hooks/useDraftAutosave'
 import { updateNeuralDriveAbility, docExists } from '../../../lib/firestoreApi'
@@ -7,7 +7,7 @@ import { makeEntityId, stripIdPrefix } from '../../../utils/idSlug'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
-import { SkillEffectItem } from './PilotAdmin'
+import { FrozenEffectsNote } from '../../../components/admin/FrozenEffects'
 import { parseBuffRef, formatBuffRef } from '../../../utils/buffRef'
 import { isSelfBuff, pickLevel } from '../../../utils/ndOverrides'
 import { findBuffLevelRefs } from '../../../utils/buffLevelRefs'
@@ -218,9 +218,7 @@ function NdAbilityEditPanel({
   function update<K extends keyof NeuralDriveAbility>(key: K, value: NeuralDriveAbility[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
-  const effects = form.effects ?? []
   const buffIds = form.buffIds ?? []
-  function updateEffects(next: SkillEffect[]) { update('effects', next) }
   function updateBuffIds(val: string) {
     update('buffIds', val.split(/[,\n]/).map((s) => s.trim()).filter(Boolean))
   }
@@ -270,33 +268,8 @@ function NdAbilityEditPanel({
           onCompileText={(tf, refs) => { update('description', tf(form.description)); if (refs) update('descriptionRefs', refs) }}
         />
 
-        {/* 可計算效果 */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">可計算效果 effects</span>
-            <button
-              onClick={() => updateEffects([...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
-              className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-            >
-              + 新增效果
-            </button>
-          </div>
-          {effects.length === 0 ? (
-            <p className="text-xs text-text-dim py-2 text-center">尚未填入（模擬器不計此能力）</p>
-          ) : (
-            <div className="space-y-2">
-              {effects.map((eff, i) => (
-                <SkillEffectItem
-                  key={i}
-                  effect={eff}
-                  index={i}
-                  onChange={(updated) => { const next = [...effects]; next[i] = updated; updateEffects(next) }}
-                  onRemove={() => updateEffects(effects.filter((_, idx) => idx !== i))}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* 可計算效果：PLAN-065-A C-1 凍結，只唯讀列出既有值 */}
+        <FrozenEffectsNote label="可計算效果 effects" items={form.effects} />
 
         <Field label="觸發 Buff ID buffIds（逗號分隔）">
           <textarea
@@ -436,7 +409,7 @@ export default function NeuralDriveAdmin({ initialSearch = '' }: { initialSearch
         </button>
         <select value={filters.status} onChange={(e) => setFilter('status', e.target.value as NdFilters['status'])} className="px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-primary text-sm">
           <option value="all">全部</option>
-          <option value="noEffects">缺 effects（待補模擬）</option>
+          <option value="noEffects">缺 effects（PLAN-065-A 起凍結，不再補填）</option>
           <option value="unlinked">缺引用標記（[xxx] 未指派）</option>
         </select>
       </div>

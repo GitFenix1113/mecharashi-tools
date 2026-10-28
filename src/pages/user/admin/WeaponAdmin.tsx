@@ -28,6 +28,8 @@ import { weaponIconCategoryOf } from '../../../utils/gameIcons'
 import { WEAPON_RARITY_CLASS, WEAPON_KIND_BY_TYPE, ALL_WEAPON_KINDS } from './constants'
 import { SkillEditPanel } from './SkillAdmin'
 import { makeDefaultSkill, findServerSkillClash } from './skillLibrary'
+import { withServerGameRef } from './gameRefGuard'
+import { GameRefRow, GameRefBadge } from '../../../components/admin/GameRefField'
 
 type WeaponFilters = { rarity: string; type: string; exclusive: 'all' | 'yes' | 'no' }
 
@@ -393,8 +395,9 @@ function WeaponEditPanel({
     }
   }
 
-  async function handleSkillSave(doc: PilotSkillDoc) {
+  async function handleSkillSave(edited: PilotSkillDoc) {
     const session = skillSession
+    const doc = await withServerGameRef('pilotSkills', edited)   // gameRef 唯讀：一律用伺服器現值（PLAN-065-A）
     const version = await updatePilotSkill(doc)
     gdPanel.patchCollectionItem('pilotSkills', doc, version)
     skillDraft.commit()
@@ -439,6 +442,7 @@ function WeaponEditPanel({
           <p className="text-[14px] text-text-dim mt-0.5">
             {form.type} · {form.kind} · {form.rarity} · 技能 {(form.skills ?? []).length}
           </p>
+          <GameRefRow value={form.gameRef} className="mt-1" />
         </div>
       </div>
 
@@ -969,7 +973,8 @@ export default function WeaponAdmin({
     if (item) setEditing(item)
   }
 
-  async function handleSave(updated: Weapon) {
+  async function handleSave(edited: Weapon) {
+    const updated = await withServerGameRef('weapons', edited)   // gameRef 唯讀：一律用伺服器現值（PLAN-065-A）
     const version = await updateWeapon(updated)
     upsert(updated)
     gd.patchCollectionItem('weapons', updated, version)
@@ -1060,6 +1065,7 @@ export default function WeaponAdmin({
                       專屬{pilot ? `・${pilot.name}` : '（未綁定）'}
                     </span>
                   )}
+                  <GameRefBadge value={w.gameRef} />
                 </div>
                 <p className="text-[14px] text-text-dim mt-0.5">
                   {w.equipSlot} · 重量 {w.weight} · 攻擊 {w.attack} · 射程 {w.rangeType === RangeType.RING ? `${w.maxRange}+` : `${w.minRange}-${w.maxRange}`}

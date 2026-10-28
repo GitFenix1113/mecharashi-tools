@@ -55,6 +55,7 @@
     <table class="data-table">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>文件 ID。格式 <code>form_&lt;機師名&gt;_&lt;形態名去「形態」尾綴&gt;</code>，如 <code>form_海莉絲_先鋒</code>。<strong>與其他集合的 <code>&lt;prefix&gt;_&lt;slug(name)&gt;</code> 不同</strong>——形態名（先鋒／突擊…）在不同調構師之間必然重複，只用名稱會直接撞 ID</td></tr>
+      <tr><td>gameRef</td><td>FormGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——形態被動 ID（<code>passiveSkillId</code>），傷害模擬用。選填；與 <code>gameId</code> 不同、不互推。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填，後台唯讀顯示；未設定＝未連結。型別見 <code>src/types/gameRef.ts</code></td></tr>
       <tr><td>pilotId</td><td>string</td><td>所屬機師文件 ID（<code>pilots</code>）</td></tr>
       <tr><td>name</td><td>string</td><td>形態名稱。統一用「<strong>形</strong>態」不用「型」態（舊 pilotSkills 遺留文件的 id 是「型」態）</td></tr>
       <tr><td>order</td><td>number</td><td>顯示順序。形態數不固定 → UI 一律 <code>map</code>，不寫死欄數</td></tr>

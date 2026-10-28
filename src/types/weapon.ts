@@ -1,6 +1,7 @@
 // ─── 武器 ──────────────────────────────────────────────────────────────────
 
 import type { DescriptionRefs } from './common'
+import type { WeaponGameRef } from './gameRef'
 import type { SkillEffect } from './buff'
 
 /**
@@ -116,6 +117,8 @@ export interface Weapon {
    * 讀取端一律走 `weaponIconCandidates()`（src/utils/gameIcons.ts），不要自己拼路徑。
    */
   gameId?: string
+  /** 遊戲身分鍵（PLAN-065-A）：武器記錄 ID，傷害模擬用。與 gameId（圖示編號）不互推，見 types/gameRef.ts。 */
+  gameRef?: WeaponGameRef
   /**
    * 固定武裝左右肩的鏡像圖（PLAN-056）：官方慣例左肩＝…01、右肩＝…02（霸王、破曉者-01 遊戲截圖確認）。
    * 掛載點有 side 時優先用它，否則用 gameId。只有 `isFixedArmament` 的肩部武裝需要；

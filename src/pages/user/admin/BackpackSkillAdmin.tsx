@@ -4,7 +4,7 @@
 // levels[] 與 BuffLevel 同構就該用同一套操作，維護者不必學第二種。
 
 import { useState, useEffect } from 'react'
-import type { BackpackSkillDoc, BackpackSkillLevel, SkillEffect } from '../../../types'
+import type { BackpackSkillDoc, BackpackSkillLevel } from '../../../types'
 import { SkillType } from '../../../types/enums'
 import {
   Field, AdminModal, GRID_AUTO_FIELDS,
@@ -20,7 +20,7 @@ import { sortLevelsAscending } from '../../../utils/buffLevelRefs'
 import { useGameData } from '../../../contexts/GameDataContext'
 import { RefPicker } from '../../../components/admin/RefPicker'
 import { GameIconField, IconThumb } from '../../../components/admin/GameIconPicker'
-import { SkillEffectItem } from './PilotAdmin'
+import { FrozenEffectsNote } from '../../../components/admin/FrozenEffects'
 
 // PLAN-055：背包技能圖示改從扁平圖庫挑（PLAN-043 E-1 的獨立資料夾 skills/背包技能 改判退場——
 // 那 19 張與被動夾位元組相同，「分得清來源」改由選圖器的「被誰用」反查提供）
@@ -65,7 +65,6 @@ function BackpackSkillLevelItem({
   function upd<K extends keyof BackpackSkillLevel>(key: K, value: BackpackSkillLevel[K]) {
     onChange({ ...levelData, [key]: value })
   }
-  const effects = levelData.effects ?? []
   const buffIds = levelData.buffIds ?? []
   const nameCheck = checkBuffLevelName(skillName, levelData.level, levelData.name, LEVEL_NAME_OPTS)
 
@@ -145,32 +144,8 @@ function BackpackSkillLevelItem({
             presetKinds={['passive']}
           />
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[12px] text-text-dim font-medium uppercase tracking-wider">該級效果 effects</span>
-              <button
-                onClick={() => upd('effects', [...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
-                className="text-[12px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-              >
-                + 新增效果
-              </button>
-            </div>
-            {effects.length === 0 ? (
-              <p className="text-xs text-text-dim py-1 text-center">尚未填入（各級數值差異在此填，如移動力 +1 / +2）</p>
-            ) : (
-              <div className="space-y-2">
-                {effects.map((eff, i) => (
-                  <SkillEffectItem
-                    key={i}
-                    effect={eff}
-                    index={i}
-                    onChange={(updated) => { const next = [...effects]; next[i] = updated; upd('effects', next) }}
-                    onRemove={() => upd('effects', effects.filter((_, idx) => idx !== i))}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          {/* PLAN-065-A C-1：效果數值凍結，只唯讀列出既有值 */}
+          <FrozenEffectsNote label="該級效果 effects" items={levelData.effects} />
 
           <Field label="該級觸發 Buff ID buffIds（逗號分隔，選填）">
             <textarea
@@ -206,7 +181,6 @@ function BackpackSkillEditPanel({
   function update<K extends keyof BackpackSkillDoc>(key: K, value: BackpackSkillDoc[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
-  const effects = form.effects ?? []
   const buffIds = form.buffIds ?? []
   const levels  = form.levels ?? []
   const isLeveled = levels.length > 0
@@ -279,35 +253,8 @@ function BackpackSkillEditPanel({
           onCompileText={(tf, refs) => { update('description', tf(form.description)); if (refs) update('descriptionRefs', refs) }}
         />
 
-        {/* 可計算效果（非階梯技能用；階梯技能改由各級提供） */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">
-              可計算效果 effects{isLeveled && '（階梯技能請改填各級）'}
-            </span>
-            <button
-              onClick={() => update('effects', [...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
-              className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-            >
-              + 新增效果
-            </button>
-          </div>
-          {effects.length === 0 ? (
-            <p className="text-xs text-text-dim py-2 text-center">尚未填入（模擬器不計此技能的數值）</p>
-          ) : (
-            <div className="space-y-2">
-              {effects.map((eff: SkillEffect, i: number) => (
-                <SkillEffectItem
-                  key={i}
-                  effect={eff}
-                  index={i}
-                  onChange={(updated) => { const next = [...effects]; next[i] = updated; update('effects', next) }}
-                  onRemove={() => update('effects', effects.filter((_, idx) => idx !== i))}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* 可計算效果：PLAN-065-A C-1 凍結（頂層與各級都是），只唯讀列出既有值 */}
+        <FrozenEffectsNote label="可計算效果 effects" items={form.effects} />
 
         <Field label="觸發 Buff ID buffIds（逗號分隔）">
           <textarea

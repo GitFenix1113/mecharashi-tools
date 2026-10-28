@@ -42,6 +42,7 @@
     <table class="data-table blue-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>id</td><td>string</td><td>唯一識別碼（特性/8級/通用：mod_{masterApiId}；副模組：mod_{機甲名}_{position}）</td></tr>
+      <tr><td>gameRef</td><td>ModuleGameRef?</td><td>🆕 PLAN-065-A：<strong>遊戲身分鍵</strong>——效果族 ID（<code>entryId</code>）＋選填道具記錄 ID（<code>itemId</code>），傷害模擬用。選填；與 <code>gameId</code> 不同、不互推。由 <code>scripts/backfill-game-join-keys.mjs</code> 回填，後台唯讀顯示；未設定＝未連結。型別見 <code>src/types/gameRef.ts</code></td></tr>
       <tr><td>name</td><td>string</td><td>模組名稱</td></tr>
       <tr><td>slot</td><td>ModuleSlot</td><td>槽位 Enum：機甲特性模組 / 機甲8級模組 / 通用模組 / 機甲副模組</td></tr>
       <tr><td>boundMechId</td><td>string?</td><td>綁定機甲 ID → 引用 mechs collection；null = 可獨立取得</td></tr>

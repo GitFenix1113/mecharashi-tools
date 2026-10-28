@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, SkillEffect, SkillCondition, NeuralDrive, NeuralDriveLevel, NeuralDriveAbility, TalentLoadoutMod, EquipTarget, EquipStat, TalentTier } from '../../../types'
+import type { Pilot, PilotSkill, PilotSkillDoc, PilotTalent, TalentNdVariant, NeuralDrive, NeuralDriveLevel, NeuralDriveAbility, TalentLoadoutMod, EquipTarget, EquipStat, TalentTier } from '../../../types'
 import { formatWeaponReq } from '../../../types'
-import { ItemRarity, PilotClass, MechLicense, WeaponType, WeaponKind, BackpackType } from '../../../types/enums'
+import { ItemRarity, PilotClass, MechLicense, WeaponKind, BackpackType } from '../../../types/enums'
 import { BACKPACK_TYPE_CONFIG } from '../../../components/badges/BackpackBadges'
 import { loadoutModHintWords } from '../../../utils/talentLoadoutMods'
 import { useGameVersions } from '../../../hooks/useGameVersions'
@@ -25,8 +25,11 @@ import { PilotGameArtFields } from '../../../components/admin/GameArtFields'
 import { PilotPortraitField } from '../../../components/admin/GameArtPicker'
 import { CardArtField } from '../../../components/admin/CardArtField'
 import { CardFocusField } from '../../../components/admin/CardFocusField'
+import { GameRefRow, GameRefBadge } from '../../../components/admin/GameRefField'
+import { FrozenEffectsNote } from '../../../components/admin/FrozenEffects'
 import { assetUrl, pilotPortraitPath } from '../../../utils/assets'
-import { PILOT_RARITY_CLASS, TRIGGER_DISPLAY, STAT_OPTIONS } from './constants'
+import { PILOT_RARITY_CLASS } from './constants'
+import { withServerGameRef } from './gameRefGuard'
 
 // ─── 新機師預設值工廠（PLAN-025）─────────────────────────────────────────────────
 // 手建機師沒有官方爬蟲來源：statsBase 給空物件，apBase 複製 ap。
@@ -65,208 +68,9 @@ const TALENT_TEXT_SECTIONS: RefTextSection[] = [
   { label: '最大強化', splitKey: '強化' },
 ]
 
-// ─── 技能條件編輯器 ────────────────────────────────────────────────────────────
-function SkillConditionEditor({
-  condition,
-  onChange,
-}: {
-  condition: SkillCondition
-  onChange: (updated: SkillCondition) => void
-}) {
-  return (
-    <div className="p-2 bg-bg-dark/60 rounded border border-border/40 space-y-2 mt-1.5">
-      <Field label="觸發條件 trigger">
-        <select
-          value={condition.trigger}
-          onChange={(e) => onChange({ ...condition, trigger: e.target.value })}
-          className="input-field"
-        >
-          {Object.entries(TRIGGER_DISPLAY).map(([k, label]) => (
-            <option key={k} value={k}>{label}</option>
-          ))}
-        </select>
-      </Field>
-      {condition.trigger === 'weaponType' && (
-        <Field label="武器類型 weaponType">
-          <select
-            value={condition.weaponType ?? ''}
-            onChange={(e) => onChange({ ...condition, weaponType: e.target.value || undefined })}
-            className="input-field"
-          >
-            <option value="">不限</option>
-            {Object.values(WeaponType).map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </Field>
-      )}
-      {condition.trigger === 'hpBelow' && (
-        <Field label="HP 門檻 (%) hpThreshold">
-          <input
-            type="number"
-            value={condition.hpThreshold ?? ''}
-            onChange={(e) => onChange({ ...condition, hpThreshold: e.target.value !== '' ? Number(e.target.value) : undefined })}
-            className="input-field"
-            placeholder="如：50 代表 HP < 50%"
-          />
-        </Field>
-      )}
-      {condition.trigger === 'onApSkill' && (
-        <Field label="最低 AP 消耗 minApCost">
-          <input
-            type="number"
-            value={condition.minApCost ?? ''}
-            onChange={(e) => onChange({ ...condition, minApCost: e.target.value !== '' ? Number(e.target.value) : undefined })}
-            className="input-field"
-          />
-        </Field>
-      )}
-      {condition.trigger === 'hasBuff' && (
-        <Field label="狀態名稱 hasBuff">
-          <input
-            type="text"
-            value={condition.hasBuff ?? ''}
-            onChange={(e) => onChange({ ...condition, hasBuff: e.target.value || undefined })}
-            className="input-field"
-            placeholder="如：強化射擊、瞄準"
-          />
-        </Field>
-      )}
-      <Field label="目標職業 targetClass（選填）">
-        <input
-          type="text"
-          value={condition.targetClass ?? ''}
-          onChange={(e) => onChange({ ...condition, targetClass: e.target.value || undefined })}
-          className="input-field"
-          placeholder="如：突擊手（留空 = 不限）"
-        />
-      </Field>
-    </div>
-  )
-}
-
-// ─── 技能效果項目 ──────────────────────────────────────────────────────────────
-export function SkillEffectItem({
-  effect,
-  index,
-  onChange,
-  onRemove,
-}: {
-  effect: SkillEffect
-  index: number
-  onChange: (updated: SkillEffect) => void
-  onRemove: () => void
-}) {
-  const hasCondition = effect.condition !== null
-
-  return (
-    <div className="border border-border/50 rounded-lg p-2.5 space-y-2 bg-bg-card/30">
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] text-text-dim">效果 #{index + 1}</span>
-        <button
-          onClick={onRemove}
-          className="text-[13px] px-1.5 py-0.5 text-accent-red border border-accent-red/30 rounded hover:bg-accent-red/10"
-        >
-          ✕ 移除
-        </button>
-      </div>
-      {/* stat / value / scope / valueType 同屬一組效果參數，原本拆成 3+1 兩排；併為單一自動格線（PLAN-033 B-2） */}
-      <div className={`${GRID_AUTO_FIELDS} gap-2`}>
-        <Field label="屬性 stat">
-          <select
-            value={effect.stat}
-            onChange={(e) => onChange({ ...effect, stat: e.target.value })}
-            className="input-field"
-          >
-            {STAT_OPTIONS.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
-          </select>
-        </Field>
-        <Field label="數值 value">
-          <input
-            type="number"
-            value={effect.value}
-            onChange={(e) => onChange({ ...effect, value: Number(e.target.value) })}
-            className="input-field"
-          />
-        </Field>
-        <Field label="對象 scope">
-          <select
-            value={effect.scope}
-            onChange={(e) => onChange({ ...effect, scope: e.target.value })}
-            className="input-field"
-          >
-            <option value="self">自身 (self)</option>
-            <option value="ally">隊友 (ally)</option>
-            <option value="team">全隊 (team)</option>
-          </select>
-        </Field>
-        <Field label="計算方式 valueType">
-          <select
-            value={effect.valueType ?? 'add'}
-            onChange={(e) => onChange({ ...effect, valueType: e.target.value as 'add' | 'override' })}
-            className="input-field"
-          >
-            <option value="add">加算 (add)　—　預設</option>
-            <option value="override">覆蓋原始值 (override)</option>
-          </select>
-        </Field>
-      </div>
-      <label className="flex items-center gap-2 text-[14px] text-text-dim cursor-pointer">
-        <input
-          type="checkbox"
-          checked={hasCondition}
-          onChange={() => onChange({ ...effect, condition: hasCondition ? null : { trigger: 'always' } })}
-          className="accent-accent-orange w-3.5 h-3.5"
-        />
-        有條件觸發
-      </label>
-      {hasCondition && effect.condition && (
-        <SkillConditionEditor
-          condition={effect.condition}
-          onChange={(cond) => onChange({ ...effect, condition: cond })}
-        />
-      )}
-    </div>
-  )
-}
-
-// ─── 可計算效果清單編輯器（天賦 effects / enhancedEffects 共用）────────────────
-function EffectListEditor({
-  label,
-  effects,
-  onChange,
-}: {
-  label: string
-  effects: SkillEffect[]
-  onChange: (next: SkillEffect[]) => void
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[13px] text-text-dim font-medium uppercase tracking-wider">{label}</span>
-        <button
-          onClick={() => onChange([...effects, { stat: 'dmg', value: 0, scope: 'self', condition: null }])}
-          className="text-[13px] text-accent-cyan hover:text-accent-cyan/80 transition-colors"
-        >
-          + 新增效果
-        </button>
-      </div>
-      {effects.length === 0 ? (
-        <p className="text-xs text-text-dim py-2 text-center">尚未填入</p>
-      ) : (
-        <div className="space-y-2">
-          {effects.map((eff, i) => (
-            <SkillEffectItem
-              key={i}
-              effect={eff}
-              index={i}
-              onChange={(updated) => { const next = [...effects]; next[i] = updated; onChange(next) }}
-              onRemove={() => onChange(effects.filter((_, idx) => idx !== i))}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+// PLAN-065-A C-1：原本這裡有 SkillConditionEditor／SkillEffectItem／EffectListEditor 三個效果數值編輯器
+// （技能、BUFF、背包技能、神驅能力、天賦共用）。效果數值改由遊戲資料帶出、不再人工輸入，
+// 各處改用唯讀的 FrozenEffectsNote（components/admin/FrozenEffects.tsx）；欄位與前台讀取照舊。
 
 // ─── 配裝修正編輯器（PLAN-052-N A-2）──────────────────────────────────────────
 //
@@ -814,7 +618,6 @@ function TalentItem({
   onRemove: () => void
 }) {
   const effects  = talent.effects ?? []
-  const enhanced = talent.enhancedEffects ?? []
   const buffIds  = talent.buffIds ?? []
   function upd<K extends keyof PilotTalent>(key: K, value: PilotTalent[K]) { onChange({ ...talent, [key]: value }) }
   function updBuffIds(val: string) { upd('buffIds', val.split(/[,\n]/).map((s) => s.trim()).filter(Boolean)) }
@@ -906,12 +709,9 @@ function TalentItem({
                 hintWords={loadoutModHintWords(talent)}
                 onChange={(n) => upd('loadoutMods', n.length ? n : undefined)}
               />
-              <EffectListEditor label="可計算效果 effects" effects={effects} onChange={(n) => upd('effects', n)} />
-              <EffectListEditor
-                label="強化效果 enhancedEffects（選填）"
-                effects={enhanced}
-                onChange={(n) => upd('enhancedEffects', n.length ? n : undefined)}
-              />
+              {/* PLAN-065-A C-1：效果數值凍結，只唯讀列出既有值（全庫 0 筆） */}
+              <FrozenEffectsNote label="可計算效果 effects" items={talent.effects} />
+              <FrozenEffectsNote label="強化效果 enhancedEffects" items={talent.enhancedEffects} />
               <Field label="觸發 Buff ID buffIds（逗號分隔）">
                 <textarea
                   value={buffIds.join(', ')}
@@ -1522,6 +1322,7 @@ function PilotEditPanel({
               人物檔案、簡介與英文名已移到故事館編輯台 →
             </Link>
           )}
+          <GameRefRow value={form.gameRef} className="mt-1" />
         </div>
       </div>
 
@@ -1716,7 +1517,8 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
     if (item) setEditing(item)
   }
 
-  async function handleSave(updated: Pilot) {
+  async function handleSave(edited: Pilot) {
+    const updated = await withServerGameRef('pilots', edited)   // gameRef 唯讀：一律用伺服器現值（PLAN-065-A）
     const version = await updatePilot(updated)
     upsert(updated)
     gd.patchCollectionItem('pilots', updated, version)
@@ -1806,6 +1608,7 @@ export default function PilotAdmin({ initialSearch = '' }: { initialSearch?: str
                 </span>
                 <span className="text-[13px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">{pilot.class}</span>
                 <span className="text-[13px] px-1.5 py-0.5 rounded bg-bg-card border border-border text-text-dim shrink-0">{pilot.license}</span>
+                <GameRefBadge value={pilot.gameRef} />
               </div>
               <div className="text-[14px] text-text-dim mt-0.5">
                 格{pilot.stats.melee} · 突{pilot.stats.assault} · 射{pilot.stats.shooting} · 術{pilot.stats.tactics} · 防{pilot.stats.defense} · 工{pilot.stats.engineering}

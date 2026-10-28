@@ -1,5 +1,7 @@
 // ─── 背包 ──────────────────────────────────────────────────────────────────
 
+import type { BackpackGameRef } from './gameRef'
+
 /**
  * 背包的製作前置關係（PLAN-036）。前置主背包一律是「低一階」的背包：
  *   · SS 特種背包 ← S+ 前置主背包（無法從名字 derive，後台手輸；如 征服者背包 ← 某 S+）
@@ -25,6 +27,8 @@ export interface Backpack {
    * 有 2 個官方檔名是 `Icon_BackPack_`（大寫），換算由 `equipIconKey()` 查表，讀取端一律走 `backpackIconCandidates()`。
    */
   gameId?: string
+  /** 遊戲身分鍵（PLAN-065-A）：背包記錄 ID，傷害模擬用。見 types/gameRef.ts。 */
+  gameRef?: BackpackGameRef
   /**
    * 自訂圖（非官方原檔）的路徑；只在沒有 gameId 時才會用到。
    * PLAN-056 C-5 之前這裡還存著官方圖的舊路徑 `/images/backpacks/Icon_backpack_*.png`（過渡期後備）。
