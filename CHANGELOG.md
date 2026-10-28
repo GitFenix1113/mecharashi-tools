@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-26
+## [Unreleased] - 2026-10-28
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **sim**: PLAN-065-A 遊戲身分鍵 gameRef 與傷害模擬前置 (`ce5ed19`)
 - **admin**: 機甲編輯面板可修改機甲名稱 (`f993318`)
 - **raids**: PLAN-064 Phase H 審核後修正（譯名全條目、點字修改、欄位覆寫） (`5f57a92`)
 - **raids**: PLAN-064 Phase D／E 武裝討伐頁與後台審核 (`cdf54d5`)
@@ -332,6 +333,7 @@
 
 ### 📚 文件
 
+- **plan**: 立案 PLAN-065-B 引擎 A（面板＋單擊），開發完成 13／14 (`0e5b26b`)
 - **raids**: PLAN-064 上線紀錄（F-2／H-5 完成，42／46） (`7e17af7`)
 - **raids**: PLAN-064 F-3 Cloudflare 白名單已加 /raids（36／41） (`9e530de`)
 - **raids**: PLAN-064 例行流程文件與關聯計畫補註（C-4／F-4／F-6） (`5eb735e`)
