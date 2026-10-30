@@ -227,6 +227,7 @@
   </div>
 
   <div class="warn-block">
+    <strong style="color:var(--accent-yellow);">◆ 2026-10-31 機師卡池動態 13 → 62 位</strong>：換入 EN wiki 作者 HuyT 擴充的引擎（042-B J-1），新增 49 位；J-4 只剩艾達，進度數不變，仍 19／24。<br><br>
     <strong style="color:var(--accent-yellow);">◆ 2026-10-19 機師卡池動態 12 → 13 位</strong>：042-B J-2 補的 Flow1 粒子 <code>_Color</code> 色調順帶解開 <b>10103167 黑障</b>（J-4 開工、進度數不變，仍 19／24）。<br><br>
     <strong style="color:var(--accent-yellow);">◆ 2026-10-17 立 Phase J 卡池動態</strong>：站長要機師的招募插畫與官方特效比照機甲（042-B Phase J）。新增 J-1～J-5（開發者 4＋管理員 1），總數 19 → 24。<b>同日 J-1～J-3 完成（19／24）</b>：招募插畫 62 位上站、卷宗卡池卡＋全景鑑賞＋卡池名稱欄位、管線泛化並上 12 位卡池動態。剩 J-4（引擎補功能，與 042-B J 一起排）、J-5（站長填卡池名稱）。<br><br>
     <strong style="color:var(--accent-green);">◆ 2026-10-13 對外開放</strong>：站長宣布公開（PLAN-042-D「舞台＋卷宗」改版完成當天）。
@@ -1053,7 +1054,14 @@
           貼圖全是站上既有的（線上已 200，不必等 CF 404 快取）。驗收（production 預覽 4173＋headless Playwright swiftshader）：機師圖鑑卡池橫條「動態全景」與故事館卷宗卡池卡都 <code>is-ready</code>、
           隔 0.8 秒 24–27% 取樣像素在變動、動態 chunk 與 8 張貼圖全 200、console 0 錯誤。
           ⚠ 煙霧 2 個系統用透明混色，同 J-3 <b>還沒拿遊戲畫面並排比</b>。
-          其他 6 位（10103133、10103153、10103154、10103172、11021、13037）少了 <code>_Color</code> 那條 ⚠，但還有別的 ⚠。</div>
+          其他 6 位（10103133、10103153、10103154、10103172、11021、13037）少了 <code>_Color</code> 那條 ⚠，但還有別的 ⚠。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-31</span> <b>換入 HuyT 擴充的引擎（見 042-B J-1），62／63 位 0 ⚠ 上站</b>（新增 49 位，新貼圖 281 張 21.5 MB，含與機甲共用的 16 張）：
+          Animator 的顏色／材質曲線與 <code>m_IsActive</code>、UIShiny、<code>UI/Common</code>、<code>SpeedLine</code>、<code>C_EffectStandard</code>、<code>UIAdditive</code>、序列幀（戰部渡的雲海 60 張拼成 2 張 WebP 圖集）、
+          Filled Image、TweenPos2／TweenRot、圓形發射的弧、插畫切片與名字字樣（奈奧米、梅利莎、賽文、馬庫斯、繪梨沙、菲婭）。對照表沿用我們的 <code>pilotGachaCards.json</code>，與他的成品逐位元相同。
+          已上站 13 位有 7 位的 JSON 跟著變：粒子 pivot 3 位（10103144、10103155、10103160）、多了插畫切片 5 位（10103111、10103126、10103137、10103150、10103155）。
+          <b>剩艾達 10103118</b>：陸版 prefab 有兩張 Image 掛 <code>UI_General</code>（SweepLight_03／04），引擎只支援粒子用，先不上（HuyT 那邊用國際版、沒有這兩張）。
+          哈達威、佐伊、瑪汀妮、戰部渡的插畫切片和我們卡片裡已烘焙的角色是同一張圖（J-1 的 <code>layers</code>），會再疊一次；本機看戰部渡無異狀，首格要等約 10 秒（序列幀圖集 2.3 MB）。
+          ⚠ 新功能都沒對遊戲畫面看過。</div>
         <div class="task-file">_local-notes/2026-10/2026-10-17_機師卡池動態評估/data/classify.json · src/data/gachaFx/pilots/10103167.json</div>
       </div>
       <div class="task-assignee">開發者</div>
