@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-28
+## [Unreleased] - 2026-10-30
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **lore**: 卡池動態補齊機甲 64 台、機師 62 位（換入 HuyT 擴充的引擎） (`608c4b3`)
 - **sim**: PLAN-065-A 遊戲身分鍵 gameRef 與傷害模擬前置 (`ce5ed19`)
 - **admin**: 機甲編輯面板可修改機甲名稱 (`f993318`)
 - **raids**: PLAN-064 Phase H 審核後修正（譯名全條目、點字修改、欄位覆寫） (`5f57a92`)
