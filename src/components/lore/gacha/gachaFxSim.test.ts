@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { evalCurve, evalGradient, evalMinMax, makePerlin, ParticleSim, uvFrame, uvRect } from './gachaFxSim.ts'
-import type { FxCommonFlowParams, FxFlow1Params, FxFlow1Tex, FxSystem, FxUICommonParams, FxUV, GachaFxData } from './gachaFxTypes.ts'
+import type { FxCommonFlowParams, FxFlow1Params, FxFlow1Tex, FxGeneralParams, FxSystem, FxUICommonParams, FxUV, GachaFxData } from './gachaFxTypes.ts'
 
 const FX_DIR = new URL('../../../data/gachaFx/', import.meta.url)
 // 名字以 .webp 結尾的是序列幀圖集（10-30 起），檔名就是它自己
@@ -18,17 +18,17 @@ function fxTextures(data: GachaFxData): string[] {
   const common = (p: FxCommonFlowParams) => [p.mainTex, p.disturbTex, p.mask?.tex]
   const flow1 = (p: FxFlow1Params) => t1([p.main, p.colorTex, p.disturb?.tex, p.dissolve?.tex, p.dissolve?.mask, p.mask1?.tex, p.mask2?.tex, p.main2?.tex])
   const uiCommon = (c: FxUICommonParams) => t1([c.distort?.tex, c.main, c.alpha?.tex, c.alpha3?.tex, c.grad?.tex])
+  const general = (g: FxGeneralParams) => t1([g.noise?.tex, g.main, g.edge?.tex, g.mask1?.tex, g.soft?.tex, g.mask2?.tex])
   const sys = data.systems.flatMap((s) => {
-    const M = s.material, g = M.general
+    const M = s.material
     return [
-      ...(M.flow ? common(M.flow) : M.flow1 ? flow1(M.flow1)
-        : g ? t1([g.noise?.tex, g.main, g.edge?.tex, g.mask1?.tex, g.soft?.tex, g.mask2?.tex])
-        : M.uiCommon ? uiCommon(M.uiCommon) : [M.tex]),
+      ...(M.flow ? common(M.flow) : M.flow1 ? flow1(M.flow1) : M.general ? general(M.general) : M.uiCommon ? uiCommon(M.uiCommon) : [M.tex]),
       s.trail?.material.tex,
     ]
   })
   const flows = data.flows.flatMap((f) => (f.shader === 'alpha' ? [f.tex, ...(f.seq?.sheets ?? [])]
-    : f.shader === 'speedLine' ? [f.maskTex] : f.shader === 'uiCommon' ? uiCommon(f) : f.shader === 'flow1' ? flow1(f) : common(f)))
+    : f.shader === 'speedLine' ? [f.maskTex] : f.shader === 'uiCommon' ? uiCommon(f) : f.shader === 'general' ? general(f.general)
+    : f.shader === 'flow1' ? flow1(f) : common(f)))
   return [...new Set([...sys, ...flows])].filter((t): t is string => !!t)
 }
 

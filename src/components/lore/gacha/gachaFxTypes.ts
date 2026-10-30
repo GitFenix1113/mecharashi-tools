@@ -284,6 +284,8 @@ export interface FxLayerAnim {
   shinyCorners?: number[]
   /** 每格 1 個數（UI/Flow1 的 _DissolveValue，10-29 起），取代 dissolve.value */
   dissolveValue?: number[]
+  /** 每格 1 個數（UI_General 的 _SoftDissValue，10-31 起，艾達的掃光），取代 general.soft.value */
+  softValue?: number[]
 }
 
 /**
@@ -530,7 +532,20 @@ export interface FxUICommonLayer extends FxFlowBase, FxUICommonParams {
   blend?: 'alpha'
 }
 
-export type FxFlow = FxCommonFlow | FxFlow1 | FxImage | FxSpeedLine | FxUICommonLayer
+/**
+ * Image＋UI_General（10-31 起，10103118 艾達的 SweepLightGroup/1、2：青色掃光，片段把軟溶解值來回推）：跟粒子同一支 FS_GENERAL，
+ * UV 是 Image 的 0～1、頂點色是 Image 顏色 × 材質 _Color（同粒子的 tint，builder 先乘好）× CanvasGroup。shader 只讀 UV 與頂點色，
+ * 所以 Image 跟粒子的畫法一樣（同 FxUICommonLayer）
+ */
+export interface FxGeneralImage extends FxFlowBase {
+  shader: 'general'
+  color: RGBA
+  /** 'alpha'＝_Dst 10；省略＝疊加 */
+  blend?: 'alpha'
+  general: FxGeneralParams
+}
+
+export type FxFlow = FxCommonFlow | FxFlow1 | FxImage | FxSpeedLine | FxUICommonLayer | FxGeneralImage
 
 export interface GachaFxData {
   v: 1

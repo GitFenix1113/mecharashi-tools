@@ -19,10 +19,10 @@
 // 實際公式的擾動是 (2r−1)×_DisturbValue×0.1、預設兩軸都推，alpha 也乘 _MainValue，溶解也有確切算式——都和上面的校準版不同，
 // 但校準值是對遊戲畫面調的，沒重新對過畫面前不動。反組譯檔：_local-notes/2026-10/2026-10-17_卡池動態_流動圖層預設貼圖/。
 
-import { fillQuads, flow1Uniforms, isFlow1, isImage, isSpeedLine, isUICommon, splitFlows } from './gachaFxFlow1'
+import { fillQuads, flow1Uniforms, isFlow1, isGeneral, isImage, isSpeedLine, isUICommon, splitFlows } from './gachaFxFlow1'
 import { evalMinMax, evalMinMaxGradient, makePerlin, ParticleSim, speedT, uvFrame, uvRect } from './gachaFxSim'
 export { ORBITAL_DEG, ORBITAL_RAD } from './gachaFxSim'
-import type { FxClip, FxCommonFlow, FxCommonFlowParams, FxFlow, FxFlow1, FxFlow1Params, FxFlow1Tex, FxGeneralParams, FxImage, FxSpeedLine, FxUICommonLayer, FxUICommonParams, FxTO, GachaFxData } from './gachaFxTypes'
+import type { FxClip, FxCommonFlow, FxCommonFlowParams, FxFlow, FxFlow1, FxFlow1Params, FxFlow1Tex, FxGeneralImage, FxGeneralParams, FxImage, FxSpeedLine, FxUICommonLayer, FxUICommonParams, FxTO, GachaFxData } from './gachaFxTypes'
 
 const FLOW_DISTURB_K = 0.1
 const FLOW_GAIN = 0.85
@@ -415,6 +415,7 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     | { kind: 'image'; f: FxImage; tex: WebGLTexture; seq?: WebGLTexture[] }
     | { kind: 'speedLine'; f: FxSpeedLine; tex: WebGLTexture }
     | { kind: 'uiCommon'; f: FxUICommonLayer; tex: WebGLTexture[] }
+    | { kind: 'general'; f: FxGeneralImage; tex: WebGLTexture[] }
   /** 粒子系統的畫法：plain＝粒子 shader、flow＝UI_CommonFlow、flow1＝UI/Flow1（材質的 flow／flow1，見 gachaFxTypes.ts） */
   type DrawEntry = (
     | { sim: ParticleSim; kind: 'plain'; tex: WebGLTexture }
@@ -433,6 +434,8 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
   const flow1Tex = (p: FxFlow1Params) => Promise.all([p.main, p.colorTex, p.disturb?.tex, p.dissolve?.tex, p.dissolve?.mask, p.mask1?.tex, p.mask2?.tex, p.main2?.tex].map(f1Tex))
   /** UI/Common 的五張貼圖（圖層與粒子共用），照 UIC_TEX 的順序 */
   const uiCommonTex = (c: FxUICommonParams) => Promise.all([c.distort?.tex, c.main, c.alpha?.tex, c.alpha3?.tex, c.grad?.tex].map(f1Tex))
+  /** UI_General 的六張貼圖（圖層與粒子共用），照 GEN_TEX 的順序 */
+  const generalTex = (g: FxGeneralParams) => Promise.all([g.noise?.tex, g.main, g.edge?.tex, g.mask1?.tex, g.soft?.tex, g.mask2?.tex].map(f1Tex))
   const [T_BG, drawList, flowTex] = await Promise.all([
     loadTex(opts.background, false),
     Promise.all(order.map(async (s): Promise<DrawEntry> => {
@@ -442,7 +445,8 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     Promise.all(data.flows.map(async (f): Promise<FlowEntry> => isImage(f)
       ? { kind: 'image', f, tex: await fxTex(f.tex), ...(f.seq ? { seq: await Promise.all(f.seq.sheets.map((x) => fxTex(x))) } : {}) }
       : isSpeedLine(f) ? { kind: 'speedLine', f, tex: f.maskTex ? await fxTex(f.maskTex) : T_WHITE }
-      : isUICommon(f) ? { kind: 'uiCommon', f, tex: await uiCommonTex(f) } : isFlow1(f)
+      : isUICommon(f) ? { kind: 'uiCommon', f, tex: await uiCommonTex(f) }
+      : isGeneral(f) ? { kind: 'general', f, tex: await generalTex(f.general) } : isFlow1(f)
       ? { kind: 'flow1', f, tex: await flow1Tex(f) }
       : { kind: 'common', f, ...(await commonFlowTex(f)) })),
   ])
@@ -451,10 +455,7 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     const M = s.sys.material
     if (M.flow) return { sim: s, kind: 'flow', flow: await commonFlowTex(M.flow) }
     if (M.flow1) return { sim: s, kind: 'flow1', tex: await flow1Tex(M.flow1) }
-    if (M.general) {
-      const g = M.general
-      return { sim: s, kind: 'general', tex: await Promise.all([g.noise?.tex, g.main, g.edge?.tex, g.mask1?.tex, g.soft?.tex, g.mask2?.tex].map(f1Tex)) }
-    }
+    if (M.general) return { sim: s, kind: 'general', tex: await generalTex(M.general) }
     if (M.uiCommon) {
       const c = M.uiCommon
       return { sim: s, kind: 'uiCommon', tex: await uiCommonTex(c) }
@@ -832,6 +833,17 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
     gl.activeTexture(gl.TEXTURE0)
   }
 
+  /** Image＋UI_General（FS_GENERAL，同粒子）：Blend SrcAlpha [_Dst]；片段改的 _SoftDissValue（10-31 補，艾達的掃光）取代靜止值 */
+  function drawGeneral(f: FxGeneralImage, tex: WebGLTexture[], time: number) {
+    scissor(f.clip)
+    generalUniformsSet(f.general, tex, time)
+    const A = f.anim
+    if (A?.softValue) gl.uniform1f(uGen.uSoftVal, track(A.softValue, 1, A.len, time, ABUF)[0])
+    gl.blendFunc(gl.SRC_ALPHA, f.blend === 'alpha' ? gl.ONE_MINUS_SRC_ALPHA : gl.ONE)
+    flowQuad(f, time)
+    gl.activeTexture(gl.TEXTURE0)
+  }
+
   /** Image＋SpeedLine（FS_SPEEDLINE）：Blend SrcAlpha One */
   function drawSpeedLine(f: FxSpeedLine, tex: WebGLTexture, time: number) {
     scissor(f.clip)
@@ -880,6 +892,9 @@ export async function startGachaFx(canvas: HTMLCanvasElement, data: GachaFxData,
       } else if (e.kind === 'uiCommon') {
         gl.useProgram(P_UIC); gl.uniform4f(uUic.uView, ...view)
         drawUICommon(e.f, e.tex, time)
+      } else if (e.kind === 'general') {
+        gl.useProgram(P_GEN); gl.uniform4f(uGen.uView, ...view)
+        drawGeneral(e.f, e.tex, time)
       } else if (e.kind === 'speedLine') {
         gl.useProgram(P_SL); gl.uniform4f(uSl.uView, ...view)
         drawSpeedLine(e.f, e.tex, time)

@@ -53,6 +53,7 @@
  * 逐台清單在 _local-notes/2026-10/2026-10-17_卡池動態_startDelay/（更早的版本在同月的「剩餘30台」「Flow1」「Box形狀」「祖先位移」「不發射系統略過」「批次上站」「流動圖層預設貼圖」「序列幀」夾）。
  * 10-29 起標日期的功能（orbital、拖尾、Animator 片段、Tween、插畫切片、反組譯的 UI_General／UI/Common／UIShiny／SpeedLine… 等）是 EN wiki 作者 HuyT
  * 拿 10-28 給他的芬里厄範例包擴充的，10-30 換回本 repo（用陸版重建，機甲 64、機師 63 與他的成品逐位元相同；機師只差艾達有 ⚠）。
+ * 10-31 補 Image＋UI_General（generalLayer，含 _SoftDissValue 曲線）：陸版艾達的兩道掃光（他用國際版，沒有這兩張），機甲 64、機師 63 全部 0 ⚠。
  * 各功能的英文說明與他的批次管線在 _local-notes/2026-10/2026-10-30_EN作者_HuyT原始說明/，評估在同月的 2026-10-30_EN作者_卡池動態補完評估.md。
  * 「·」開頭的是提示不是 ⚠（例：官方沒指定材質、或 emission 關又沒有 burst 的粒子會略過），照常可以上站。
  */
@@ -415,6 +416,10 @@ const PROP_TRACKS = {
     // 10-29 補，10103118 艾達的 SweepLight01／02（溶解貼圖一直有，片段把值從 1 降到 0：掃光從溶解中浮現）
     _DissolveValue: ['dissolveValue', (m) => [num(m.floats._DissolveValue ?? 0)], (fl) => !!fl.dissolve],
   },
+  // 10-31 補，10103118 艾達的 SweepLightGroup/1、2（軟溶解開著才讀 _SoftDissValue，見 generalParams）
+  general: {
+    _SoftDissValue: ['softValue', (m) => [num(m.floats._SoftDissValue ?? 0)], (fl) => fl.general.soft?.value != null],
+  },
 }
 
 /**
@@ -606,7 +611,20 @@ function flow1ParticleMaterial(m, name, owner, dst) {
  * _Color_Str／_Dst3），那些 shader 根本不讀。選填的段落只在會改變結果時輸出。Blend SrcAlpha [_Dst]，_Dst 預設 0（＝Zero）
  */
 function generalParticleMaterial(m, name, owner) {
-  const f = m.floats, c = m.colors, t = m.tex, own = `${owner}：材質 ${name}（UI_General）`
+  const { g, dst, tint } = generalParams(m, `${owner}：材質 ${name}（UI_General）`)
+  return {
+    tex: g.main?.tex ?? '',
+    strength: 1,
+    texRotate: 0,
+    ...(dst === 10 ? { blend: 'alpha' } : {}),
+    ...(isWhite(tint) ? {} : { tint }),
+    general: g,
+  }
+}
+
+/** UI_General 的參數（粒子與 Image 共用，10-31 從 generalParticleMaterial 拆出來）→ { g＝FxGeneralParams, dst, tint＝_Color } */
+function generalParams(m, own) {
+  const f = m.floats, c = m.colors, t = m.tex
   const dst = f._Dst ?? 0
   if (dst !== 1 && dst !== 10) warn(`${own} 的混色 SrcAlpha／${dst} 引擎不支援（只有 1＝疊加、10＝透明），當成疊加`)
   if (f._UseUIAlphaClip) warn(`${own} 開了 UNITY_UI_ALPHACLIP（alpha 小於 0.001 丟掉），引擎沒做`)
@@ -657,12 +675,25 @@ function generalParticleMaterial(m, name, owner) {
   if (t._SoftDissTex?.tex || x * x * (3 - 2 * x) !== 1) {
     g.soft = { ...layer(t._SoftDissTex, '_SoftDissTex', c._SoftDissSpeed), ...(softOn ? { value: num(softV) } : {}), float4: num(F4), ...(softRev ? { revert: true } : {}) }
   }
+  return { g, dst, tint }
+}
+
+/**
+ * Image＋UI_General（10-31 補，10103118 艾達的 SweepLightGroup/1、2：陸版的青色掃光，片段經 UIShaderVariableProxy 把 _SoftDissValue
+ * 在 0.3～0.78 來回推）。shader 只讀 UV 與頂點色，Image 沒掛 sprite 時 UV 是 0～1、頂點色是 Image 顏色，所以跟粒子同一套參數（同 uiCommonLayer）；
+ * 材質 _Color（粒子的 tint）乘進頂點色
+ */
+function generalLayer(n, img, at, m = D.materials[img.material]) {
+  const owner = `${n.name}：材質 ${img.material}（UI_General）`
+  if (img.fields.m_Sprite?.pid && img.fields.m_Sprite.pid !== '0') warn(`${owner}：Image 掛了 sprite，引擎當成整張（UV 0～1）`)
+  if (img.fields.m_Type) warn(`${owner}：Image 類型 ${img.fields.m_Type}（不是 Simple），引擎畫成整張矩形`)
+  const { g, dst, tint } = generalParams(m, owner), c = img.fields.m_Color
   return {
-    tex: g.main?.tex ?? '',
-    strength: 1,
-    texRotate: 0,
+    name: n.name,
+    ...flowGeom(n, at, owner),
+    shader: 'general',
+    color: [c.r, c.g, c.b, c.a].map((v, k) => num(v * tint[k])),
     ...(dst === 10 ? { blend: 'alpha' } : {}),
-    ...(isWhite(tint) ? {} : { tint }),
     general: g,
   }
 }
@@ -1499,6 +1530,7 @@ for (const [i, n] of nodes.entries()) {
     else if (mb.script === 'Image' && shader === SHADER_PARTICLE) addFlow(imageLayer(n, i, img, layout[i]), i, mb)
     else if (mb.script === 'Image' && shader === SHADER_SPEEDLINE) addFlow(speedLineLayer(n, img, layout[i], m), i, mb)
     else if (mb.script === 'Image' && shader === SHADER_UI_COMMON) addFlow(uiCommonLayer(n, img, layout[i], m), i, mb)
+    else if (mb.script === 'Image' && shader === SHADER_GENERAL) addFlow(generalLayer(n, img, layout[i], m), i, mb)
     else if (shader) warn(`${n.name}：${mb.script} 用了材質 ${mb.material}（${shader}），引擎不畫`)
   }
 }
@@ -1529,8 +1561,8 @@ if (animation) {
     flows.forEach((fl, j) => {
       if (!hit[j] && !shaded[j]) return
       const i = flowAt[j], mb = flowMb[j]
-      // 頂點 alpha 除了 Image 顏色的 a 以外的係數：流動圖層乘了材質 _Color 的 a，shader 'alpha' 的圖層沒乘
-      const kA = fl.shader == null || fl.shader === 'flow1' ? (D.materials[mb.material]?.colors._Color?.[3] ?? 1) : 1
+      // 頂點 alpha 除了 Image 顏色的 a 以外的係數：流動圖層與 UI_General（10-31 起）乘了材質 _Color 的 a，shader 'alpha' 的圖層沒乘
+      const kA = fl.shader == null || fl.shader === 'flow1' || fl.shader === 'general' ? (D.materials[mb.material]?.colors._Color?.[3] ?? 1) : 1
       const alpha = frames.map((f) => {
         const a = f.graphicA.get(i)
         return Math.round((a == null ? fl.alpha0 : a * kA) * groupAlpha(i, f.alpha) * 1000) / 1000

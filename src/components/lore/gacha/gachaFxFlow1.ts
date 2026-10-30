@@ -4,7 +4,7 @@
 // 這裡把 FxFlow1 的選填欄位換成 shader 要的數字：省略的欄位一律換成「恰好恆等」的值（旋轉 (1, 0)、TO [1,1,0,0]、
 // 擾動量 0、溶解常數 1.1），配合 shader 寫成「線性部分＋只含 uniform 的常數」，預設值時 UV 逐位元不變。
 
-import type { FxFill, FxFlow, FxFlow1, FxFlow1Params, FxImage, FxSpeedLine, FxTO, FxUICommonLayer } from './gachaFxTypes'
+import type { FxFill, FxFlow, FxFlow1, FxFlow1Params, FxGeneralImage, FxImage, FxSpeedLine, FxTO, FxUICommonLayer } from './gachaFxTypes'
 
 const TO_ID: FxTO = [1, 1, 0, 0]
 
@@ -90,6 +90,7 @@ export const isFlow1 = (f: FxFlow): f is FxFlow1 => f.shader === 'flow1'
 export const isImage = (f: FxFlow): f is FxImage => f.shader === 'alpha'
 export const isSpeedLine = (f: FxFlow): f is FxSpeedLine => f.shader === 'speedLine'
 export const isUICommon = (f: FxFlow): f is FxUICommonLayer => f.shader === 'uiCommon'
+export const isGeneral = (f: FxFlow): f is FxGeneralImage => f.shader === 'general'
 
 /**
  * 繪製分段：under（遊戲裡階層在所有 UIParticle 之前）→ 粒子 → 其他圖層，各段內照資料順序（＝階層順序）。

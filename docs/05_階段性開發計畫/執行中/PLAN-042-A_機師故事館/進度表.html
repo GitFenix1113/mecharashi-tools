@@ -210,15 +210,15 @@
 
 
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">19</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">20</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">5</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">4</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">21 + 3</div><div class="summary-lbl">開發者任務 + 管理員作業</div></div>
   </div>
 
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-green);">19 / 24</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 79%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-green);">20 / 24</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 83%"></div></div>
   </div>
 
   <div class="impact-note">
@@ -227,7 +227,7 @@
   </div>
 
   <div class="warn-block">
-    <strong style="color:var(--accent-yellow);">◆ 2026-10-31 機師卡池動態 13 → 62 位</strong>：換入 EN wiki 作者 HuyT 擴充的引擎（042-B J-1），新增 49 位；J-4 只剩艾達，進度數不變，仍 19／24。<br><br>
+    <strong style="color:var(--accent-green);">◆ 2026-10-31 機師卡池動態 13 → 63 位，J-4 完成（20／24）</strong>：換入 EN wiki 作者 HuyT 擴充的引擎（042-B J-1）新增 49 位；同日補 Image＋<code>UI_General</code>，艾達也上站。剩 J-5（站長填卡池名稱）等。<br><br>
     <strong style="color:var(--accent-yellow);">◆ 2026-10-19 機師卡池動態 12 → 13 位</strong>：042-B J-2 補的 Flow1 粒子 <code>_Color</code> 色調順帶解開 <b>10103167 黑障</b>（J-4 開工、進度數不變，仍 19／24）。<br><br>
     <strong style="color:var(--accent-yellow);">◆ 2026-10-17 立 Phase J 卡池動態</strong>：站長要機師的招募插畫與官方特效比照機甲（042-B Phase J）。新增 J-1～J-5（開發者 4＋管理員 1），總數 19 → 24。<b>同日 J-1～J-3 完成（19／24）</b>：招募插畫 62 位上站、卷宗卡池卡＋全景鑑賞＋卡池名稱欄位、管線泛化並上 12 位卡池動態。剩 J-4（引擎補功能，與 042-B J 一起排）、J-5（站長填卡池名稱）。<br><br>
     <strong style="color:var(--accent-green);">◆ 2026-10-13 對外開放</strong>：站長宣布公開（PLAN-042-D「舞台＋卷宗」改版完成當天）。
@@ -1041,7 +1041,7 @@
     <div class="task-group-header">
       <div class="task-group-title">J-4 &nbsp; 引擎補功能（與 042-B J 續作一起排）</div>
       <div class="task-group-meta">src/components/lore/gacha/ · scripts/build-gacha-fx.mjs</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -1061,11 +1061,17 @@
           已上站 13 位有 7 位的 JSON 跟著變：粒子 pivot 3 位（10103144、10103155、10103160）、多了插畫切片 5 位（10103111、10103126、10103137、10103150、10103155）。
           <b>剩艾達 10103118</b>：陸版 prefab 有兩張 Image 掛 <code>UI_General</code>（SweepLight_03／04），引擎只支援粒子用，先不上（HuyT 那邊用國際版、沒有這兩張）。
           哈達威、佐伊、瑪汀妮、戰部渡的插畫切片和我們卡片裡已烘焙的角色是同一張圖（J-1 的 <code>layers</code>），會再疊一次；本機看戰部渡無異狀，首格要等約 10 秒（序列幀圖集 2.3 MB）。
-          ⚠ 新功能都沒對遊戲畫面看過。</div>
-        <div class="task-file">_local-notes/2026-10/2026-10-17_機師卡池動態評估/data/classify.json · src/data/gachaFx/pilots/10103167.json</div>
+          ⚠ 新功能都沒對遊戲畫面看過。
+          <br><span style="color:var(--accent-green);">✅ 2026-10-31</span> <b>補 Image＋<code>UI_General</code>，艾達上站，63／63 位</b>：builder 的 <code>generalLayer</code> 照 HuyT 處理 Image＋<code>UI/Common</code> 的做法，
+          把粒子用的 <code>UI_General</code> 參數（拆成 <code>generalParams</code> 共用）套到 Image（UV 0～1、頂點色＝Image 顏色 × <code>_Color</code>），圖層 <code>shader: 'general'</code>；
+          片段經 UIShaderVariableProxy 推的 <code>_SoftDissValue</code> 烘成 <code>anim.softValue</code>（PROP_TRACKS），引擎 <code>drawGeneral</code> 逐格換掉軟溶解值。
+          艾達的 SweepLightGroup/1、2 是環形光圈上的條狀光段（青色、疊加），軟溶解值 0.36→0.78、0.3→0.7 再回來（6 秒一輪）。
+          驗收：艾達 0 ⚠、去掉這兩層後與 HuyT 的成品逐位元相同；其餘 126 個卡池 JSON 不變；固定步長時鐘（50 ms）只畫這兩層、黑底量亮度：1 秒左右最亮（左段 3605 個亮像素），
+          3～3.5 秒幾乎溶解掉（1136），6 秒回到原狀，與曲線一致；本機 vite 鑑賞 console 零錯誤、貼圖全 200。<code>npm test</code> 1722 過、tsc、lint、vite build 過。⚠ 沒對遊戲畫面看過。</div>
+        <div class="task-file">_local-notes/2026-10/2026-10-17_機師卡池動態評估/data/classify.json · src/data/gachaFx/pilots/10103167.json · src/data/gachaFx/pilots/10103118.json</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
