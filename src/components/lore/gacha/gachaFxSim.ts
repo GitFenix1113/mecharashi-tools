@@ -86,16 +86,25 @@ export function evalMinMaxGradient(g: FxMinMaxGradient | undefined, t: number, r
 /** 一輪幾格：整張＝tilesX×tilesY、只播一列＝tilesX */
 export const uvFrameCount = (uv: FxUV) => (uv.animationType === 1 ? uv.tilesX : uv.tilesX * uv.tilesY)
 
+/** 速率照 [下限, 上限] 對到 0–1（依速度的模組共用；上下限相同時取 0） */
+export const speedT = (range: readonly [number, number], sp: number) => {
+  const [lo, hi] = range
+  return hi > lo ? Math.min(1, Math.max(0, (sp - lo) / (hi - lo))) : 0
+}
+
 /**
  * 粒子現在是第幾格（0 起算，整張的編號：左上第 0 格、先橫後直）。照 Unity：
  *   依壽命：startFrame ＋ frameOverTime(年齡÷壽命) × cycles
+ *   依速度：startFrame ＋ frameOverTime(速率照 speedRange 對到 0–1)（10-29 起；sp＝這一格的速率）
  *   依 fps ：startFrame ＋ 年齡 × fps ÷ 幀數（cycles 只對依壽命有意義）
  * 取小數部分（超過一輪就從頭）× 幀數、無條件捨去。只播一列時再加上列的偏移。
  * r＝粒子固定的亂數：[frameOverTime, startFrame, 隨機列]
  */
-export function uvFrame(uv: FxUV, age: number, life: number, r: readonly [number, number, number]): number {
+export function uvFrame(uv: FxUV, age: number, life: number, r: readonly [number, number, number], sp = 0): number {
   const n = uvFrameCount(uv)
-  const t = uv.timeMode === 2 ? (age * (uv.fps ?? 0)) / n : evalMinMax(uv.frameOverTime, age / life, r[0]) * (uv.cycles ?? 1)
+  const t = uv.timeMode === 2 ? (age * (uv.fps ?? 0)) / n
+    : uv.timeMode === 1 ? evalMinMax(uv.frameOverTime, speedT(uv.speedRange ?? [0, 1], sp), r[0])
+    : evalMinMax(uv.frameOverTime, age / life, r[0]) * (uv.cycles ?? 1)
   const x = evalMinMax(uv.startFrame, 0, r[1]) + t
   const k = Math.min(Math.floor((x - Math.floor(x)) * n), n - 1)
   if (uv.animationType !== 1) return k
@@ -116,6 +125,25 @@ export function uvRect(uv: FxUV, k: number): [number, number, number, number] {
 // ── 3D 小工具 ────────────────────────────────────────────────────────────────
 
 const D2R = Math.PI / 180
+
+/**
+ * 速度模組 orbital 的單位換成弧度的倍率：1＝rad/s、D2R＝°/s。Unity 文件沒寫單位；
+ * 10-29 用 3028 天角獸（Particle_Spark2 orbitalX −0.9、Particle_Smoke_2 orbitalY 0.44）對 Global 遊戲畫面比對，rad/s 比較像
+ */
+export const ORBITAL_RAD = 1
+export const ORBITAL_DEG = D2R
+
+export interface SimOptions {
+  /** orbital 的單位倍率（見 ORBITAL_RAD）；負值＝反方向，0＝關掉。省略＝ORBITAL_RAD */
+  orbitalScale?: number
+  /**
+   * 照 prefab 的 simulationSpeed 加速／減速；省略＝照（10-30 起：站上已上線的 17 台有 ×0.5～×3，先維持 10-16 校準的行為），
+   * false＝一律 ×1。EN wiki（HuyT）10-29 的版本預設不照：遊戲裡粒子由 UIParticle 自己呼叫 Simulate(deltaTime)，
+   * 它的程式沒讀 simulationSpeed；對 3028 天角獸的 ×10 火花（Particle_Spark4／5）比對遊戲畫面，×1 比較像。
+   * 芬里厄 10-16 校準時是照的（火花 ×0.5、×0.7），要改成不照得先對過遊戲畫面
+   */
+  honorSimSpeed?: boolean
+}
 
 /** Unity Quaternion.Euler：先 Z、再 X、再 Y（角度） */
 export function rotEuler(v: Vec3, ex: number, ey: number, ez: number): Vec3 {
@@ -187,30 +215,81 @@ export interface Particle {
   r: [number, number, number, number, number]
   /** 序列幀用的固定亂數（見 uvFrame）；系統沒有序列幀就沒有——不多抽亂數，其他系統的亂數序列維持原樣 */
   uvr?: [number, number, number]
+  /** 拖尾（系統有 trail、而且這顆有抽中 ratio 才有）；同樣沒有拖尾的系統不多抽亂數 */
+  trail?: ParticleTrail
+}
+
+export interface ParticleTrail {
+  /** 走過的點，新的在前：[x, y, z（相對系統原點，Unity 單位）, 加入時的系統時間] */
+  pts: [number, number, number, number][]
+  /** 拖尾壽命（秒）：點的年齡超過就丟掉 */
+  life: number
+  /** colorOverTrail／colorOverLifetime 的固定亂數 */
+  r: number
 }
 
 export class ParticleSim {
   readonly sys: FxSystem
   readonly parts: Particle[] = []
+  /** 粒子死了、拖尾還沒消完的（dieWithParticles 關時）：age 停在 life，只剩拖尾的點繼續過期 */
+  readonly orphans: Particle[] = []
   /** 播放時間（秒，不含 startDelay，跟 Unity 的 ParticleSystem.time 一樣） */
   t = 0
   /** startDelay 還剩幾秒：等的時候整個系統停住（t 不走、不發射） */
   wait: number
+  /** 被片段關掉的時候 false（sys.active，見 setActive） */
+  on = true
+  /** 這一格系統原點的畫布座標（sys.pos，被 TweenPos2 平移時引擎每格改，見 sys.move） */
+  origin: [number, number]
+  /** 這一格發射用的位移（模擬單位）與旋轉（sys.emitter，world 空間的系統被片段移動時引擎每格改；預設 0 與 sys.rot） */
+  emitOff: Vec3 = [0, 0, 0]
+  emitRot: Quat
   private emitAcc = 0
-  private readonly bursts: { time: number; next: number; done: number; burst: FxBurst }[]
+  private bursts: { time: number; next: number; done: number; burst: FxBurst }[] = []
   private readonly rand: Rand
   private readonly perlin: (x: number, y: number, z: number) => number
+  private readonly orbitalScale: number
+  private readonly simSpeed: number
 
-  constructor(sys: FxSystem, rand: Rand = Math.random, perlin = makePerlin(rand)) {
+  constructor(sys: FxSystem, rand: Rand = Math.random, perlin = makePerlin(rand), opts: SimOptions = {}) {
     this.sys = sys
     this.rand = rand
     this.perlin = perlin
-    this.bursts = (sys.emission?.bursts ?? []).map((b) => ({ time: b.time, next: b.time, done: 0, burst: b }))
+    this.orbitalScale = opts.orbitalScale ?? ORBITAL_RAD
+    this.simSpeed = opts.honorSimSpeed !== false ? sys.simSpeed || 1 : 1
+    this.origin = sys.pos
+    this.emitRot = sys.rot
+    this.wait = 0
+    this.start()
+  }
+
+  /** 從頭播：延遲、burst、預熱都重來（建構時與 setActive 打開時） */
+  private start(): void {
+    const S = this.sys
+    this.t = 0
+    this.emitAcc = 0
+    this.bursts = (S.emission?.bursts ?? []).map((b) => ({ time: b.time, next: b.time, done: 0, burst: b }))
     // 兩個常數之間隨機才抽亂數：沒有延遲（或延遲是常數）的系統亂數序列不變
-    const d = sys.delay
-    this.wait = d ? Math.max(0, evalMinMax(d, 0, d.mode === 3 ? rand() : 0)) : 0
+    const d = S.delay
+    this.wait = d ? Math.max(0, evalMinMax(d, 0, d.mode === 3 ? this.rand() : 0)) : 0
     // 預熱：開場就是「已經跑了一輪」的樣子（預熱＋延遲 Unity 不給並用，builder 不會輸出這種組合）
-    if (sys.prewarm) for (let i = 0; i < Math.ceil(sys.duration * 30); i++) this.update(1 / 30)
+    if (S.prewarm) for (let i = 0; i < Math.ceil(S.duration * 30); i++) this.update(1 / 30)
+  }
+
+  /**
+   * 片段開關 GameObject（sys.active，10-29 起）：關掉時粒子與拖尾清掉、不再跑；再打開時從頭播（Unity 的 OnEnable＋playOnAwake）
+   */
+  setActive(on: boolean): void {
+    if (on === this.on) return
+    this.on = on
+    this.parts.length = 0
+    this.orphans.length = 0
+    if (on) this.start()
+  }
+
+  /** 丟掉年齡超過拖尾壽命的點（最舊的在後面） */
+  private trimTrail(T: ParticleTrail): void {
+    while (T.pts.length && this.t - T.pts[T.pts.length - 1][3] > T.life) T.pts.pop()
   }
 
   emit(n: number): void {
@@ -221,7 +300,7 @@ export class ParticleSim {
       const life = evalMinMax(I.lifetime, tn, R()), speed = evalMinMax(I.speed, tn, R())
       const size = evalMinMax(I.size, tn, R())
       const sizeY = I.sizeY ? evalMinMax(I.sizeY, tn, R()) || size : size
-      // 形狀：0 球、4 圓錐、5 方塊、8 圓錐體積（其餘當點）
+      // 形狀：0 球、4 圓錐、5 方塊、8 圓錐體積、10 圓形（其餘當點）
       let lp: Vec3 = [0, 0, 0]
       let dir = randUnit(R)
       if (sh && (sh.type === 4 || sh.type === 8)) {
@@ -235,6 +314,12 @@ export class ParticleSim {
         const u = randUnit(R), rr = sh.radius * Math.cbrt(lerp((1 - sh.thickness) ** 3, 1, R()))
         lp = [u[0] * rr, u[1] * rr, u[2] * rr]
         dir = u
+      } else if (sh && sh.type === 10) {
+        // 圓形（10-29 起）：xy 平面上的圓盤（thickness＝從外緣往內多厚，面積均勻），方向從圓心往外；
+        // arc 只做 Random 模式：角度在 0～arc 之間均勻亂數，從 +x 往 +y 量（builder 會報其他模式）
+        const a = R() * (sh.arc != null ? sh.arc * D2R : Math.PI * 2), rr = Math.sqrt(lerp((1 - sh.thickness) ** 2, 1, R()))
+        lp = [Math.cos(a) * rr * sh.radius, Math.sin(a) * rr * sh.radius, 0]
+        dir = [Math.cos(a), Math.sin(a), 0]
       } else if (sh && sh.type === 5) {
         // 方塊（Unity 的 Box＝從體積發射）：邊長 1、以原點為中心，下面乘上形狀的 scale 就是方塊大小（Unity 編輯器的方塊 gizmo 也是
         // size＝scale）。方向一律是形狀的前方 +z、不吃 scale，只跟著形狀旋轉（Unity 手冊：粒子沿發射器的 forward (Z) 移動）
@@ -248,23 +333,36 @@ export class ParticleSim {
         lp = [p[0] + ox, p[1] + oy, p[2] + oz]
         dir = rotEuler(dir, rx, ry, rz)
       }
-      // 粒子系統本身的旋轉與縮放（Local scaling）
-      const sc = S.scale
-      lp = rotQuat([lp[0] * sc[0], lp[1] * sc[1], lp[2] * sc[2]], S.rot)
-      dir = rotQuat(dir, S.rot)
+      // 粒子系統本身的旋轉與縮放（Local scaling）；被片段移動的 world 空間系統用這一格的旋轉與位移（emitRot／emitOff）
+      const sc = S.scale, eo = this.emitOff
+      lp = rotQuat([lp[0] * sc[0], lp[1] * sc[1], lp[2] * sc[2]], this.emitRot)
+      lp = [lp[0] + eo[0], lp[1] + eo[1], lp[2] + eo[2]]
+      dir = rotQuat(dir, this.emitRot)
       const vel: Vec3 = [dir[0] * speed, dir[1] * speed, dir[2] * speed]
+      // 拖尾：抽 ratio、壽命（發射時取一次，跟著系統時間取曲線）、顏色用的亂數；第一個點就是出生的位置。
+      // 壽命的「兩條曲線之間隨機」照 Unity（兩條都乘 scalar），不用檔頭那個試作的怪地方（下限乘 minScalar）：
+      // 1018 的 minScalar 是 1、scalar 0.05，照試作會變成粒子壽命的 4%–99%，曳光彈拖著整條飛行路徑
+      let trail: ParticleTrail | undefined
+      if (S.trail && R() < S.trail.ratio) {
+        const T = S.trail, LT = T.lifetime
+        const lt = LT.mode === 2 ? lerp(LT.scalar * evalCurve(LT.minCurve, tn), LT.scalar * evalCurve(LT.maxCurve, tn), R()) : evalMinMax(LT, tn, R())
+        const k = lt * (T.sizeAffectsLifetime ? size * sc[0] : 1)
+        trail = { pts: [[lp[0], lp[1], lp[2], this.t]], life: Math.max(Math.max(life, 1e-3) * k, 1e-3), r: R() }
+      }
       this.parts.push({
         pos: lp, vel, vel3: [...vel], age: 0, life: Math.max(life, 1e-3),
         size: size * sc[0], sizeY: sizeY * sc[1], rot: -evalMinMax(I.rotation, tn, R()),
         col: evalMinMaxGradient(I.color, tn, R()), r: [R(), R(), R(), R(), R()],
         ...(S.uv ? { uvr: [R(), R(), R()] as [number, number, number] } : {}),
+        ...(trail ? { trail } : {}),
       })
     }
   }
 
   update(dt: number): void {
+    if (!this.on) return
     const S = this.sys
-    dt *= S.simSpeed || 1
+    dt *= this.simSpeed
     // startDelay 只在開始播放時等一次，之後每輪不再等；等完那一格剩下的時間照常跑
     if (this.wait > 0) {
       if (dt < this.wait) { this.wait -= dt; return }
@@ -272,13 +370,23 @@ export class ParticleSim {
       this.wait = 0
     }
     this.t += dt
+    // 粒子死了的拖尾：點照樣過期，消完就丟
+    for (let i = this.orphans.length - 1; i >= 0; i--) {
+      const tr = this.orphans[i].trail!
+      this.trimTrail(tr)
+      if (!tr.pts.length) this.orphans.splice(i, 1)
+    }
     const dur = S.duration, tn = (this.t % dur) / dur
-    const V = S.velocity, F = S.force, L = S.clamp, N = S.noise, RM = S.rotationOverLife
+    const V = S.velocity, F = S.force, L = S.clamp, N = S.noise, RM = S.rotationOverLife, RS = S.rotationBySpeed
     const grav = evalMinMax(S.initial.gravity, tn, 0.5) * 9.81
     for (let i = this.parts.length - 1; i >= 0; i--) {
       const q = this.parts[i]
       q.age += dt
-      if (q.age >= q.life) { this.parts.splice(i, 1); continue }
+      if (q.age >= q.life) {
+        this.parts.splice(i, 1)
+        if (q.trail && !S.trail?.dieWithParticles) { q.age = q.life; this.orphans.push(q) }
+        continue
+      }
       const a = q.age / q.life
       q.vel[1] -= grav * dt
       if (F) {
@@ -309,9 +417,53 @@ export class ParticleSim {
           this.perlin(x * fr + 71.7, y * fr, z * fr + sc) * st,
         ]
       }
-      q.vel3 = [q.vel[0] + ext[0] + nz[0], q.vel[1] + ext[1] + nz[1], q.vel[2] + ext[2] + nz[2]]
+      // orbital／radial：這一格位置繞中心轉、往外推的位移，換成速度加進 vel3（跟線性速度一樣不累積，拉伸 billboard 也照實際方向）。
+      // 中心＝系統原點＋offset；world 以外在系統自己的座標轉（先把位置轉回系統座標、算完再轉出來）
+      let ob: Vec3 = [0, 0, 0]
+      if (V && (V.orbital || V.radial) && dt > 0) {
+        const inv: Quat = [-S.rot[0], -S.rot[1], -S.rot[2], S.rot[3]]
+        const p = V.world ? q.pos : rotQuat(q.pos, inv)
+        const c: Vec3 = V.offset ? [evalMinMax(V.offset.x, a, q.r[0]), evalMinMax(V.offset.y, a, q.r[1]), evalMinMax(V.offset.z, a, q.r[2])] : [0, 0, 0]
+        const rel: Vec3 = [p[0] - c[0], p[1] - c[1], p[2] - c[2]]
+        let np = rel
+        if (V.orbital) {
+          const k = (dt * this.orbitalScale) / D2R
+          np = rotEuler(rel, evalMinMax(V.orbital.x, a, q.r[0]) * k, evalMinMax(V.orbital.y, a, q.r[1]) * k, evalMinMax(V.orbital.z, a, q.r[2]) * k)
+        }
+        if (V.radial) {
+          const n = norm3(rel), r = evalMinMax(V.radial, a, q.r[3]) * dt
+          np = [np[0] + n[0] * r, np[1] + n[1] * r, np[2] + n[2] * r]
+        }
+        let d: Vec3 = [(np[0] - rel[0]) / dt, (np[1] - rel[1]) / dt, (np[2] - rel[2]) / dt]
+        if (!V.world) d = rotQuat(d, S.rot)
+        ob = d
+      }
+      // speedModifier（10-29 補）：Unity 手冊「沿著／繞著目前的行進方向」乘速度，所以乘在粒子本身的速度＋線性＋繞軸上；噪聲是另一個模組，不乘。
+      // 有限速（clamp）的話乘完再限一次：1036 幻影的 Glow_4／5 是 ×10 配限速 3.7／3.11、dampen 1，不限的話一格就飛出畫面（3600 px），
+      // 照設計意圖限速是管最後的速度。沒有 speedModifier 的系統照原本的加法順序（浮點結果逐位元不變）
+      const SM = V?.speedModifier
+      if (SM) {
+        const k = evalMinMax(SM, a, q.r[3])
+        let mv = [0, 1, 2].map((i) => (q.vel[i] + ext[i] + ob[i]) * k) as Vec3
+        if (L) {
+          const lim = evalMinMax(L.magnitude, a, q.r[3]), sp = Math.hypot(...mv)
+          if (sp > lim && sp > 0) {
+            const s = lerp(1, lim / sp, 1 - Math.pow(1 - L.dampen, dt * 30))
+            mv = [mv[0] * s, mv[1] * s, mv[2] * s]
+          }
+        }
+        q.vel3 = [mv[0] + nz[0], mv[1] + nz[1], mv[2] + nz[2]]
+      } else q.vel3 = [q.vel[0] + ext[0] + nz[0] + ob[0], q.vel[1] + ext[1] + nz[1] + ob[1], q.vel[2] + ext[2] + nz[2] + ob[2]]
       q.pos = [q.pos[0] + q.vel3[0] * dt, q.pos[1] + q.vel3[1] * dt, q.pos[2] + q.vel3[2] * dt]
+      // 拖尾：離上一個點超過 minVertexDistance 才加新點（畫的時候頭一律接到目前位置）
+      if (q.trail) {
+        const T = q.trail, last = T.pts[0]
+        if (!last || Math.hypot(q.pos[0] - last[0], q.pos[1] - last[1], q.pos[2] - last[2]) >= S.trail!.minVertexDistance) T.pts.unshift([q.pos[0], q.pos[1], q.pos[2], this.t])
+        this.trimTrail(T)
+      }
       if (RM) q.rot -= evalMinMax(RM, a, q.r[2]) * dt
+      // 依速度旋轉（10-29 補）：這一格實際速率（vel3）照 range 對到 0–1 取曲線，轉速的單位與方向同 rotationOverLife
+      if (RS) q.rot -= evalMinMax(RS.curve, speedT(RS.range, Math.hypot(...q.vel3)), q.r[2]) * dt
     }
     // ⚠ 發射放在更新之後（Unity 的順序）：先老化、移除，再補新的——
     //   反過來的話「最多 1 顆」的光暈每輪都會斷一拍、整片閃爍（試作 10-16 修掉的關鍵）

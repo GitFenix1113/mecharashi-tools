@@ -37,8 +37,10 @@ r"""
   { prefab, nodes[], materials{}, textures{} }，JSON indent=1、浮點取小數 5 位、PPtr 換成 { pid（字串）, fid }。
   nodes  依深度優先排列：name／active／parent（索引）／depth／rect（RectTransform 原樣，去掉 m_Children／m_Father）
          ／ps（ParticleSystem typetree 原樣）／psr（Renderer typetree＋materials 材質名）／mb（MonoBehaviour：script、fields、
-         Image／RawImage 另有 material／texture 名）／canvasGroup／animator（{ enabled, controller }，2026-10-17 起：
-         機師卡池 14 位掛循環動畫，builder 要看得到才能報 ⚠）。其他元件（TrailRenderer…）不輸出，會在畫面上列出。
+         Image／RawImage 另有 material／texture 名；機師的 Image 另有 sprite 名，10-29 起）／psId（ParticleSystem 元件的 path id，10-29 起，對 UIParticle 的
+         m_Particles 用）／canvasGroup／animator（{ enabled, controller }，2026-10-17 起：
+         機師卡池 14 位掛循環動畫，builder 要看得到才能報 ⚠；10-29 起多 clips，見 decode_clip）。
+         其他元件（TrailRenderer…）不輸出，會在畫面上列出。
   materials  材質名 → shader（完整名）／tex（屬性 → 貼圖名＋scale＋offset）／floats／colors（[r,g,b,a]）。
   textures   貼圖名 → file（tex/<官方貼圖名>.png）／w／h／wrap（[U, V]，Unity TextureWrapMode：0 Repeat、1 Clamp、2 Mirror…）。
              wrap 是 10-17 J-1 加的（流動圖層的主貼圖捲動要知道會不會重複）；除此之外與 10-16 試作逐位元組相同。
@@ -47,7 +49,7 @@ r"""
 
 只讀封包，不改任何東西。
 """
-import argparse, csv, json, math, re, shutil, sys
+import argparse, csv, json, math, re, shutil, struct, sys, zlib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -58,7 +60,8 @@ CARD_FILES = {'mech': 'scripts/lib/mechGachaCards.json', 'pilot': 'scripts/lib/p
 FX_DIRS = {'mech': 'src/data/gachaFx', 'pilot': 'src/data/gachaFx/pilots'}
 # 機師的相依只載這些以外的（見檔頭）：文字圖、介面圖集、字型、其他 prefab 與特效貼圖無關，招募插畫封包例外
 PILOT_SKIP = ('ui_textimages_', 'ui_uiimages_', 'ui_fonts', 'ui_prefabs_')
-PILOT_KEEP = {'ui_textimages_pilotgachaimg_abs.cn'}
+# 招募插畫（2026-10-29 起也匯出：舞台要拼背景、builder 要畫插畫切片）：uipilotgacha 是早期的，uigacha_pilot<ob 版號／se> 是之後的
+PILOT_KEEP = re.compile(r'^(ui_textimages_pilotgachaimg_abs\.cn|ui_uiimages_uipilotgacha_abs\.b|ui_uiimages_uigacha_pilot\w+_abs\.b)$')
 MANIFEST = 'StandaloneWindows64'
 INDEX_FILE = '圖片索引.csv'
 # 一起匯出的元件；其他的列在「略過的元件」（CanvasRenderer 每個 UI 節點都有、沒有內容，不列）
@@ -75,6 +78,8 @@ ap.add_argument('--list', action='store_true', help='只列出卡池 prefab 與�
 ap.add_argument('--out', help='匯出根目錄（每台一個子資料夾：wap，沒有 wap 的用卡池鍵）')
 ap.add_argument('--settings', default=str(SETTINGS), help=f'擷取工具設定檔（預設 {SETTINGS}）')
 ap.add_argument('--bundles', help='封包資料夾（預設 settings.json 的 source 底下的 ExportAssetBundle）')
+ap.add_argument('--cache', help='遊戲下載的熱更新封包資料夾（LocalLow/Unity/<公司>_<產品>）：同名封包取安裝目錄與快取裡最新的一份'
+                ' （2026-10-29 起，機師用；不給＝只讀安裝目錄，與之前相同）')
 ap.add_argument('--dump', default='latest', help='沿用 PNG 的擷取資料夾（預設 latest＝最新一次；none＝一律從封包解碼）')
 args = ap.parse_args()
 KIND = args.kind
@@ -92,7 +97,19 @@ cfg = json.load(open(args.settings, encoding='utf-8-sig'))
 k = cfg['key'].strip()
 UnityPy.set_assetbundle_decrypt_key(bytes.fromhex(k) if len(k) == 32 else k.encode())
 ROOT = Path(args.bundles) if args.bundles else Path(cfg['source']) / BUNDLE_SUBDIR
-if not (ROOT / PREFAB_BUNDLE).exists():
+
+
+def bundle_path(name):
+    """封包檔：安裝目錄的那份；給了 --cache 時，快取（<封包名去掉副檔名>/<hash>/__data）裡較新的優先——熱更新後的卡池 prefab、
+    新機師的招募插畫只在快取裡。只認 .b 與沒有副檔名的（manifest）：多語系封包（.cn／.en…）的快取是遊戲語言那份，不能拿來換。
+    都沒有回 None。"""
+    paths = [ROOT / name] if (ROOT / name).exists() else []
+    if args.cache and (name.endswith('.b') or '.' not in name):
+        paths += Path(args.cache).glob(f"{name.rsplit('.', 1)[0]}/*/__data")
+    return max(paths, key=lambda p: p.stat().st_mtime) if paths else None
+
+
+if not bundle_path(PREFAB_BUNDLE):
     sys.exit(f'找不到 {ROOT / PREFAB_BUNDLE}（用 --bundles 指定封包資料夾）')
 
 # ── 卡池鍵 ↔ wap（機師：gameId）──────────────────────────────────────────────
@@ -117,7 +134,7 @@ def has_fx(wap):
 
 
 # ── 載入封包：prefab 封包＋manifest 列的全部相依 ───────────────────────────────
-pre = UnityPy.load(str(ROOT / PREFAB_BUNDLE))
+pre = UnityPy.load(str(bundle_path(PREFAB_BUNDLE)))
 POOLS = {}  # 卡池鍵 → GameObject 的 ObjectReader
 for o in pre.objects:
     if o.type.name == 'GameObject':
@@ -153,7 +170,7 @@ for key in args.prefab or []:
         sys.exit(f'封包裡沒有 {key} 的卡池 prefab（--list 看全部）')
     targets.append((WAP_OF.get(norm(real), real), real))
 
-man = next(o for o in UnityPy.load(str(ROOT / MANIFEST)).objects if o.type.name == 'AssetBundleManifest').read_typetree()
+man = next(o for o in UnityPy.load(str(bundle_path(MANIFEST))).objects if o.type.name == 'AssetBundleManifest').read_typetree()
 names = dict(man['AssetBundleNames'])
 infos = dict(man['AssetBundleInfos'])
 # 相依要取遞移閉包：共用特效材質在 uifxgacha，它的貼圖又可能在 uifxgacha 自己的相依裡（例：Stone_03）
@@ -163,9 +180,36 @@ while todo:
     if i not in seen:
         seen.add(i); todo += infos[i]['AssetBundleDependencies']
 deps = sorted(names[i] for i in seen if names[i] != PREFAB_BUNDLE)
+SKIPPED = []
 if KIND == 'pilot':
-    deps = [d for d in deps if not d.startswith(PILOT_SKIP) or d in PILOT_KEEP]
-env = UnityPy.load(str(ROOT / PREFAB_BUNDLE), *[str(ROOT / d) for d in deps if (ROOT / d).exists()])
+    SKIPPED = [d for d in deps if d.startswith(PILOT_SKIP) and not PILOT_KEEP.match(d)]
+    deps = [d for d in deps if d not in SKIPPED]
+env = UnityPy.load(*[str(p) for p in map(bundle_path, [PREFAB_BUNDLE, *deps]) if p])
+
+# 被跳過的相依封包：sprite 解不到時才找、才載（10-29 補）。瑪蒂妮的 Mask01 在 ui_uiimages_uigacha_mechaob11_abs.b、
+# 智者的 Image_Glow 在 ui_textimages_ob13_abs.cn。CAB 名→封包的索引第一次用到時才建（一次只開一個封包，不會 MemoryError）
+_skipped_cabs = None
+
+
+def load_skipped(cab):
+    """CAB 名在被跳過的相依封包裡：載進 env、回 True"""
+    global _skipped_cabs
+    if _skipped_cabs is None:
+        _skipped_cabs = {}
+        for d in SKIPPED:
+            p = bundle_path(d)
+            if not p:
+                continue
+            try:
+                for c in getattr(UnityPy.load(str(p)), 'cabs', {}):
+                    _skipped_cabs.setdefault(c.lower(), p)
+            except Exception:
+                pass
+    p = _skipped_cabs.pop(cab.lower(), None)
+    if p is None:
+        return False
+    env.load_file(str(p))
+    return env.get_cab(cab) is not None
 _cab = env.get_cab(next(iter(POOLS.values())).assets_file.name)
 POOLS = {key: _cab.objects[o.path_id] for key, o in POOLS.items()}
 
@@ -204,8 +248,9 @@ def clean(x):
     return x
 
 
-def resolve(owner, ref):
-    """typetree 裡的 { m_FileID, m_PathID } → ObjectReader（同檔或相依封包）；空指標或解不到回 None"""
+def resolve(owner, ref, lazy=False):
+    """typetree 裡的 { m_FileID, m_PathID } → ObjectReader（同檔或相依封包）；空指標或解不到回 None。
+    lazy：解不到時到被跳過的相依封包找（只給機師的 sprite 用，其他欄位照舊，匯出檔不變）"""
     fid, pid = ref.get('m_FileID', 0), ref.get('m_PathID', 0)
     if not pid:
         return None
@@ -213,10 +258,75 @@ def resolve(owner, ref):
     if fid:
         if fid - 1 >= len(sf.externals):
             return None
-        sf = env.get_cab(sf.externals[fid - 1].name)   # Library/unity default resources 這類解不到
+        cab = sf.externals[fid - 1].name
+        sf = env.get_cab(cab)   # Library/unity default resources 這類解不到
+        if sf is None and lazy and load_skipped(cab):
+            sf = env.get_cab(cab)
         if sf is None or not hasattr(sf, 'objects'):
             return None
     return sf.objects.get(pid)
+
+
+# ── AnimationClip（10-29 起，3027 巨像的探照燈）─────────────────────────────────
+# 執行期的 Mecanim 片段沒有可讀的曲線，只有 m_MuscleClip（StreamedClip／DenseClip／ConstantClip 三段，順序同 AssetStudio 的
+# AnimationClipConverter）與 genericBindings（路徑、屬性都是 CRC32）。路徑相對於 Animator 的節點，walk 完再對回節點名。
+# Transform（typeID 4）的屬性是編號：1 位置、2 四元數、3 縮放、4 歐拉角（度，Unity 的 ZXY 順序）；其他元件的是屬性路徑的 CRC32，
+# 照下面的候選名對回去，對不到的留數字（builder 報 ⚠）。
+ANIM_PROPS = {zlib.crc32(n.encode()): n for n in
+              [f'{p}.{a}' for p in ('m_AnchoredPosition', 'm_SizeDelta', 'm_AnchorMin', 'm_AnchorMax', 'm_Pivot', 'm_LocalPosition',
+                                    'm_LocalScale', 'm_LocalEulerAnglesHint') for a in 'xyz']
+              + [f'm_Color.{a}' for a in 'rgba'] + [f'material._Color.{a}' for a in 'rgba']
+              + ['m_Alpha', 'm_IsActive', 'm_Enabled', 'm_FillAmount']
+              # 遊戲的 UIShaderVariableProxy（10-29 起）：欄位值寫進材質，屬性名在同一個元件的 m_*_names；UIShiny 的掃光；Image 換 sprite（序列幀）
+              + [f'm_float_{i}' for i in range(5)]
+              + [f'm_{p}_{i}.{a}' for p in ('vector', 'tilingOffset') for i in range(5) for a in 'xyzw']
+              + [f'm_color_{i}.{a}' for i in range(5) for a in 'rgba']
+              + ['m_EffectFactor', 'm_Rotation', 'm_Sprite']}
+TRANSFORM_ATTR = {1: ('pos', 'xyz'), 2: ('rot', 'xyzw'), 3: ('scale', 'xyz'), 4: ('euler', 'xyz')}
+
+
+def decode_clip(tt):
+    """AnimationClip typetree → { name, start, stop, loop, curves: [{ path（CRC32，之後換成路徑）, type（typeID）, prop, keys }] }。
+    keys：Streamed＝[[t, a, b, c, d], …]（t 起的一段三次式 ((a·dt + b)·dt + c)·dt + d，到下一個 t 為止）；
+    Dense＝每格一個值換成同格式（a=b=c=0 的常數段，引擎/builder 照 t 取值）；Constant＝[[0, 0, 0, 0, v]]。"""
+    mc = tt['m_MuscleClip']
+    clip = mc['m_Clip']['data'] if 'data' in mc['m_Clip'] else mc['m_Clip']
+    labels, pptr = [], set()
+    for b in tt['m_ClipBindingConstant']['genericBindings']:
+        if b.get('isPPtrCurve'):
+            pptr.add(len(labels))
+        if b['typeID'] == 4 and b['attribute'] in TRANSFORM_ATTR:
+            nm, comps = TRANSFORM_ATTR[b['attribute']]
+            labels += [(b['path'], 4, f'{nm}.{c}') for c in comps]
+        else:
+            labels.append((b['path'], b['typeID'], ANIM_PROPS.get(b['attribute'], b['attribute'])))
+    words = clip['m_StreamedClip']['data']
+    raw = struct.pack(f'<{len(words)}I', *words)
+    keys, pre, pos = {}, {}, 0
+    while pos < len(raw):
+        t, n = struct.unpack_from('<fi', raw, pos); pos += 8
+        for _ in range(n):
+            i, a, b, c, d = struct.unpack_from('<i4f', raw, pos); pos += 20
+            if t > -1e30:   # 第一格是 −FLT_MAX：時間 0 之前的常數，用不到（PPtr 曲線例外，見下面的 pre）
+                keys.setdefault(i, []).append([round(t, 5)] + [float(f'{v:.6g}') for v in (a, b, c, d)])
+            else:
+                pre[i] = float(f'{d:.6g}')
+    ns = clip['m_StreamedClip'].get('curveCount', len(keys))
+    dense = clip['m_DenseClip']
+    nd, dt0, rate = dense['m_CurveCount'], dense['m_BeginTime'], dense['m_SampleRate']
+    arr = dense['m_SampleArray']
+    for f in range(dense['m_FrameCount'] if nd else 0):
+        for k in range(nd):
+            keys.setdefault(ns + k, []).append([round(dt0 + f / rate, 5), 0, 0, 0, float(f'{arr[f * nd + k]:.6g}')])
+    for k, v in enumerate(clip['m_ConstantClip']['data']):
+        keys[ns + nd + k] = [[0, 0, 0, 0, float(f'{v:.6g}')]]
+    return {
+        'name': tt['m_Name'], 'start': round(mc['m_StartTime'], 5), 'stop': round(mc['m_StopTime'], 5), 'loop': bool(mc['m_LoopTime']),
+        # PPtr 曲線（10-29 起，10103171 戰部渡的 Img_Sequence 換 sprite）：值是 pptrCurveMapping 的索引；pre＝第一個關鍵格之前的值
+        # （−FLT_MAX 那格，序列幀的第 0 張）。只有 PPtr 曲線多這個欄位，其他片段的匯出不變
+        'curves': [{'path': p, 'type': ty, 'prop': pr, 'keys': keys.get(i, []), **({'pre': pre.get(i, 0.0)} if i in pptr else {})}
+                   for i, (p, ty, pr) in enumerate(labels)],
+    }
 
 
 def export_one(folder, key):
@@ -254,6 +364,27 @@ def export_one(folder, key):
             img.save(out / fn)
             src_count['封包解碼'] += 1
         textures[name] = {'file': fn, 'w': img.width, 'h': img.height, 'wrap': wrap}
+        return name
+
+    def export_sprite(obj):
+        """Sprite（機師，10-29 起）→ 裁成它自己那一塊的 PNG，當一張貼圖輸出（名字＝官方 sprite 名，textures 裡標 sprite: true）。
+        機師卡池的插畫切片有一半是掛 sprite 的 Image（菲婭的 Img_03、帕洛瑪的 Word…）；builder 照整張貼圖畫。"""
+        d = obj.read()
+        name = d.m_Name
+        if name in textures:
+            if not textures[name].get('sprite'):
+                notes.append(f'sprite {name} 和同名的貼圖撞名，沿用貼圖那份')
+            return name
+        fn = f'tex/{name}.png'
+        try:
+            img = d.image
+        except Exception as e:
+            notes.append(f'sprite {name} 解碼失敗：{str(e)[:60]}')
+            textures[name] = {'file': None, 'w': 0, 'h': 0, 'wrap': [1, 1], 'sprite': True}
+            return name
+        img.save(out / fn)
+        src_count['封包解碼'] += 1
+        textures[name] = {'file': fn, 'w': img.width, 'h': img.height, 'wrap': [1, 1], 'sprite': True}
         return name
 
     def export_mat(obj):
@@ -295,6 +426,7 @@ def export_one(folder, key):
                 node['rect'].pop('m_Children', None); node['rect'].pop('m_Father', None)
             elif t == 'ParticleSystem':
                 node['ps'] = clean(co.read_typetree())
+                node['psId'] = str(co.path_id)   # 10-29 起：對 UIParticle.m_Particles（它只畫清單裡的系統）
             elif t == 'ParticleSystemRenderer':
                 tt = clean(co.read_typetree())
                 mats = []
@@ -329,15 +461,36 @@ def export_one(folder, key):
                     to = resolve(co, raw.get('m_Texture', {}))
                     if to is not None and to.type.name == 'Texture2D':
                         entry['texture'] = export_tex(to)
+                    so = resolve(co, raw.get('m_Sprite', {}), lazy=True) if KIND == 'pilot' else None
+                    if so is not None and so.type.name == 'Sprite':
+                        entry['sprite'] = export_sprite(so)
                 node.setdefault('mb', []).append(entry)
             elif t == 'CanvasGroup':
                 node['canvasGroup'] = clean(co.read_typetree())
             elif t == 'Animator':
+                clips, ctrl = [], None
                 try:
-                    ctrl = co.read().m_Controller.deref().read().m_Name
-                except Exception:
-                    ctrl = None
+                    cobj = co.read().m_Controller.deref()
+                    ctrl = cobj.read().m_Name
+                    for ref in cobj.read_typetree().get('m_AnimationClips', []):
+                        o = resolve(cobj, ref)
+                        if o is not None and o.type.name == 'AnimationClip':
+                            ctt = o.read_typetree()
+                            clip = decode_clip(ctt)
+                            # PPtr 曲線的物件表（10-29 起）：sprite 照 Image 的 sprite 一樣裁成 PNG，存名字；不是 sprite 的存 None
+                            refs = ctt['m_ClipBindingConstant'].get('pptrCurveMapping') or []
+                            if refs and KIND == 'pilot':
+                                names = []
+                                for r in refs:
+                                    so = resolve(o, r, lazy=True)
+                                    names.append(export_sprite(so) if so is not None and so.type.name == 'Sprite' else None)
+                                clip['pptr'] = names
+                            clips.append(clip)
+                except Exception as e:
+                    notes.append(f'{g.m_Name}：Animator 的控制器／片段讀不到（{str(e)[:60]}）')
                 node['animator'] = {'enabled': co.read_typetree().get('m_Enabled', 1), 'controller': ctrl}
+                if clips:
+                    node['animator']['clips'] = clips
             if t not in EXPORTED:
                 skipped.setdefault(t, []).append(g.m_Name)
         nodes.append(node)
@@ -348,6 +501,19 @@ def export_one(folder, key):
 
     target = POOLS[key].read().m_Name  # 照官方檔名（彌造者是 …Pooll…）
     walk(POOLS[key])
+    # 片段的路徑 CRC32 → 相對於 Animator 節點的節點索引（自己＝空路徑）；對不到的留 CRC32（builder 報 ⚠）
+    for ai, an in enumerate(nodes):
+        for clip in (an.get('animator') or {}).get('clips', []):
+            rel = {}
+            for i in range(ai, len(nodes)):
+                parts, x = [], i
+                while x is not None and x != ai:
+                    parts.append(nodes[x]['name']); x = nodes[x]['parent']
+                if x == ai:
+                    rel.setdefault(zlib.crc32('/'.join(reversed(parts)).encode()), i)
+            for cv in clip['curves']:
+                if cv['path'] in rel:
+                    cv['node'] = rel[cv['path']]; del cv['path']
     with open(out / 'data.json', 'w', encoding='utf-8') as f:
         json.dump({'prefab': target, 'nodes': nodes, 'materials': materials, 'textures': textures}, f, ensure_ascii=False, indent=1)
 

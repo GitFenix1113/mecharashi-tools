@@ -5,8 +5,10 @@ import { flow1Uniforms, splitFlows } from './gachaFxFlow1.ts'
 import type { FxFlow1, GachaFxData } from './gachaFxTypes.ts'
 
 const FX_DIR = new URL('../../../data/gachaFx/', import.meta.url)
+// 機甲（<wap>.json）＋機師（pilots/<gameId>.json）
 const allFx = (): [string, GachaFxData][] =>
-  fs.readdirSync(FX_DIR).filter((f) => f.endsWith('.json')).map((f) => [f, JSON.parse(fs.readFileSync(new URL(f, FX_DIR), 'utf8')) as GachaFxData])
+  [FX_DIR, new URL('pilots/', FX_DIR)].flatMap((dir) => fs.readdirSync(dir).filter((f) => f.endsWith('.json'))
+    .map((f): [string, GachaFxData] => [dir === FX_DIR ? f : `pilots/${f}`, JSON.parse(fs.readFileSync(new URL(f, dir), 'utf8'))]))
 
 const layer = (over: Partial<FxFlow1> = {}): FxFlow1 => ({ shader: 'flow1', name: 't', pos: [0, 0], size: [100, 100], color: [1, 1, 1, 1], mainValue: 1, ...over })
 
@@ -43,11 +45,15 @@ test('Flow1 的旋轉與溶解常數照 shader：(cos, sin)、2×(0.55 − 1.05�
   assert.deepEqual([d.dissolveST, d.dissolveFlow], [[0.5, 0.5, 0, 0], [0.2, 0.1]])
 })
 
-test('繪製分段：under 的先畫、其餘在粒子之後，段內照資料（階層）順序', () => {
-  const xs = [{ n: 'a' }, { n: 'b', under: true }, { n: 'c' }, { n: 'd', under: true }]
-  const { under, over } = splitFlows(xs, (x) => !!x.under)
+test('繪製分段：under 的先畫、beforeGroup 的放到那組粒子之前、其餘在粒子之後，段內照資料（階層）順序', () => {
+  const xs: { n: string; under?: true; beforeGroup?: number }[] = [
+    { n: 'a' }, { n: 'b', under: true }, { n: 'c' }, { n: 'd', under: true }, { n: 'e', beforeGroup: 1 }, { n: 'f', beforeGroup: 1 },
+  ]
+  const { under, over, before } = splitFlows(xs, (x) => x)
   assert.deepEqual(under.map((x) => x.n), ['b', 'd'])
   assert.deepEqual(over.map((x) => x.n), ['a', 'c'])
+  assert.deepEqual(before[1].map((x) => x.n), ['e', 'f'])
+  assert.equal(before[0], undefined)
 })
 
 test('站上的 Flow1 圖層：打包出來的 uniform 都是有限數', () => {

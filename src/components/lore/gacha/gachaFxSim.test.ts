@@ -2,12 +2,35 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { evalCurve, evalGradient, evalMinMax, makePerlin, ParticleSim, uvFrame, uvRect } from './gachaFxSim.ts'
-import type { FxSystem, FxUV, GachaFxData } from './gachaFxTypes.ts'
+import type { FxCommonFlowParams, FxFlow1Params, FxFlow1Tex, FxSystem, FxUICommonParams, FxUV, GachaFxData } from './gachaFxTypes.ts'
 
 const FX_DIR = new URL('../../../data/gachaFx/', import.meta.url)
-const texFile = (name: string) => new URL(`../../../../public/images/game/fx/${name}.png`, import.meta.url)
+// 名字以 .webp 結尾的是序列幀圖集（10-30 起），檔名就是它自己
+const texFile = (name: string) => new URL(`../../../../public/images/game/fx/${name.endsWith('.webp') ? name : `${name}.png`}`, import.meta.url)
+// 機甲（<wap>.json）＋機師（pilots/<gameId>.json）
 const allFx = (): [string, GachaFxData][] =>
-  fs.readdirSync(FX_DIR).filter((f) => f.endsWith('.json')).map((f) => [f, JSON.parse(fs.readFileSync(new URL(f, FX_DIR), 'utf8')) as GachaFxData])
+  [FX_DIR, new URL('pilots/', FX_DIR)].flatMap((dir) => fs.readdirSync(dir).filter((f) => f.endsWith('.json'))
+    .map((f): [string, GachaFxData] => [dir === FX_DIR ? f : `pilots/${f}`, JSON.parse(fs.readFileSync(new URL(f, dir), 'utf8'))]))
+
+/** 一個卡池要載的貼圖：照 gachaFxEngine.ts 載貼圖的來源（選填的省略＝shader 預設的純色，不必有檔） */
+function fxTextures(data: GachaFxData): string[] {
+  const t1 = (xs: (FxFlow1Tex | undefined)[]) => xs.map((x) => x?.tex)
+  const common = (p: FxCommonFlowParams) => [p.mainTex, p.disturbTex, p.mask?.tex]
+  const flow1 = (p: FxFlow1Params) => t1([p.main, p.colorTex, p.disturb?.tex, p.dissolve?.tex, p.dissolve?.mask, p.mask1?.tex, p.mask2?.tex, p.main2?.tex])
+  const uiCommon = (c: FxUICommonParams) => t1([c.distort?.tex, c.main, c.alpha?.tex, c.alpha3?.tex, c.grad?.tex])
+  const sys = data.systems.flatMap((s) => {
+    const M = s.material, g = M.general
+    return [
+      ...(M.flow ? common(M.flow) : M.flow1 ? flow1(M.flow1)
+        : g ? t1([g.noise?.tex, g.main, g.edge?.tex, g.mask1?.tex, g.soft?.tex, g.mask2?.tex])
+        : M.uiCommon ? uiCommon(M.uiCommon) : [M.tex]),
+      s.trail?.material.tex,
+    ]
+  })
+  const flows = data.flows.flatMap((f) => (f.shader === 'alpha' ? [f.tex, ...(f.seq?.sheets ?? [])]
+    : f.shader === 'speedLine' ? [f.maskTex] : f.shader === 'uiCommon' ? uiCommon(f) : f.shader === 'flow1' ? flow1(f) : common(f)))
+  return [...new Set([...sys, ...flows])].filter((t): t is string => !!t)
+}
 
 /** 固定亂數，結果可重現 */
 const seeded = (seed = 1) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646
@@ -209,12 +232,7 @@ test('站上每一台的卡池動態：跑 10 秒不出現 NaN、貼圖都在 pu
   assert.ok(list.length >= 1, '至少有芬里厄（2054）')
   for (const [file, data] of list) {
     assert.equal(data.v, 1, file)
-    // 流動圖層的擾動圖、遮罩是選填（沒有＝引擎綁 shader 預設的純色）；UI/Flow1 的貼圖全是選填
-    const flowTex = data.flows.flatMap((f) => (f.shader === 'flow1'
-      ? [f.main, f.colorTex, f.disturb?.tex, f.dissolve?.tex, f.dissolve?.mask, f.mask1?.tex, f.mask2?.tex].map((t) => t?.tex)
-      : [f.mainTex, f.disturbTex, f.mask?.tex])).filter((t): t is string => !!t)
-    const tex = new Set([...data.systems.map((s) => s.material.tex), ...flowTex])
-    for (const t of tex) assert.ok(fs.existsSync(texFile(t)), `${file}：缺貼圖 ${t}.png`)
+    for (const t of fxTextures(data)) assert.ok(fs.existsSync(texFile(t)), `${file}：缺貼圖 ${t}`)
     for (const def of data.systems) {
       const s = new ParticleSim(def, seeded(7))
       for (let i = 0; i < 600; i++) s.update(1 / 60)
