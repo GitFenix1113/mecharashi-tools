@@ -1775,7 +1775,7 @@ for (const i of [...sysAt, ...flowAt]) {
  * 透明粒子全在它後面就輸出 under、全在它前面就照常畫在最後。
  * 兩邊都有透明粒子、或圖層自己是透明混色（10-29 起，1051 奔霄的 Image02）：照遊戲分組——每個系統輸出 group（所屬 UIParticle 在階層裡是第幾個），
  * 圖層輸出 beforeGroup（它後面第一組的組號），引擎照組畫、組之間插圖層。只有需要時才輸出 group，其他多組 UIParticle 的機甲
- * 照舊全部照 sortingOrder 排，資料不變。
+ * 照舊全部照 sortingOrder 排，資料不變。分組了的卡池，夾在兩組之間的其他圖層也一律照階層輸出 beforeGroup（10-31 起，見迴圈後）。
  * 已上站各台沒有夾在中間的圖層，不受影響；2013 烈焰的光暈因此能畫（透明粒子 FrontSmoke／Shoot 全在它前面）。
  */
 const uiParticleOf = (i) => { for (let x = i; x != null; x = nodes[x].parent) if ((nodes[x].mb ?? []).some((b) => b.script === 'UIParticle')) return x; return i }
@@ -1791,6 +1791,14 @@ if (systems.length) {
       if (fl.blend !== 'alpha' && !before) fl.under = true
       else if (fl.blend === 'alpha' || after) { fl.beforeGroup = groups.findIndex((x) => x > flowAt[j]); grouped = true }
     }
+  })
+  // 有分組時照階層精確擺（10-31 補）：上面「疊加的圖層跟疊加的粒子先後無關」只對粒子成立——透明的圖層提前進 beforeGroup 之後，
+  // 階層在它前面卻留在最後畫（或在它後面卻提前成 under）的疊加圖層就跑到它上面（下面）去了。10103118 艾達的環形光圈、速度線、
+  // 掃光、箭頭光全畫到人物切片 Img_Gacha 上面（站長 10-31 指出）。所以分組的卡池裡，夾在兩組之間的圖層一律照階層進那一組之前
+  if (grouped) flows.forEach((fl, j) => {
+    if (flowAt[j] < lo || flowAt[j] > hi || fl.beforeGroup != null) return
+    delete fl.under
+    fl.beforeGroup = groups.findIndex((x) => x > flowAt[j])
   })
   if (grouped) systems.forEach((s, k) => { if (groups.indexOf(at[k])) s.group = groups.indexOf(at[k]) })
 }
