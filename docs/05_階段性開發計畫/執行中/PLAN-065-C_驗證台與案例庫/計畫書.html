@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-065-C 驗證台與案例庫 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-065-C 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-065-C</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    驗證台與案例庫<span style="-webkit-text-fill-color:var(--text-secondary);"> 管理者驗證台 · 實測對帳 · 私有案例庫</span>
+  </h1>
+  <p class="hero-sub">讓站長貼上配裝、選首領、輸入遊戲內實測，立刻看到引擎預測與誤差；對完帳的案例存進私有 repo，成為引擎每次改動都要通過的回歸測試。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label purple">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value purple">PLAN-065-C</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-11-01</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">公開 repo（後台驗證台頁、配裝轉請求、模擬 API 用戶端）＋私有 repo（Worker 管理者通道、案例庫與回歸測試）</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value purple">開發中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-065-B</div>
+    </div>
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+  <div class="info-block">
+    <strong>065-B 算得出數字，但還沒有被遊戲證明過</strong><br>
+    引擎 A 已上線，正確性目前只對過評估階段的原型與站上面板。要標成「已驗證」，必須拿遊戲內的實測逐擊對帳。
+  </div>
+  <div class="problem-block">
+    <strong>對帳現在全靠人工，也存不下來</strong><br>
+    截圖轉成數字、配裝轉成請求、預測與實測逐項比對，每一步都要開發者手動處理；對完的結果也沒有地方累積，引擎下次改動時無法自動確認沒有改壞。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label purple">Design</div>
+  <div class="section-title">設計決策</div>
+  <div class="warning-block">
+    <strong>文件政策</strong><br>
+    本計畫書與進度表公開在 /documents，只寫工作項目、介面與驗收；計算方式、規則、案例內容都在私有 repo <code>mecharashi-sim</code>。
+  </div>
+  <div class="decision-block">
+    <strong>決策一：驗證台放在站上後台，只給管理者</strong><br>
+    在 <code>/admin</code> 下新增一頁，沿用後台既有的登入與權限。頁面只負責輸入與顯示，計算與完整拆解一律由 Worker 回傳（總綱決策 C1：完整拆解只給管理者）。
+  </div>
+  <div class="decision-block">
+    <strong>決策二：管理者身分由 Worker 驗證</strong><br>
+    頁面帶上站上的登入憑證，Worker 驗證憑證真偽、再比對管理者允許名單；Worker 不讀資料庫、不持有任何金鑰（總綱決策 C3）。
+    沒有通過驗證的請求維持一般使用者的待遇。
+  </div>
+  <div class="decision-block">
+    <strong>決策三：公開程式碼不寫死拆解內容</strong><br>
+    驗證台以通用方式呈現 Worker 回傳的完整拆解，不在公開 repo 定義它的結構，避免從前端程式碼推回計算方式。
+  </div>
+  <div class="decision-block">
+    <strong>決策四：配裝轉請求、模擬 API 用戶端做成共用模組</strong><br>
+    065-D 的傷害模式會直接沿用，不必重寫。
+  </div>
+  <div class="decision-block">
+    <strong>決策五：案例庫只放私有 repo</strong><br>
+    驗證台匯出案例檔，放進私有 repo 後成為回歸測試；截圖與錄影不進任何 repo，留在站長本機。
+  </div>
+  <div class="decision-block">
+    <strong>決策六：以「確認攻擊」預覽為主要對帳依據</strong><br>
+    預覽沒有隨機成分，一張截圖就是一筆確定的樣本；實際跳字與部位分布作為輔助。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label purple">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>Worker 的管理者通道：驗證登入憑證、允許名單、管理者可取得完整拆解。</li>
+      <li>公開 repo 共用模組：契約的公開型別、配裝轉請求、模擬 API 用戶端。</li>
+      <li>後台驗證台頁：載入配裝與養成假設、選煉獄首領、輸入實測、看預測與誤差、匯出案例。</li>
+      <li>私有 repo 的案例庫與回歸測試，以及首批實測入庫。</li>
+    </ul>
+  </div>
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>對一般玩家開放的傷害模式（065-D）。</li>
+      <li>Buff 與條件效果的計算（065-E、065-F）；驗證台會把它們列為未計入。</li>
+      <li>截圖自動辨識、錄影自動解析（數字由站長輸入）。</li>
+    </ul>
+  </div>
+  <div class="info-block">
+    <strong>驗收</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>管理者能在驗證台載入任一配裝、選任一煉獄首領，看到預測與完整拆解；未登入或非管理者拿不到完整拆解。</li>
+      <li>輸入實測後自動算出逐項誤差；案例可以匯出，並在私有 repo 重跑。</li>
+      <li>首批實測（第 1 週三關）入庫，單擊誤差達標或差異已歸因（列出未計入的來源）。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label purple">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-065-C 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-065_傷害模擬_總綱/計畫書.html">
+      <div class="doc-tag">Parent</div>
+      <h4>◆ PLAN-065 總綱</h4>
+      <p>架構決策與子計畫拆分</p>
+    </a>
+    <a class="doc-item" href="../PLAN-065-B_引擎A_面板與單擊/計畫書.html">
+      <div class="doc-tag">Prev</div>
+      <h4>◆ PLAN-065-B</h4>
+      <p>引擎 A：面板與單擊</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-065-C — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
