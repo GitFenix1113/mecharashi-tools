@@ -28,6 +28,7 @@ import {
   todayKey,
 } from './collect'
 import { budgetLimit, needsTruncatedMark, noteWrites, shouldWrite } from './collectBudget'
+import { isAllowedSource } from './origin'
 
 export interface Env {
   /** service account JSON 字串（CF Secret；本機走 workers/.dev.vars）。 */
@@ -117,10 +118,10 @@ function antiScrapeBlock(request: Request, env: Env, cors: Record<string, string
   // ⚠ 同源請求（Phase 5 路線 B：/api 掛在 mecharashi.wiki 之下）**不會帶 Origin header**，
   // 只靠 origin 比對會把正常訪客全部判成爬蟲 → 全站資料 403。故同時接受：
   //   · Sec-Fetch-Site: same-origin（瀏覽器自動帶，同源 fetch 的正字標記）
-  //   · Referer 前綴落在白名單（同源預設 referrer policy 會送完整 URL）
+  //   · Referer 的 origin 落在白名單（同源預設 referrer policy 會送完整 URL；取 origin 後完全比對，見 origin.ts）
   // 兩者與 Origin 一樣可偽造，安全強度不變；限流交由 zone Rate Limiting 承擔。
   const sameOrigin = request.headers.get('sec-fetch-site') === 'same-origin'
-  const okRef = sameOrigin || allowed.some(a => origin === a || referer.startsWith(a))
+  const okRef = sameOrigin || isAllowedSource(allowed, origin, referer)
   const asn = (request.cf as { asn?: number } | undefined)?.asn
   const fromDatacenter = asn !== undefined && DATACENTER_ASNS.has(asn)
   return (!okRef || fromDatacenter) ? json({ error: 'forbidden' }, 403, cors) : null
