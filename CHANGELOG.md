@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-10-30
+## [Unreleased] - 2026-11-01
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **admin**: 傷害模擬驗證台 /admin/sim（PLAN-065-C Phase C） (`ebad426`)
 - **lore**: 機師艾達補上卡池動態（引擎支援 Image＋UI_General） (`d8d7895`)
 - **lore**: 卡池動態補齊機甲 64 台、機師 62 位（換入 HuyT 擴充的引擎） (`608c4b3`)
 - **sim**: PLAN-065-A 遊戲身分鍵 gameRef 與傷害模擬前置 (`ce5ed19`)
@@ -336,6 +337,12 @@
 
 ### 📚 文件
 
+- **plan**: 065-C D-3 對帳摘要完成（13／15） (`f4b999a`)
+- **plan**: 065-C A-3 管理者通道部署驗收完成（12／15） (`f2a16f0`)
+- **plan**: 065-C D-1 案例回歸完成（11／15） (`0cf5585`)
+- **plan**: 065-C Phase C 完成（10／15），管理後台頁面規劃補驗證台 (`90f04d2`)
+- **plan**: 立案 PLAN-065-C 驗證台與案例庫，完成 A-1／A-2、Phase B（5／15） (`b7ae3d5`)
+- **plan**: 065-B 完成 14／14、065-A 13／14（gameRef 寫入、C4／C5 拍板） (`7780ba9`)
 - **plan**: 立案 PLAN-065-B 引擎 A（面板＋單擊），開發完成 13／14 (`0e5b26b`)
 - **raids**: PLAN-064 上線紀錄（F-2／H-5 完成，42／46） (`7e17af7`)
 - **raids**: PLAN-064 F-3 Cloudflare 白名單已加 /raids（36／41） (`9e530de`)
@@ -481,8 +488,15 @@
 - 更新首頁文字 (`e8a42e2`)
 - 調整機師頭像比例置中 (`0473986`)
 
+### 🧪 測試
+
+- **sim**: 驗證台目標選擇 resolveTarget 的單元測試 (`8730c33`)
+- **sim**: 凍結契約樣本供私有 repo 驗證（PLAN-065-C） (`59ddccd`)
+
 ### 🔧 維護
 
+- **worker**: /api 來源檢查的 Referer 改成取 origin 後完全比對 (`86db0e6`)
+- **sim**: PLAN-065-C Phase B 契約公開型別、配裝轉請求、模擬 API 用戶端 (`655d875`)
 - **raids**: PLAN-064 Phase B 武裝討伐集合接線與型別 (`278408b`)
 - **raids**: PLAN-064 Phase A 武裝討伐擷取與組裝腳本 (`16bde19`)
 - **scripts**: 機師卡判定認得 NPC 轉正的 5 碼卡號（差異報告、--other-icons） (`c7202e5`)
@@ -620,6 +634,7 @@
 
 ### 🚀 CI/CD
 
+- 推上 main 與 PR 時跑 npm test（只回報、不擋部署） (`8f6cc64`)
 - 台版公告每週自動抓取排程（PLAN-048 2-9） (`02d49cb`)
 - 修好 PR 預覽部署的 base path（網域搬遷後未更新） (`860f35a`)
 - PLAN-029 Phase 2 前端正式切換 — deploy.yml 注入 VITE_WORKER_API_BASE (`2d367cd`)
