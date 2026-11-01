@@ -165,14 +165,14 @@
   <div class="section-label purple">Progress</div>
   <div class="section-title">總進度</div>
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">5</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">10</div><div class="summary-lbl">已完成</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">10</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">5</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">15</div><div class="summary-lbl">工作項</div></div>
   </div>
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-purple);">5 / 15</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 33%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-purple);">10 / 15</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 67%"></div></div>
   </div>
   <div class="impact-note"><strong>目標效果：</strong>站長在後台輸入實測，就能立刻看到引擎差多少、差在哪；對過的案例自動變成回歸測試，引擎之後加 Buff、加攻擊方式都不會不知不覺改壞。</div>
 </section>
@@ -286,75 +286,75 @@
     <div class="task-group-header">
       <div class="task-group-title">C-1 &nbsp; 路由與權限</div>
       <div class="task-group-meta">mecharashi-tools/src/pages</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">後台新頁</div>
-        <div class="task-desc">放在 /admin 之下（不新增頂層路徑），只給管理者；後台入口、頁名與 sitemap 排除。</div>
+        <div class="task-desc">放在 /admin 之下（不新增頂層路徑），只給管理者；後台入口、頁名與 sitemap 排除。<b>2026-11-01</b>：完成，路徑 <code>/admin/sim</code>（不需補 Cloudflare 白名單）；後台入口卡片、頁名、sitemap 排除、使用統計排除都已加上。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-2 &nbsp; 輸入：配裝與目標</div>
       <div class="task-group-meta">mecharashi-tools/src/pages</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">配裝、養成假設、煉獄首領</div>
-        <div class="task-desc">貼分享碼或帶入目前的模擬器配裝；設定潛能、改裝、科研；從武裝討伐資料挑首領。</div>
+        <div class="task-desc">貼分享碼或帶入目前的模擬器配裝；設定潛能、改裝、科研；從武裝討伐資料挑首領。<b>2026-11-01</b>：完成。配裝可貼分享碼或從本機書架挑；首領可選已發布的期，未發布的期可加入匯入草稿，也能手動填目標的遊戲 ID；另可填遊戲內面板覆寫。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-3 &nbsp; 輸入：實測</div>
       <div class="task-group-meta">mecharashi-tools/src/pages</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">預覽與實際跳字</div>
-        <div class="task-desc">預覽的單擊、擊數、命中率、暴擊率；實際逐擊跳字、部位與是否暴擊。</div>
+        <div class="task-desc">預覽的單擊、擊數、命中率、暴擊率；實際逐擊跳字、部位與是否暴擊。<b>2026-11-01</b>：完成。實際跳字用簡短記號輸入（命中、暴擊、未命中、部位），認不得的記號會列出來。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-4 &nbsp; 結果與誤差</div>
       <div class="task-group-meta">mecharashi-tools/src/pages</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">預測、未計入、誤差</div>
-        <div class="task-desc">顯示預測與未計入清單、以通用方式呈現完整拆解、逐項算出誤差並標示可能原因。</div>
+        <div class="task-desc">顯示預測與未計入清單、以通用方式呈現完整拆解、逐項算出誤差並標示可能原因。<b>2026-11-01</b>：完成。誤差表分「判定」與「參考」兩種；完整拆解以通用樹狀檢視呈現，可點選數字當預覽單擊的比對對象。本機以正式 Worker 實跑通過；完整拆解的實際顯示要等 A-3 部署後由站長確認。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
     <div class="task-group-header">
       <div class="task-group-title">C-5 &nbsp; 匯出案例</div>
       <div class="task-group-meta">mecharashi-tools/src/pages</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">案例檔下載</div>
-        <div class="task-desc">包含請求、引擎與資料版本、實測與備註；下載後放進私有 repo。</div>
+        <div class="task-desc">包含請求、引擎與資料版本、實測與備註；下載後放進私有 repo。<b>2026-11-01</b>：完成。下載 JSON 案例檔，內含請求、引擎與資料版本、結果、實測與備註，不含登入憑證。</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>
