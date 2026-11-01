@@ -2,6 +2,8 @@
 // 公開網站 ↔ `/sim/v1/*` Worker 之間的資料結構。純型別、無實作。
 //
 // 正本在私有 repo mecharashi-sim 的 contract/v1.ts；改契約時兩邊一起改。
+// 兩份是否一致由私有 repo 的型別對照檢查；站上組出的請求樣本凍在 __fixtures__/sim-contract-samples.json
+// （requestBuilder.test.ts 末段），私有端拿它驗 schema。
 // 本檔只收站上會用到的部分，註解只寫欄位是什麼，不寫計算方式。
 //
 // 與正本刻意不同的三處：

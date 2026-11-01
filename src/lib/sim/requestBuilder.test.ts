@@ -8,6 +8,9 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Backpack, Boss, Component, Mech, MechForm, Module, Pilot, PilotSkillDoc, RaidSeason, Stage, Weapon } from '../../types/index.ts'
 import type { EquipSet, LoadoutDraft } from '../../types/loadout.ts'
 import { buildWorld } from '../../utils/loadoutRules.ts'
@@ -15,6 +18,8 @@ import {
   buildRaidTarget, buildSimLoadout, buildSingleRequest, defaultScenario, highestRaidDifficulty, simSlotOf, simWeaponKey,
   type GrowthAssumptions,
 } from './requestBuilder.ts'
+import type { SimRequestV1, SimResponseV1, SimResultV1 } from './contract.ts'
+import { buildCaseFile } from './verifyCase.ts'
 
 // ─── fixtures ────────────────────────────────────────────────────────────────
 
@@ -501,4 +506,121 @@ test('buildSingleRequest：一套配裝 × 一個目標 × 預設情境，每個
   assert.equal(l1.clientEngineVersion, '0.2.0')
   // JSON 化之後不留 undefined 欄位（Worker 的 schema 拒絕未知欄位）
   assert.deepEqual(JSON.parse(JSON.stringify(req)), req)
+})
+
+// ─── 契約樣本（PLAN-065-C；給私有 repo 驗證）────────────────────────────────────
+//
+// 站上真的會送出的請求、驗證台匯出的案例檔，凍成 __fixtures__/sim-contract-samples.json。
+// 私有 repo mecharashi-sim 的契約檢查讀這份檔：請求要過 Worker 的 schema、案例檔要讀得懂。
+// 這裡只守「樣本＝程式現在的輸出」：請求或案例檔的形狀一改，先紅在這裡；
+// 確認私有端也跟著改了，再更新樣本（PowerShell）：
+//   $env:UPDATE_SIM_SAMPLES='1'; node --test src/lib/sim/requestBuilder.test.ts; Remove-Item Env:UPDATE_SIM_SAMPLES
+
+const SAMPLES_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), '__fixtures__', 'sim-contract-samples.json')
+
+function contractSamples() {
+  // 什麼都帶：形態分頁、混搭、模組、攜帶技能、元件、背包、雙武器組、改裝（預設＋單把）、面板覆寫、非預設情境
+  const full = buildSimLoadout({
+    world: WORLD,
+    growth: { research: 'none', refit: { default: { normal: 8, advanced: 4 }, perWeapon: { 'm-lh': { normal: 3, advanced: 0, advValue: 12 } } } },
+    draft: {
+      pilotId: 'pilot_form', mechId: 'mech_a', activeSetKey: 'form_x_先鋒', potential: 4,
+      parts: { leftArm: 'mech_b' },
+      modules: { torso: 'mod_2a', leftArm: 'mod_2a', rightArm: 'mod_1b' },
+      skills: { carried: ['skill_main', 'skill_passive'] },
+      sets: {
+        'form_x_先鋒': {
+          backpackId: 'bp_a',
+          mounts: [
+            { weaponId: 'w_rh', bank: 'main', slot: 'singleHand', side: 'right', setup: { triggerComponentIds: ['c_t1'], effectComponentIds: ['c_e1'] } },
+            { weaponId: 'w_lh', bank: 'main', slot: 'singleHand', side: 'left' },
+            { weaponId: 'w_ls', bank: 'main', slot: 'shoulder', side: 'left' },
+            { weaponId: 'w_rs', bank: 'backup', slot: 'shoulder', side: 'right' },
+          ],
+        },
+      },
+    },
+  })
+  assert.ok(full.loadout)
+  const fullTarget = buildRaidTarget({ season: S18, stage: S18_G1, bosses: BOSSES, difficulty: 'hell', part: 'body' }).target
+  assert.ok(fullTarget)
+  const fullReq = buildSingleRequest({
+    // 驗證台的做法：面板覆寫掛在 loadout 上、情境由預設情境改兩個欄位
+    loadout: { ...full.loadout, panelOverrides: { melee: 2100, fire: 3200, 'weaponAttack:m-rh': 1500, 'weaponHit:m-rh': 900, 'weaponCrit:m-rh': 300 } },
+    target: fullTarget,
+    scenario: { ...defaultScenario(), attack: { timing: 'first' }, probability: 'always' },
+    level: 'L2', perHit: true,
+    actions: [{ weaponKey: 'm-rh', skill: 'default' }, { weaponKey: 'm-ls', skill: 'equipment', aimPart: 'leg' }],
+  })
+
+  // 最少：預設配裝、雙首領關的第二位、L1
+  const min = buildSimLoadout({ world: WORLD, growth: RESEARCH_ONLY, draft: draftOf() })
+  assert.ok(min.loadout)
+  const minTarget = buildRaidTarget({ season: S11, stage: S11_G1, bosses: BOSSES, bossId: 'raid-11-g1-b2' }).target
+  assert.ok(minTarget)
+  const minReq = buildSingleRequest({
+    loadout: min.loadout, target: minTarget, level: 'L1', clientEngineVersion: '0.1.0',
+    actions: [{ weaponKey: 'm-rh', skill: 'default' }],
+  })
+
+  // 雙手武器、沒有煉獄的早期期數
+  const dual = buildSimLoadout({
+    world: WORLD, growth: RESEARCH_ONLY,
+    draft: draftOf({ set: { mounts: [{ weaponId: 'w_dual', bank: 'main', slot: 'dualHand' }] } }),
+  })
+  assert.ok(dual.loadout)
+  const dualTarget = buildRaidTarget({ season: S03, stage: S03_G1, bosses: BOSSES }).target
+  assert.ok(dualTarget)
+  const dualReq = buildSingleRequest({ loadout: dual.loadout, target: dualTarget, level: 'L2', actions: [{ weaponKey: 'm-dual', skill: 'default' }] })
+
+  // 驗證台匯出的案例檔（結果是假的，只示範形狀；私有端只檢查讀不讀得懂）
+  const result = (job: number): SimResultV1 => ({
+    job,
+    status: 'partial',
+    L0: {
+      perAction: { mean: 4310 },
+      segments: [{ stage: '首擊', occurProb: 1, hits: 1, expected: 4310, perHitMean: 4310, hitRate: 0.95, critRate: 0 }],
+      approx: true,
+      badge: 'approx',
+    },
+    L1: {
+      zones: [{ key: 'z0', value: 1 }],
+      counted: [{ src: { kind: 'weapon', id: 50102, owner: 'atk', slot: 'm-rh' }, bufIds: [] }],
+      notCounted: [{ src: { kind: 'talent', id: 202103, owner: 'atk' }, reason: 'funcTypeUnsupported', forceable: false }],
+    },
+    L2: { parts: { body: { nonCrit: 4310 } } },
+    switches: [],
+    derived: { panel: { melee: 2100 } },
+    warnings: [{ code: 'timingAssumedFirst' }],
+  })
+  const response: SimResponseV1 = {
+    contract: 'v1', engineVersion: '0.1.0', dataVersion: 'sample', buildNum: 'sample', overridesVersion: 'sample', flagsDigest: 'sample',
+    limits: { maxJobs: 8, maxBodyBytes: 65536, maxUnits: 2000, maxMcSamples: 0, rotationMaxTurns: 0, maxRps: 2 },
+    budget: { units: 20, max: 2000 },
+    results: [result(0), result(1)],
+  }
+  const caseFile = buildCaseFile({
+    createdAt: new Date('2026-11-01T00:00:00Z'),
+    title: '樣本', note: '假結果，只示範形狀', shareCode: 'SAMPLE',
+    context: { pilot: 'pilot_form', mech: 'mech_a', target: '18-1', weapons: { 'm-rh': 'w_rh', 'm-ls': 'w_ls' } },
+    request: fullReq,
+    response,
+    measures: [
+      { preview: { perHit: 4311, hits: 1, hitPct: 95, critPct: 0 }, hitLog: '4300 4320! x 體:4310', perHitPointer: '/parts/body/nonCrit', note: '截圖 預覽_01.png' },
+      { preview: { hits: 1 }, hitLog: '' },
+    ],
+  })
+
+  return { requests: { full: fullReq, minimal: minReq, dualHand: dualReq } satisfies Record<string, SimRequestV1>, caseFile }
+}
+
+test('契約樣本：與 __fixtures__/sim-contract-samples.json 一致（私有 repo 拿它驗 schema）', () => {
+  const now = JSON.parse(JSON.stringify(contractSamples())) as unknown
+  if (process.env.UPDATE_SIM_SAMPLES === '1') {
+    fs.writeFileSync(SAMPLES_FILE, JSON.stringify(now, null, 2) + '\n')
+    return
+  }
+  const frozen = JSON.parse(fs.readFileSync(SAMPLES_FILE, 'utf8')) as unknown
+  assert.deepEqual(now, frozen,
+    '請求或案例檔的形狀變了：確認私有 repo 的契約與讀法也跟著改，再用 UPDATE_SIM_SAMPLES=1 更新樣本（見本段開頭）')
 })

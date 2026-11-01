@@ -1,0 +1,745 @@
+{
+  "requests": {
+    "full": {
+      "v": 1,
+      "locale": "zh-TW",
+      "mode": "single",
+      "loadouts": [
+        {
+          "pilot": {
+            "pilotInfoId": 10103160,
+            "potential": 4,
+            "ndEffective": [],
+            "carried": [
+              {
+                "mainSkillIds": [
+                  202102
+                ]
+              },
+              {
+                "passiveSkillIds": [
+                  202103
+                ]
+              }
+            ],
+            "form": {
+              "passiveSkillId": 5223
+            }
+          },
+          "mech": {
+            "quality": "SS",
+            "parts": {
+              "body": {
+                "suitId": 1011
+              },
+              "larm": {
+                "suitId": 2022
+              },
+              "rarm": {
+                "suitId": 1011
+              },
+              "leg": {
+                "suitId": 1011
+              }
+            },
+            "modules": [
+              {
+                "position": "body",
+                "entryId": 3001,
+                "level": 4,
+                "itemId": 300102
+              },
+              {
+                "position": "larm",
+                "entryId": 3001,
+                "level": 4,
+                "itemId": 300102
+              },
+              {
+                "position": "rarm",
+                "entryId": 3002,
+                "level": 1
+              }
+            ]
+          },
+          "weapons": [
+            {
+              "key": "m-lh",
+              "slot": "lh",
+              "bank": 0,
+              "weaponInfoId": 50101,
+              "refit": {
+                "normal": 3,
+                "advanced": 0,
+                "advValue": 12
+              }
+            },
+            {
+              "key": "m-rh",
+              "slot": "rh",
+              "bank": 0,
+              "weaponInfoId": 50102,
+              "refit": {
+                "normal": 8,
+                "advanced": 4
+              },
+              "components": {
+                "trigger": [
+                  70001
+                ],
+                "effect": [
+                  70002
+                ]
+              }
+            },
+            {
+              "key": "m-ls",
+              "slot": "ls",
+              "bank": 0,
+              "weaponInfoId": 50104,
+              "refit": {
+                "normal": 8,
+                "advanced": 4
+              }
+            },
+            {
+              "key": "b-rs",
+              "slot": "rs",
+              "bank": 1,
+              "weaponInfoId": 50105,
+              "refit": {
+                "normal": 8,
+                "advanced": 4
+              }
+            }
+          ],
+          "growth": {
+            "research": "none"
+          },
+          "backpack": {
+            "backpackInfoId": 60101706
+          },
+          "panelOverrides": {
+            "melee": 2100,
+            "fire": 3200,
+            "weaponAttack:m-rh": 1500,
+            "weaponHit:m-rh": 900,
+            "weaponCrit:m-rh": 300
+          }
+        }
+      ],
+      "targets": [
+        {
+          "kind": "raid",
+          "seasonNo": 18,
+          "stageNo": 1,
+          "difficulty": 3,
+          "battleMapId": 8467,
+          "templateId": 846799,
+          "bossIndex": 0,
+          "part": "body"
+        }
+      ],
+      "scenarios": [
+        {
+          "switchCatalog": "0.0.0",
+          "attack": {
+            "timing": "first"
+          },
+          "switches": {},
+          "declared": {},
+          "numeric": {},
+          "probability": "always",
+          "boss": {
+            "openingState": true
+          }
+        }
+      ],
+      "jobs": [
+        {
+          "l": 0,
+          "t": 0,
+          "s": 0,
+          "action": {
+            "weaponKey": "m-rh",
+            "skill": "default"
+          }
+        },
+        {
+          "l": 0,
+          "t": 0,
+          "s": 0,
+          "action": {
+            "weaponKey": "m-ls",
+            "skill": "equipment",
+            "aimPart": "leg"
+          }
+        }
+      ],
+      "output": {
+        "level": "L2",
+        "perHit": true
+      }
+    },
+    "minimal": {
+      "v": 1,
+      "locale": "zh-TW",
+      "mode": "single",
+      "loadouts": [
+        {
+          "pilot": {
+            "pilotInfoId": 10103174,
+            "potential": 5,
+            "ndEffective": [],
+            "carried": []
+          },
+          "mech": {
+            "quality": "SS",
+            "parts": {
+              "body": {
+                "suitId": 1011
+              },
+              "larm": {
+                "suitId": 1011
+              },
+              "rarm": {
+                "suitId": 1011
+              },
+              "leg": {
+                "suitId": 1011
+              }
+            },
+            "modules": []
+          },
+          "weapons": [
+            {
+              "key": "m-rh",
+              "slot": "rh",
+              "bank": 0,
+              "weaponInfoId": 50102
+            }
+          ],
+          "growth": {
+            "research": "full"
+          }
+        }
+      ],
+      "targets": [
+        {
+          "kind": "raid",
+          "seasonNo": 11,
+          "stageNo": 1,
+          "difficulty": 4,
+          "battleMapId": 8356,
+          "templateId": 835602,
+          "bossIndex": 1
+        }
+      ],
+      "scenarios": [
+        {
+          "switchCatalog": "0.0.0",
+          "attack": {
+            "timing": "auto"
+          },
+          "switches": {},
+          "declared": {},
+          "numeric": {},
+          "probability": "expected",
+          "boss": {
+            "openingState": true
+          }
+        }
+      ],
+      "jobs": [
+        {
+          "l": 0,
+          "t": 0,
+          "s": 0,
+          "action": {
+            "weaponKey": "m-rh",
+            "skill": "default"
+          }
+        }
+      ],
+      "output": {
+        "level": "L1"
+      },
+      "clientEngineVersion": "0.1.0"
+    },
+    "dualHand": {
+      "v": 1,
+      "locale": "zh-TW",
+      "mode": "single",
+      "loadouts": [
+        {
+          "pilot": {
+            "pilotInfoId": 10103174,
+            "potential": 5,
+            "ndEffective": [],
+            "carried": []
+          },
+          "mech": {
+            "quality": "SS",
+            "parts": {
+              "body": {
+                "suitId": 1011
+              },
+              "larm": {
+                "suitId": 1011
+              },
+              "rarm": {
+                "suitId": 1011
+              },
+              "leg": {
+                "suitId": 1011
+              }
+            },
+            "modules": []
+          },
+          "weapons": [
+            {
+              "key": "m-dual",
+              "slot": "dual",
+              "bank": 0,
+              "weaponInfoId": 50103
+            }
+          ],
+          "growth": {
+            "research": "full"
+          }
+        }
+      ],
+      "targets": [
+        {
+          "kind": "raid",
+          "seasonNo": 3,
+          "stageNo": 1,
+          "difficulty": 3,
+          "battleMapId": 8223,
+          "templateId": 822301,
+          "bossIndex": 0
+        }
+      ],
+      "scenarios": [
+        {
+          "switchCatalog": "0.0.0",
+          "attack": {
+            "timing": "auto"
+          },
+          "switches": {},
+          "declared": {},
+          "numeric": {},
+          "probability": "expected",
+          "boss": {
+            "openingState": true
+          }
+        }
+      ],
+      "jobs": [
+        {
+          "l": 0,
+          "t": 0,
+          "s": 0,
+          "action": {
+            "weaponKey": "m-dual",
+            "skill": "default"
+          }
+        }
+      ],
+      "output": {
+        "level": "L2"
+      }
+    }
+  },
+  "caseFile": {
+    "kind": "mecharashi-sim-case",
+    "v": 1,
+    "createdAt": "2026-11-01T00:00:00.000Z",
+    "title": "樣本",
+    "note": "假結果，只示範形狀",
+    "source": {
+      "shareCode": "SAMPLE"
+    },
+    "context": {
+      "pilot": "pilot_form",
+      "mech": "mech_a",
+      "target": "18-1",
+      "weapons": {
+        "m-rh": "w_rh",
+        "m-ls": "w_ls"
+      }
+    },
+    "request": {
+      "v": 1,
+      "locale": "zh-TW",
+      "mode": "single",
+      "loadouts": [
+        {
+          "pilot": {
+            "pilotInfoId": 10103160,
+            "potential": 4,
+            "ndEffective": [],
+            "carried": [
+              {
+                "mainSkillIds": [
+                  202102
+                ]
+              },
+              {
+                "passiveSkillIds": [
+                  202103
+                ]
+              }
+            ],
+            "form": {
+              "passiveSkillId": 5223
+            }
+          },
+          "mech": {
+            "quality": "SS",
+            "parts": {
+              "body": {
+                "suitId": 1011
+              },
+              "larm": {
+                "suitId": 2022
+              },
+              "rarm": {
+                "suitId": 1011
+              },
+              "leg": {
+                "suitId": 1011
+              }
+            },
+            "modules": [
+              {
+                "position": "body",
+                "entryId": 3001,
+                "level": 4,
+                "itemId": 300102
+              },
+              {
+                "position": "larm",
+                "entryId": 3001,
+                "level": 4,
+                "itemId": 300102
+              },
+              {
+                "position": "rarm",
+                "entryId": 3002,
+                "level": 1
+              }
+            ]
+          },
+          "weapons": [
+            {
+              "key": "m-lh",
+              "slot": "lh",
+              "bank": 0,
+              "weaponInfoId": 50101,
+              "refit": {
+                "normal": 3,
+                "advanced": 0,
+                "advValue": 12
+              }
+            },
+            {
+              "key": "m-rh",
+              "slot": "rh",
+              "bank": 0,
+              "weaponInfoId": 50102,
+              "refit": {
+                "normal": 8,
+                "advanced": 4
+              },
+              "components": {
+                "trigger": [
+                  70001
+                ],
+                "effect": [
+                  70002
+                ]
+              }
+            },
+            {
+              "key": "m-ls",
+              "slot": "ls",
+              "bank": 0,
+              "weaponInfoId": 50104,
+              "refit": {
+                "normal": 8,
+                "advanced": 4
+              }
+            },
+            {
+              "key": "b-rs",
+              "slot": "rs",
+              "bank": 1,
+              "weaponInfoId": 50105,
+              "refit": {
+                "normal": 8,
+                "advanced": 4
+              }
+            }
+          ],
+          "growth": {
+            "research": "none"
+          },
+          "backpack": {
+            "backpackInfoId": 60101706
+          },
+          "panelOverrides": {
+            "melee": 2100,
+            "fire": 3200,
+            "weaponAttack:m-rh": 1500,
+            "weaponHit:m-rh": 900,
+            "weaponCrit:m-rh": 300
+          }
+        }
+      ],
+      "targets": [
+        {
+          "kind": "raid",
+          "seasonNo": 18,
+          "stageNo": 1,
+          "difficulty": 3,
+          "battleMapId": 8467,
+          "templateId": 846799,
+          "bossIndex": 0,
+          "part": "body"
+        }
+      ],
+      "scenarios": [
+        {
+          "switchCatalog": "0.0.0",
+          "attack": {
+            "timing": "first"
+          },
+          "switches": {},
+          "declared": {},
+          "numeric": {},
+          "probability": "always",
+          "boss": {
+            "openingState": true
+          }
+        }
+      ],
+      "jobs": [
+        {
+          "l": 0,
+          "t": 0,
+          "s": 0,
+          "action": {
+            "weaponKey": "m-rh",
+            "skill": "default"
+          }
+        },
+        {
+          "l": 0,
+          "t": 0,
+          "s": 0,
+          "action": {
+            "weaponKey": "m-ls",
+            "skill": "equipment",
+            "aimPart": "leg"
+          }
+        }
+      ],
+      "output": {
+        "level": "L2",
+        "perHit": true
+      }
+    },
+    "engine": {
+      "engineVersion": "0.1.0",
+      "dataVersion": "sample",
+      "buildNum": "sample",
+      "overridesVersion": "sample",
+      "flagsDigest": "sample"
+    },
+    "admin": true,
+    "results": [
+      {
+        "job": 0,
+        "status": "partial",
+        "L0": {
+          "perAction": {
+            "mean": 4310
+          },
+          "segments": [
+            {
+              "stage": "首擊",
+              "occurProb": 1,
+              "hits": 1,
+              "expected": 4310,
+              "perHitMean": 4310,
+              "hitRate": 0.95,
+              "critRate": 0
+            }
+          ],
+          "approx": true,
+          "badge": "approx"
+        },
+        "L1": {
+          "zones": [
+            {
+              "key": "z0",
+              "value": 1
+            }
+          ],
+          "counted": [
+            {
+              "src": {
+                "kind": "weapon",
+                "id": 50102,
+                "owner": "atk",
+                "slot": "m-rh"
+              },
+              "bufIds": []
+            }
+          ],
+          "notCounted": [
+            {
+              "src": {
+                "kind": "talent",
+                "id": 202103,
+                "owner": "atk"
+              },
+              "reason": "funcTypeUnsupported",
+              "forceable": false
+            }
+          ]
+        },
+        "L2": {
+          "parts": {
+            "body": {
+              "nonCrit": 4310
+            }
+          }
+        },
+        "switches": [],
+        "derived": {
+          "panel": {
+            "melee": 2100
+          }
+        },
+        "warnings": [
+          {
+            "code": "timingAssumedFirst"
+          }
+        ]
+      },
+      {
+        "job": 1,
+        "status": "partial",
+        "L0": {
+          "perAction": {
+            "mean": 4310
+          },
+          "segments": [
+            {
+              "stage": "首擊",
+              "occurProb": 1,
+              "hits": 1,
+              "expected": 4310,
+              "perHitMean": 4310,
+              "hitRate": 0.95,
+              "critRate": 0
+            }
+          ],
+          "approx": true,
+          "badge": "approx"
+        },
+        "L1": {
+          "zones": [
+            {
+              "key": "z0",
+              "value": 1
+            }
+          ],
+          "counted": [
+            {
+              "src": {
+                "kind": "weapon",
+                "id": 50102,
+                "owner": "atk",
+                "slot": "m-rh"
+              },
+              "bufIds": []
+            }
+          ],
+          "notCounted": [
+            {
+              "src": {
+                "kind": "talent",
+                "id": 202103,
+                "owner": "atk"
+              },
+              "reason": "funcTypeUnsupported",
+              "forceable": false
+            }
+          ]
+        },
+        "L2": {
+          "parts": {
+            "body": {
+              "nonCrit": 4310
+            }
+          }
+        },
+        "switches": [],
+        "derived": {
+          "panel": {
+            "melee": 2100
+          }
+        },
+        "warnings": [
+          {
+            "code": "timingAssumedFirst"
+          }
+        ]
+      }
+    ],
+    "measurements": [
+      {
+        "preview": {
+          "perHit": 4311,
+          "hits": 1,
+          "hitPct": 95,
+          "critPct": 0
+        },
+        "hitLog": "4300 4320! x 體:4310",
+        "perHitPointer": "/parts/body/nonCrit",
+        "note": "截圖 預覽_01.png",
+        "job": 0,
+        "hits": [
+          {
+            "damage": 4300,
+            "crit": false
+          },
+          {
+            "damage": 4320,
+            "crit": true
+          },
+          {
+            "damage": null,
+            "crit": false
+          },
+          {
+            "damage": 4310,
+            "crit": false,
+            "part": "body"
+          }
+        ]
+      },
+      {
+        "preview": {
+          "hits": 1
+        },
+        "hitLog": "",
+        "job": 1,
+        "hits": []
+      }
+    ]
+  }
+}
