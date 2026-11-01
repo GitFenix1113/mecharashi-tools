@@ -165,14 +165,14 @@
   <div class="section-label purple">Progress</div>
   <div class="section-title">總進度</div>
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">0</div><div class="summary-lbl">已完成</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">2</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">1</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">1</div><div class="summary-lbl">進行中</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">7</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">9</div><div class="summary-lbl">工作項</div></div>
   </div>
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-purple);">0 / 9</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 0%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-purple);">1 / 9</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 11%"></div></div>
   </div>
   <div class="impact-note"><strong>目標效果：</strong>玩家在配裝模擬器切到傷害模式，就能對武裝討伐首領看到附可信度標示的傷害預估；引擎與資料留在私有後端。</div>
 </section>
@@ -189,7 +189,7 @@
     <div class="task-row">
       <div>
         <div class="task-name">前置資料對照與保護骨架</div>
-        <div class="task-desc">gameRef 回填、私有 repo、ping Worker、凍結人工效果。<b>2026-10-28 開發者工項完成（11／14）</b>，剩站長的部署量測、待確認筆數寫入、C4／C5 拍板。</div>
+        <div class="task-desc">gameRef 回填、私有 repo、ping Worker、凍結人工效果。<b>2026-10-28 開發者工項完成；2026-11-01 拍板 C4／C5、gameRef 寫入 1,814 筆（13／14）</b>，只剩手機 4G 量測。</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status doing">進行中</span>
@@ -199,15 +199,15 @@
     <div class="task-group-header">
       <div class="task-group-title">065-B &nbsp; 引擎 A（面板＋單擊）</div>
       <div class="task-group-meta"><a href="../PLAN-065-B_引擎A_面板與單擊/進度表.html" style="color:var(--accent-purple)">065-B 進度表</a></div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">引擎 A（面板＋單擊）</div>
-        <div class="task-desc">資料編譯管線 v0、面板、單擊、run 端點、golden（2026-10-29 開發完成 13／14；待站長部署與邊緣 CPU 確認）</div>
+        <div class="task-desc">資料編譯管線 v0、面板、單擊、run 端點、golden（2026-10-29 開發完成；2026-11-01 部署上線、邊緣 CPU 達標，14／14）</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status doing">進行中</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
@@ -329,18 +329,18 @@
     <div class="task-row">
       <div>
         <div class="task-name">C4 Workers 方案與升級時機</div>
-        <div class="task-desc">Free 或 Paid；建議最晚在 065-F 開工前升 Paid。</div>
+        <div class="task-desc"><b>2026-11-01 拍板</b>：065-A～C 期間維持 Free，065-F 開工前升 Paid。</div>
       </div>
       <div class="task-assignee">065-A 對外前</div>
-      <span class="status blocked">待拍板</span>
+      <span class="status done">已拍板</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">C5 限流規則涵蓋 /sim/</div>
-        <div class="task-desc">唯一一條 zone 規則如何同時涵蓋 /api 與 /sim；需先截現有規則。</div>
+        <div class="task-desc"><b>2026-11-01 拍板並套用</b>：/sim/ 併進唯一那條 zone 規則、與 /api 共用門檻（門檻值在私有 repo）。</div>
       </div>
       <div class="task-assignee">065-A 對外前</div>
-      <span class="status blocked">待拍板</span>
+      <span class="status done">已拍板</span>
     </div>
     <div class="task-row">
       <div>
