@@ -1,5 +1,6 @@
 export type { ChangelogEntry, ChangelogMonth, ChangelogType } from './types'
 
+import nov2026 from './2026-11'
 import oct2026 from './2026-10'
 import sep2026 from './2026-09'
 import aug2026 from './2026-08'
@@ -10,6 +11,7 @@ import type { ChangelogMonth } from './types'
 
 // 依時間倒序排列（最新月份在前）
 export const SITE_CHANGELOG: ChangelogMonth[] = [
+  nov2026,
   oct2026,
   sep2026,
   aug2026,

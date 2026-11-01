@@ -468,11 +468,13 @@ export interface SingleRequestInput {
   level: SimOutputV1['level']
   /** 回傳每擊結果（只在 L2 有效） */
   perHit?: boolean
+  /** 省略＝defaultScenario() */
+  scenario?: SimScenarioV1
   clientEngineVersion?: string
   clientDataVersion?: string
 }
 
-/** 一套配裝 × 一個目標 × 預設情境，每個動作一個 job 的單擊請求。 */
+/** 一套配裝 × 一個目標 × 一個情境（預設全部交給引擎），每個動作一個 job 的單擊請求。 */
 export function buildSingleRequest(input: SingleRequestInput): SimRequestV1 {
   const output: SimOutputV1 = input.perHit ? { level: input.level, perHit: true } : { level: input.level }
   const req: SimRequestV1 = {
@@ -481,7 +483,7 @@ export function buildSingleRequest(input: SingleRequestInput): SimRequestV1 {
     mode: 'single',
     loadouts: [input.loadout],
     targets: [input.target],
-    scenarios: [defaultScenario()],
+    scenarios: [input.scenario ?? defaultScenario()],
     jobs: input.actions.map((action) => ({ l: 0, t: 0, s: 0, action: { ...action } })),
     output,
   }

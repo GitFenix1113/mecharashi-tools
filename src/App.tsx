@@ -48,6 +48,7 @@ const AdminSystemLogPage       = lazy(() => import('./pages/admin/AdminSystemLog
 const AdminAnalyticsPage       = lazy(() => import('./pages/admin/AdminAnalyticsPage'))
 const AdminAnnouncementsPage   = lazy(() => import('./pages/admin/AdminAnnouncementsPage'))
 const AdminRaidsPage           = lazy(() => import('./pages/admin/AdminRaidsPage'))
+const AdminSimVerifyPage       = lazy(() => import('./pages/admin/AdminSimVerifyPage'))
 const RaidsPage                = lazy(() => import('./pages/raids/RaidsPage'))
 const RaidSeasonPage           = lazy(() => import('./pages/raids/RaidSeasonPage'))
 const RainbowMechPlannerPage   = lazy(() => import('./pages/guides/tools/RainbowMechPlannerPage'))
@@ -156,6 +157,11 @@ function App() {
             <Route
               path="admin/raids"
               element={<AdminRoute><Suspense fallback={null}><AdminRaidsPage /></Suspense></AdminRoute>}
+            />
+            {/* 傷害模擬驗證台（PLAN-065-C）：只開 ADMIN。完整拆解另由 /sim Worker 依允許名單判斷，頁面權限只是第一道 */}
+            <Route
+              path="admin/sim"
+              element={<AdminRoute><Suspense fallback={null}><AdminSimVerifyPage /></Suspense></AdminRoute>}
             />
             <Route
               path="admin/analytics"

@@ -210,6 +210,18 @@ export default function AdminPage() {
           </div>
           <span className="text-accent-red/50 ml-2 text-lg">›</span>
         </Link>
+        {/* 傷害模擬驗證台（PLAN-065-C）：配裝＋首領送 /sim，對遊戲內實測、匯出案例到私有 repo */}
+        <Link
+          to="/admin/sim"
+          className="inline-flex items-center gap-3 px-5 py-3 bg-accent-yellow/10 border border-accent-yellow/30 rounded-xl hover:bg-accent-yellow/20 hover:border-accent-yellow/50 transition-colors no-underline"
+        >
+          <span className="text-accent-yellow text-xl">🎯</span>
+          <div>
+            <div className="text-sm font-bold text-accent-yellow">傷害模擬驗證台</div>
+            <div className="text-xs text-text-dim">引擎預測對遊戲內實測、匯出回歸案例</div>
+          </div>
+          <span className="text-accent-yellow/50 ml-2 text-lg">›</span>
+        </Link>
         {/* 使用統計（PLAN-046）：ADMIN 即可見——彙總數字、不含個人行為資料，
             敏感度低於下方的系統日誌（那個含裝置指紋，故限 OWNER）。 */}
         <Link

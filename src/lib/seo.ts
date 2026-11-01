@@ -68,6 +68,7 @@ export const PAGE_TITLES: Record<string, TitleSpec> = {
   '/admin/analytics':             '使用統計',
   '/admin/announcements':         '公告審核',
   '/admin/raids':                 '武裝討伐審核',
+  '/admin/sim':                   '傷害模擬驗證台',
   '/admin/lore':                  '故事館編輯台',
   '*':                            '找不到頁面',
 }
@@ -135,6 +136,7 @@ export const SITEMAP_EXCLUDED: Record<string, string> = {
   '/admin/analytics':            '後台',
   '/admin/announcements':        '後台',
   '/admin/raids':                '後台',
+  '/admin/sim':                  '後台',
   '/admin/lore':                 '後台',
   '*':                           '404 頁',
 }
