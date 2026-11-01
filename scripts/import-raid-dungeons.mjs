@@ -417,6 +417,8 @@ class Assembler {
               else if (xb && xb.visible && xb.name && !xb.devnote) notCounted.push(tr.name('buff', xb.name, seq))
             }
             if ((panel.notCounted || []).includes('pilotAdapt')) notCounted.push('機師適性')
+            // 背包附加屬性：資料包目前全空、語意未確認；出現時先列在這裡，交開發者確認
+            if ((panel.notCounted || []).includes('backpackAdditional')) notCounted.push('背包附加屬性')
           }
           const bv = stripUndefined({
             templateId: a.configId,
