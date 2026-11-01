@@ -1,0 +1,38 @@
+# 每次推上 main（與 PR）跑一次 npm test。
+# 只回報、不擋部署：deploy.yml 照常跑；這裡紅了要回頭修。
+# Node 用 24：測試直接跑 .ts（node --test 內建的型別剝除），與本機版本一致。
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
