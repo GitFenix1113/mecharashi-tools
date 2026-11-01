@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-065-C 驗證台與案例庫 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-065-C 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge purple">◆ PLAN-065-C</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">驗證台與案例庫</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-11-01</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label purple">Progress</div>
+  <div class="section-title">總進度</div>
+  <div class="summary-row">
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">13</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">2</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">15</div><div class="summary-lbl">工作項</div></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-purple);">13 / 15</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 87%"></div></div>
+  </div>
+  <div class="impact-note"><strong>目標效果：</strong>站長在後台輸入實測，就能立刻看到引擎差多少、差在哪；對過的案例自動變成回歸測試，引擎之後加 Buff、加攻擊方式都不會不知不覺改壞。</div>
+</section>
+<section class="section">
+  <div class="section-label purple">Phase A</div>
+  <div class="section-title">Worker 管理者通道</div>
+  <div class="section-desc">私有 repo：讓管理者的請求拿得到完整拆解。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 管理者身分驗證</div>
+      <div class="task-group-meta">mecharashi-sim/worker/src</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">驗證登入憑證＋允許名單</div>
+        <div class="task-desc">驗證站上登入憑證的真偽與期限，再比對管理者允許名單；驗證用的公開金鑰會快取。不讀資料庫、不持有金鑰。<b>2026-11-01</b>：完成，含 15 項測試（偽造、過期、對象不符、名單外、金鑰輪替）。</div>
+        <div class="task-file">worker/src/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 管理者通道</div>
+      <div class="task-group-meta">mecharashi-sim/worker/src</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">通過驗證的請求不套公開政策</div>
+        <div class="task-desc">管理者可取得完整拆解、使用自訂目標與待驗證開關，數值不量化；其他請求照舊。<b>2026-11-01</b>：完成；驗證失敗照一般請求處理，不回錯誤碼。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 設定與部署</div>
+      <div class="task-group-meta">mecharashi-sim/docs/deploy.md</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">允許名單、重新部署、驗收</div>
+        <div class="task-desc">在 Worker 設定管理者允許名單後重新部署；驗收未登入與非管理者都拿不到完整拆解。<b>2026-11-01</b>：完成。站長設定允許名單並重新部署；驗收：未登入、帶無效憑證要求完整拆解都只拿到一般結果；管理者在驗證台登入後拿得到完整拆解，匯出的案例檔標記為管理者通道、不含登入憑證。</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label purple">Phase B</div>
+  <div class="section-title">共用模組</div>
+  <div class="section-desc">公開 repo：驗證台與 065-D 傷害模式共用。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 契約的公開型別</div>
+      <div class="task-group-meta">mecharashi-tools/src/lib/sim</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">請求與結果摘要的型別</div>
+        <div class="task-desc">只含請求與一般使用者可見的結果；完整拆解維持不透明。<b>2026-11-01</b>：完成（<code>src/lib/sim/contract.ts</code>）；完整拆解維持不定義型別。</div>
+        <div class="task-file">src/lib/sim/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 配裝轉請求</div>
+      <div class="task-group-meta">mecharashi-tools/src/lib/sim</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">站上配裝 → 模擬請求</div>
+        <div class="task-desc">從模擬器狀態或分享碼，加上養成假設（潛能、改裝、科研），轉成以遊戲身分鍵描述的請求；沒有連結的實體列出來。<b>2026-11-01</b>：完成（<code>requestBuilder.ts</code>，17 項測試）；查不到遊戲 ID 的實體列成「未連結」；武裝討伐目標與引擎資料逐筆比對 66／66 一致。模組等級與神經驅動的送法待私有端定案。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 模擬 API 用戶端</div>
+      <div class="task-group-meta">mecharashi-tools/src/lib/sim</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">呼叫 /sim/v1/run</div>
+        <div class="task-desc">帶登入憑證、逾時與取消、依回應的上限自動分批、遇到限流退避重試。<b>2026-11-01</b>：完成（<code>simClient.ts</code>，14 項測試）；自動分批、退避重試、管理者模式；正式 Worker 實跑 10 筆分兩批回來、順序正確。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label purple">Phase C</div>
+  <div class="section-title">驗證台頁面</div>
+  <div class="section-desc">公開 repo：後台新增一頁。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 路由與權限</div>
+      <div class="task-group-meta">mecharashi-tools/src/pages</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">後台新頁</div>
+        <div class="task-desc">放在 /admin 之下（不新增頂層路徑），只給管理者；後台入口、頁名與 sitemap 排除。<b>2026-11-01</b>：完成，路徑 <code>/admin/sim</code>（不需補 Cloudflare 白名單）；後台入口卡片、頁名、sitemap 排除、使用統計排除都已加上。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 輸入：配裝與目標</div>
+      <div class="task-group-meta">mecharashi-tools/src/pages</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">配裝、養成假設、煉獄首領</div>
+        <div class="task-desc">貼分享碼或帶入目前的模擬器配裝；設定潛能、改裝、科研；從武裝討伐資料挑首領。<b>2026-11-01</b>：完成。配裝可貼分享碼或從本機書架挑；首領可選已發布的期，未發布的期可加入匯入草稿，也能手動填目標的遊戲 ID；另可填遊戲內面板覆寫。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 輸入：實測</div>
+      <div class="task-group-meta">mecharashi-tools/src/pages</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">預覽與實際跳字</div>
+        <div class="task-desc">預覽的單擊、擊數、命中率、暴擊率；實際逐擊跳字、部位與是否暴擊。<b>2026-11-01</b>：完成。實際跳字用簡短記號輸入（命中、暴擊、未命中、部位），認不得的記號會列出來。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 結果與誤差</div>
+      <div class="task-group-meta">mecharashi-tools/src/pages</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">預測、未計入、誤差</div>
+        <div class="task-desc">顯示預測與未計入清單、以通用方式呈現完整拆解、逐項算出誤差並標示可能原因。<b>2026-11-01</b>：完成。誤差表分「判定」與「參考」兩種；完整拆解以通用樹狀檢視呈現，可點選數字當預覽單擊的比對對象。本機以正式 Worker 實跑通過；完整拆解的實際顯示已於 A-3 部署後確認（2026-11-01）。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 匯出案例</div>
+      <div class="task-group-meta">mecharashi-tools/src/pages</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">案例檔下載</div>
+        <div class="task-desc">包含請求、引擎與資料版本、實測與備註；下載後放進私有 repo。<b>2026-11-01</b>：完成。下載 JSON 案例檔，內含請求、引擎與資料版本、結果、實測與備註，不含登入憑證。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label purple">Phase D</div>
+  <div class="section-title">案例庫與回歸</div>
+  <div class="section-desc">私有 repo：讓每一筆對過的實測守住引擎。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 案例格式與回歸測試</div>
+      <div class="task-group-meta">mecharashi-sim/tests/regression</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每次測試都重跑全部案例</div>
+        <div class="task-desc">案例重跑引擎、比對實測；容差與「差異已歸因」的標記方式。<b>2026-11-01</b>：完成。私有 repo 每次測試都重跑全部案例；超出容差的項目要標上誤差來源（已歸因），否則測試失敗；已歸因的項目回到容差內時會提醒拿掉標記；遊戲改版後對不上的舊案例可標為退役。案例庫目前是空的，等 D-2 首批入庫。</div>
+        <div class="task-file">tests/regression/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 首批入庫</div>
+      <div class="task-group-meta">mecharashi-sim/tests/regression</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">第 1 週實測轉成案例</div>
+        <div class="task-desc">18-1、18-2、15-2 三關的預覽與出手紀錄。</div>
+      </div>
+      <div class="task-assignee">站長＋開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 對帳摘要</div>
+      <div class="task-group-meta">mecharashi-sim/tests/regression</div>
+      <span class="status done">已完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">達標／已歸因／未解</div>
+        <div class="task-desc">跑完回歸產出一份摘要，列出每個案例的狀態與誤差來源。<b>2026-11-01</b>：完成。每次跑完回歸自動產出一份摘要，列出每個案例的狀態、超出容差的項目、依預計解決的計畫分組的誤差來源與未解清單；內容沒變就不會產生差異。案例庫目前是空的。</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">已完成</span>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label purple">Phase E</div>
+  <div class="section-title">驗收</div>
+  <div class="section-desc">首批實測的結果。</div>
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 首批實測達標或已歸因</div>
+      <div class="task-group-meta">總綱 065-C 驗收</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">單擊誤差</div>
+        <div class="task-desc">第 1 週的案例單擊誤差在 ±1 內，或差異已歸因到未計入的來源。</div>
+      </div>
+      <div class="task-assignee">站長＋開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-065-C — <a href="../index.html" style="color:var(--accent-purple);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

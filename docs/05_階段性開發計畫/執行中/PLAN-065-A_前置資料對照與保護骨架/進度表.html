@@ -165,16 +165,16 @@
   <div class="section-label purple">Progress</div>
   <div class="section-title">總進度</div>
   <div class="summary-row">
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">11</div><div class="summary-lbl">已完成</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">0</div><div class="summary-lbl">進行中</div></div>
-    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">3</div><div class="summary-lbl">待開始</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-green)">13</div><div class="summary-lbl">已完成</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--accent-cyan)">1</div><div class="summary-lbl">進行中</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:var(--text-dim)">0</div><div class="summary-lbl">待開始</div></div>
     <div class="summary-card"><div class="summary-num" style="color:var(--text-primary)">14</div><div class="summary-lbl">工作項</div></div>
   </div>
   <div class="progress-wrap">
-    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-purple);">11 / 14</span></div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 79%"></div></div>
+    <div class="progress-label"><span>整體完成度</span><span style="color:var(--accent-purple);">13 / 14</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 93%"></div></div>
   </div>
-  <div class="impact-note"><strong>2026-10-28 進度：</strong>開發者工項 11／11 完成（型別檢查、全套 1,723 項測試、私有 Worker 43 項測試通過；對照建議 1,918 筆與研究結論逐筆一致）。剩站長的 A-4 部署量測、B-4 確認待確認筆數與寫入、D-2 拍板 C4／C5。<br><strong>目標效果：</strong>傷害模擬動工前，站上每個可上配裝的實體都能對到遊戲記錄，私有引擎有家可放、Worker 有門可開。</div>
+  <div class="impact-note"><strong>2026-10-28 進度：</strong>開發者工項 11／11 完成（型別檢查、全套 1,723 項測試、私有 Worker 43 項測試通過；對照建議 1,918 筆與研究結論逐筆一致）。D-2、B-4 已於 2026-11-01 完成（gameRef 寫入 1,814 筆），A-4 已部署、桌機量測達標，只剩手機 4G 量測。<br><strong>目標效果：</strong>傷害模擬動工前，站上每個可上配裝的實體都能對到遊戲記錄，私有引擎有家可放、Worker 有門可開。</div>
 </section>
 <section class="section">
   <div class="section-label purple">Phase A</div>
@@ -232,15 +232,15 @@
     <div class="task-group-header">
       <div class="task-group-title">A-4 &nbsp; 部署與量測</div>
       <div class="task-group-meta">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">wrangler deploy＋量測</div>
-        <div class="task-desc">站長本人部署，回報 startup_time_ms；DevTools 量 /sim/v1/ping TTFB 各 10 次（桌機、手機 4G），記 cf-ray 機房。</div>
+        <div class="task-desc">站長本人部署，回報 startup_time_ms；DevTools 量 /sim/v1/ping TTFB 各 10 次（桌機、手機 4G），記 cf-ray 機房。<b>2026-11-01</b>：已部署（Startup 15 ms、ping 200、機房 TPE）；桌機 TTFB 中位數 38 ms（預算內），手機 4G 待量。</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status doing">進行中</span>
     </div>
   </div>
 </section>
@@ -300,15 +300,15 @@
     <div class="task-group-header">
       <div class="task-group-title">B-4 &nbsp; 確認待確認筆數並寫入</div>
       <div class="task-group-meta">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">看報告、確認少數歧義、執行 --write</div>
-        <div class="task-desc">包含 C14 等價武器記錄取哪筆的裁決。</div>
+        <div class="task-desc">包含 C14 等價武器記錄取哪筆的裁決。<b>2026-11-01</b>：待確認 25 筆全數同意、C14 取代表記錄；寫入 1,814 筆、衝突 0，寫前已備份、寫後已更新資料版本，重跑確認全部生效。</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status pending">待開始</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
   <div class="task-group">
@@ -405,15 +405,15 @@
     <div class="task-group-header">
       <div class="task-group-title">D-2 &nbsp; C4／C5 拍板</div>
       <div class="task-group-meta">站長</div>
-      <span class="status blocked">待拍板</span>
+      <span class="status done">已完成</span>
     </div>
     <div class="task-row">
       <div>
         <div class="task-name">Workers 方案與限流規則</div>
-        <div class="task-desc">截 Workers 方案頁、近 30 天請求量與現有 WAF 速率限制規則，再決定。</div>
+        <div class="task-desc">截 Workers 方案頁、近 30 天請求量與現有 WAF 速率限制規則，再決定。<b>2026-11-01</b>：截圖完成；C4 拍板維持 Free（065-F 開工前升 Paid）；C5 拍板並套用：/sim/ 併進現有規則、共用門檻，連打驗收已出現 429。</div>
       </div>
       <div class="task-assignee">站長</div>
-      <span class="status blocked">待拍板</span>
+      <span class="status done">已完成</span>
     </div>
   </div>
 </section>

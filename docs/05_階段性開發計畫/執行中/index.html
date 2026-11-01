@@ -37,7 +37,7 @@
       <p>在配裝模擬器加「傷害模式」：前端送遊戲 ID 與情境、後端私有引擎（<code>/sim/v1/*</code> Worker＋私有 repo）回傳結果與分組小計，數字標「推算／已驗證」。
         以武裝討伐煉獄首領與遊戲內預覽逐步驗證；拆成 065-A～I 九個子計畫。本系列文件只寫工項與驗收，公式與規則放私有 repo。
         <br><b>2026-10-28 立案</b>：站長拍板 C1／C2／C3／C6／C7，私有 repo 已建立；065-A 開工。
-        <br><b>2026-10-29</b>：065-B 立案，同日開發完成（13／14），待站長部署。</p>
+        <br><b>2026-10-29</b>：065-B 立案並開發完成；<b>2026-11-01</b> /sim/v1/* 部署上線（065-B 14／14）。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-065_傷害模擬_總綱/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-065_傷害模擬_總綱/進度表.html">→ 進度表</a>
@@ -45,9 +45,19 @@
     </div>
     <div class="card purple">
       <div class="card-icon">◆</div>
+      <h3>PLAN-065-C · 驗證台與案例庫</h3>
+      <p>後台新增管理者驗證台：載入配裝、選煉獄首領、輸入遊戲內實測，看引擎預測與誤差；對過帳的案例進私有 repo 成為回歸測試。共用的配裝轉請求與模擬 API 用戶端，065-D 傷害模式會沿用。
+        <br><b>2026-11-01 立案、開工</b>。</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <a class="card-link" href="PLAN-065-C_驗證台與案例庫/計畫書.html">→ 計畫書</a>
+        <a class="card-link" href="PLAN-065-C_驗證台與案例庫/進度表.html">→ 進度表</a>
+      </div>
+    </div>
+    <div class="card purple">
+      <div class="card-icon">◆</div>
       <h3>PLAN-065-B · 引擎 A：面板與單擊</h3>
       <p>傷害模擬的第一個可計算版本：私有 pipeline 編譯引擎資料、引擎算出攻方面板與單次攻擊期望傷害、經 <code>/sim/v1/run</code> 回傳；先不含 Buff（全部列為未計入、結果標「推算」）。以站上面板、首領面板與評估階段原型為基準測試。
-        <br><b>2026-10-29 立案；同日開發完成 13／14</b>：待站長部署 Worker。</p>
+        <br><b>2026-10-29 立案、開發完成；2026-11-01 部署上線（14／14）</b>。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-065-B_引擎A_面板與單擊/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-065-B_引擎A_面板與單擊/進度表.html">→ 進度表</a>
@@ -56,7 +66,7 @@
     <div class="card purple">
       <div class="card-icon">◆</div>
       <h3>PLAN-065-A · 前置資料對照與保護骨架</h3>
-      <p>站上實體補上遊戲身分鍵 <code>gameRef</code>（對照規則在私有 repo、寫入腳本在公開 repo）、後台顯示遊戲 ID、凍結人工效果欄位、私有 repo 契約與 ping Worker、/api 429 退避。<br><b>2026-10-28 開發者工項完成（11／14）</b>：剩站長部署量測（A-4）、確認待確認筆數並寫入（B-4）、拍板 C4／C5（D-2）。</p>
+      <p>站上實體補上遊戲身分鍵 <code>gameRef</code>（對照規則在私有 repo、寫入腳本在公開 repo）、後台顯示遊戲 ID、凍結人工效果欄位、私有 repo 契約與 ping Worker、/api 429 退避。<br><b>2026-10-28 開發者工項完成；2026-11-01 拍板 C4／C5、gameRef 寫入 1,814 筆（13／14）</b>：只剩手機 4G 量測（A-4）。</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <a class="card-link" href="PLAN-065-A_前置資料對照與保護骨架/計畫書.html">→ 計畫書</a>
         <a class="card-link" href="PLAN-065-A_前置資料對照與保護骨架/進度表.html">→ 進度表</a>

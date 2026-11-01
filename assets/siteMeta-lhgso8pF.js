@@ -1,0 +1,1 @@
+var e=`米赫瑪超吉情豹站`,t=`Milkhama PawInfo Station`,n=`${e} — ${t}`,r=`鋼嵐 Mecharashi 資料站｜${e}`,i=`https://mecharashi.wiki`.replace(/^https?:\/\//,``);export{n as a,t as i,i as n,e as r,r as t};
