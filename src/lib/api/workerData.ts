@@ -101,7 +101,7 @@ export function retryAfterMs(header: string | null, now: number): number | null 
 
 /** 測試用的注入點：預設就是全域 fetch／setTimeout／Date.now／Math.random。 */
 export interface RetryDeps {
-  fetchImpl?: (url: string) => Promise<Response>
+  fetchImpl?: (url: string, init?: RequestInit) => Promise<Response>
   sleep?: (ms: number) => Promise<void>
   now?: () => number
   random?: () => number
@@ -112,16 +112,20 @@ const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(r
 /**
  * fetch ＋ 退避重試。回傳最後一次的 Response（可能仍是 !ok，由呼叫端照舊判斷），
  * 所以錯誤訊息、成功路徑都跟沒有重試時一模一樣。
+ *
+ * `init` 每次重試原樣再送一次（PLAN-065-C 的 /sim POST 用）：body 必須是字串這類可重送的型別，
+ * 不能是 ReadableStream。`init.signal` 中止時，退避等待結束後不再重試、直接拋出中止原因。
+ * /api 的 getter 不帶 init，行為與原本相同。
  */
-export async function fetchWithRetry(url: string, deps: RetryDeps = {}): Promise<Response> {
+export async function fetchWithRetry(url: string, deps: RetryDeps = {}, init?: RequestInit): Promise<Response> {
   // 包成箭頭函式、呼叫當下才取全域 fetch：直接把 fetch 存成別的物件的方法再呼叫（this 不是 window）
   // 瀏覽器會拋 Illegal invocation；晚綁定也讓測試替換 globalThis.fetch 有效
-  const doFetch = deps.fetchImpl ?? ((u: string) => fetch(u))
+  const doFetch = deps.fetchImpl ?? ((u: string, i?: RequestInit) => fetch(u, i))
   const sleep = deps.sleep ?? defaultSleep
   const now = deps.now ?? Date.now
   const random = deps.random ?? Math.random
   for (let attempt = 0; ; attempt++) {
-    const res = await doFetch(url)
+    const res = await doFetch(url, init)
     if (!RETRYABLE_STATUS.has(res.status) || attempt >= RETRY_DELAYS_MS.length) return res
     const hinted = retryAfterMs(res.headers.get('retry-after'), now())
     if (hinted !== null && hinted > MAX_RETRY_AFTER_MS) return res
@@ -130,6 +134,7 @@ export async function fetchWithRetry(url: string, deps: RetryDeps = {}): Promise
     await sleep(hinted !== null
       ? hinted + Math.round(r * RETRY_AFTER_JITTER_MS)
       : Math.round(RETRY_DELAYS_MS[attempt] * (1 + RETRY_JITTER * (2 * r - 1))))
+    init?.signal?.throwIfAborted()
   }
 }
 
