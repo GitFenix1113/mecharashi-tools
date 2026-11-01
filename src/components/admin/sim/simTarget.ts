@@ -1,7 +1,7 @@
-import type { Boss, RaidSeason, Stage } from '../../../types/boss'
-import type { RaidDifficulty } from '../../../types/enums'
-import type { AimPart, SimRaidTargetV1 } from '../../../lib/sim/contract'
-import { buildRaidTarget, highestRaidDifficulty } from '../../../lib/sim/requestBuilder'
+import type { Boss, RaidSeason, Stage } from '../../../types/boss.ts'
+import type { RaidDifficulty } from '../../../types/enums.ts'
+import type { AimPart, SimRaidTargetV1 } from '../../../lib/sim/contract.ts'
+import { buildRaidTarget, highestRaidDifficulty } from '../../../lib/sim/requestBuilder.ts'
 
 // ─── 驗證台的目標選擇（PLAN-065-C C-2）：狀態與換算 ──────────────────────────────
 // 畫面在 SimTargetPicker.tsx；這裡是純函式（換算一律走 buildRaidTarget）。
