@@ -28,10 +28,19 @@ import { NdActiveAbilities } from './NdActiveAbilities'
 //
 // ⚠ **α／β 鎖死在滿級、不開放調整**（使用者裁決 2026-08-30）。它們只有 3 級、取得成本低，
 //   實務上人人點滿；開放調整只是替一個沒有人會做的選擇留一組按鈕。
-//   ⚠ **仍然畫出來**，不是整列隱藏：看過遊戲的人找不到 α／β 會以為本站漏了資料。
-//     畫成「亮著但點不動」才同時說出「它在」與「它不歸你管」。
 //   ⚠ 這條與資料一致而不是硬湊：實測 178 個 α／β 分區**零個**帶 `buffUpgrades`
 //     ⇒ `defaultNdLevels()` 對它們一律給滿級，鎖死之後值一個都不會變。
+//   ⚠ **inline 版（機師詳情頁）不畫 α／β**（使用者裁決 2026-11-02，推翻 08-30 的「仍然畫出來」）：
+//     點不動的格子在手機上佔掉一整行，卻沒有任何可做的事；「知道有就好」——分區本身仍在
+//     神經驅動分頁完整列出。panel 版（模擬器）維持原樣、照畫「亮著但點不動」。
+//     只是**不畫**，`levels` 照常帶著 α／β 的滿級值，覆寫表與正文改寫都不受影響。
+//
+// ── 手機收合（2026-11-02）────────────────────────────────────────────────────
+//
+// inline 版在 < sm（640px）預設收成一行摘要（`γ1 7 · γ2 1 · 投入 8/23`），點了才展開格子列；
+// 收合與否記在 localStorage（純本機 UI 偏好，比照 VersionGanttPanel 的寫法）。
+// ⚠ 用 CSS 斷點而不是 `useIsMobile()`：那支 hook 判的是「觸控裝置」，不是寬度 ——
+//   平板橫放時版面寬得很，沒有理由收起來。桌機（≥ sm）永遠顯示完整列，收合狀態對它無效。
 //
 // ⚠ **加成格與投入格必須長得不一樣**（`bonus`）。模組給的算力不花 γ 預算，
 //   所以「條上亮到第 4 格」與「投入徽章 23／23」會同時成立 —— 兩者混成同一種黃色的話，
@@ -62,11 +71,36 @@ export interface NdPowerBarProps {
   bonus?: NdPowerBonus | null
 }
 
+const LS_COLLAPSED = 'mecharashi_pilot_ndBarCollapsed'
+
+/** 預設收合：沒存過（或 storage 被鎖）一律當作收合 */
+function loadCollapsed(): boolean {
+  try {
+    return localStorage.getItem(LS_COLLAPSED) !== '0'
+  } catch {
+    return true
+  }
+}
+
+function saveCollapsed(v: boolean) {
+  try {
+    localStorage.setItem(LS_COLLAPSED, v ? '1' : '0')
+  } catch {
+    // ignore
+  }
+}
+
 export function NdPowerBar({
   drives, levels, affectZones, onChange, layout = 'inline', abilityMap, bonus,
 }: NdPowerBarProps) {
   const [capHint, setCapHint] = useState(false)
   const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [collapsed, setCollapsed] = useState(loadCollapsed)
+  const toggleCollapsed = () => {
+    const next = !collapsed
+    setCollapsed(next)
+    saveCollapsed(next)
+  }
 
   const gammaSum = drives
     .filter(d => isGammaZone(d.name))
@@ -147,14 +181,55 @@ export function NdPowerBar({
     )
   }
 
+  // inline 版只畫 γ 區（見檔頭 2026-11-02）。沒有 γ 區的話整列沒有可調的東西 → 不渲染
+  const gammaDrives = drives.filter(d => !isFixedZone(d))
+  if (gammaDrives.length === 0) return null
+
+  /** 讀數是**生效**算力（含加成）：它決定哪些能力亮著，而那才是玩家在看的 */
+  const shownPower = (d: NeuralDrive) => (bonus?.zone === d.name ? bonus.power : zonePower(d, levels[d.name] ?? 0))
+  const overCap = gammaSum >= ND_RULES.gammaPairCap
+
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 px-4 py-2 bg-accent-pink/[0.04] border-b border-border">
-      <span className="text-[11px] font-bold tracking-[2px] text-accent-pink uppercase whitespace-nowrap">
-        ▶ 神經驅動算力
-      </span>
-      {drives.map((d) => {
-        const cur = levels[d.name] ?? 0
-        return (
+    <>
+      {/* 手機收合時的一行摘要（整列可點）。≥ sm 永遠不出現 */}
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        aria-expanded={false}
+        className={`${collapsed ? 'flex' : 'hidden'} sm:hidden w-full items-center gap-2 px-3 py-2 text-left bg-accent-pink/[0.04] border-b border-border cursor-pointer`}
+      >
+        <span className="shrink-0 text-[11px] font-bold tracking-[1px] text-accent-pink whitespace-nowrap">
+          ▸ 神經驅動算力
+        </span>
+        <span className="min-w-0 truncate text-[12px] font-mono text-text-secondary">
+          {gammaDrives.map((d, i) => (
+            <span key={d.name}>
+              {i > 0 && <span className="text-text-dim"> · </span>}
+              {d.name} <span className={bonus?.zone === d.name ? 'text-accent-yellow font-bold' : 'text-accent-yellow'}>{shownPower(d)}</span>
+            </span>
+          ))}
+          <span className="text-text-dim"> · </span>
+          <span className={overCap ? 'text-accent-red' : ''}>投入 {gammaSum}/{ND_RULES.gammaPairCap}</span>
+        </span>
+        <span aria-hidden="true" className="ml-auto shrink-0 w-6 h-6 grid place-items-center rounded-full border border-accent-pink/40 text-[11px] text-accent-pink">
+          ▾
+        </span>
+      </button>
+
+      <div className={`${collapsed ? 'hidden sm:flex' : 'flex'} flex-wrap items-center gap-x-5 gap-y-1.5 px-3 sm:px-4 py-2 bg-accent-pink/[0.04] border-b border-border`}>
+        <span className="hidden sm:inline text-[11px] font-bold tracking-[2px] text-accent-pink uppercase whitespace-nowrap">
+          ▶ 神經驅動算力
+        </span>
+        {/* 手機展開時，標題本身就是收合鈕（▾ 展開中）。不另放一顆按鈕：它會被擠到獨立的第三行 */}
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-expanded={true}
+          className="sm:hidden text-[11px] font-bold tracking-[1px] text-accent-pink whitespace-nowrap cursor-pointer"
+        >
+          ▾ 神經驅動算力
+        </button>
+        {gammaDrives.map((d) => (
           <span key={d.name} className="flex items-center gap-1.5">
             <span className="relative text-[13px] font-bold text-text-primary">
               {d.name}
@@ -166,50 +241,45 @@ export function NdPowerBar({
               {d.levels.map((lvl, i) => {
                 const lv = i + 1
                 const st = stateOf(d, lv)
-                const fixed = isFixedZone(d)
                 return (
                   <button
                     key={lv}
                     type="button"
-                    disabled={fixed}
-                    title={fixed
-                      ? `${d.name} 固定滿級，本站不開放調整`
-                      : st === 'bonus'
-                        ? `${bonus?.moduleName} 加成給的（算力 +${bonus?.amount}）`
-                        : `Lv${lv}（算力 ${lvl.minSum}）`}
+                    title={st === 'bonus'
+                      ? `${bonus?.moduleName} 加成給的（算力 +${bonus?.amount}）`
+                      : `Lv${lv}（算力 ${lvl.minSum}）`}
                     onClick={() => clickSquare(d, lv)}
                     className={`w-3.5 h-3.5 rounded-[3px] border transition-all ${
                       st === 'on'
-                        ? `bg-accent-yellow border-accent-yellow ${fixed ? 'opacity-60 cursor-default' : 'shadow-[0_0_5px_rgba(251,191,36,0.45)]'}`
+                        ? 'bg-accent-yellow border-accent-yellow shadow-[0_0_5px_rgba(251,191,36,0.45)]'
                         : st === 'bonus'
                           // 加成格：虛線描邊的黃 —— 亮著，但看得出不是實心的那一種
                           ? 'bg-accent-yellow/25 border-accent-yellow border-dashed cursor-pointer'
                           : st === 'locked'
-                            ? `bg-bg-dark border-border border-dashed opacity-25 ${fixed ? 'cursor-default' : 'cursor-not-allowed'}`
+                            ? 'bg-bg-dark border-border border-dashed opacity-25 cursor-not-allowed'
                             : 'bg-bg-dark border-[#4a4f5e] hover:border-accent-yellow cursor-pointer'
                     }`}
                   />
                 )
               })}
             </span>
-            {/* 讀數是**生效**算力（含加成）：它決定哪些能力亮著，而那才是玩家在看的。
-                投入了多少請看右邊的徽章 —— 兩者在有加成時本來就不相等。 */}
+            {/* 投入了多少請看右邊的徽章 —— 兩者在有加成時本來就不相等。 */}
             <span className={`text-[11px] font-mono whitespace-nowrap ${
               bonus?.zone === d.name ? 'text-accent-yellow font-bold' : 'text-text-dim'
             }`}>
-              {bonus?.zone === d.name ? bonus.power : zonePower(d, cur)}
+              {shownPower(d)}
             </span>
           </span>
-        )
-      })}
-      <span className={`ml-auto text-[11.5px] font-mono px-2.5 py-0.5 rounded-md border border-border bg-bg-dark ${
-        gammaSum >= ND_RULES.gammaPairCap ? 'text-accent-red' : 'text-text-secondary'
-      }`}>
-        γ投入 {gammaSum} / {ND_RULES.gammaPairCap}
-      </span>
-      {bonusText && <span className="w-full text-[11.5px] text-accent-yellow">{bonusText}</span>}
-      {capHint && <span className="w-full text-[11.5px] text-accent-red">{capText}</span>}
-    </div>
+        ))}
+        <span className={`ml-auto text-[11.5px] font-mono px-2.5 py-0.5 rounded-md border border-border bg-bg-dark ${
+          overCap ? 'text-accent-red' : 'text-text-secondary'
+        }`}>
+          γ投入 {gammaSum} / {ND_RULES.gammaPairCap}
+        </span>
+        {bonusText && <span className="w-full text-[11.5px] text-accent-yellow">{bonusText}</span>}
+        {capHint && <span className="w-full text-[11.5px] text-accent-red">{capText}</span>}
+      </div>
+    </>
   )
 }
 

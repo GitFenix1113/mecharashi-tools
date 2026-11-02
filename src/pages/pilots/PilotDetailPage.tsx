@@ -211,67 +211,67 @@ function TalentCard({
   const currentBase = viewMax ? talent.descriptionMax! : talent.description
 
   return (
-    <div className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-border">
-      <SkillIcon icon={talent.icon} name={talent.name} />
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-          <span className="font-bold text-base">{talent.name}</span>
-          {/* 天賦區塊顯示覆寫：不論原始 type（多為被動技能），一律標示「天賦技能」 */}
-          <SkillTypeBadge type="天賦技能" />
-          {isMobile && hasMax && (
-            <button
-              type="button"
-              onClick={() => setShowMax(v => !v)}
-              title="切換 初始天賦 / 最大強化（滿星效果）"
-              className={`ml-auto text-[12px] px-2.5 py-1 rounded-full border font-medium transition-colors cursor-pointer ${
-                viewMax
-                  ? 'text-accent-cyan border-accent-cyan/45 bg-accent-cyan/15'
-                  : 'text-text-secondary border-border bg-bg-card hover:text-text-primary hover:border-border-accent'
-              }`}
-            >
-              ⇌ {viewMax ? '最大強化' : '初始天賦'}
-            </button>
+    <SkillEntry
+      icon={talent.icon}
+      name={talent.name}
+      className={`${SKILL_CARD_CLS} sm:border-border`}
+      head={<>
+        <span className="font-bold text-base">{talent.name}</span>
+        {/* 天賦區塊顯示覆寫：不論原始 type（多為被動技能），一律標示「天賦技能」 */}
+        <SkillTypeBadge type="天賦技能" />
+        {isMobile && hasMax && (
+          <button
+            type="button"
+            onClick={() => setShowMax(v => !v)}
+            title="切換 初始天賦 / 最大強化（滿星效果）"
+            className={`ml-auto text-[12px] px-2.5 py-1 rounded-full border font-medium transition-colors cursor-pointer ${
+              viewMax
+                ? 'text-accent-cyan border-accent-cyan/45 bg-accent-cyan/15'
+                : 'text-text-secondary border-border bg-bg-card hover:text-text-primary hover:border-border-accent'
+            }`}
+          >
+            ⇌ {viewMax ? '最大強化' : '初始天賦'}
+          </button>
+        )}
+      </>}
+    >
+      {isMobile ? (
+        <p className="text-sm text-text-secondary leading-relaxed">
+          {viewMax ? (
+            <DiffHighlight base={talent.description} enhanced={talent.descriptionMax!} refs={talent.descriptionRefs} />
+          ) : (
+            <RefText text={talent.description} refs={talent.descriptionRefs} />
           )}
-        </div>
-
-        {isMobile ? (
+        </p>
+      ) : (
+        <>
           <p className="text-sm text-text-secondary leading-relaxed">
-            {viewMax ? (
-              <DiffHighlight base={talent.description} enhanced={talent.descriptionMax!} refs={talent.descriptionRefs} />
-            ) : (
-              <RefText text={talent.description} refs={talent.descriptionRefs} />
-            )}
+            <RefText text={talent.description} refs={talent.descriptionRefs} />
           </p>
-        ) : (
-          <>
-            <p className="text-sm text-text-secondary leading-relaxed">
-              <RefText text={talent.description} refs={talent.descriptionRefs} />
-            </p>
-            {hasMax && (
-              <div className="mt-2.5 rounded-lg bg-accent-cyan/5 border border-accent-cyan/25 px-3 py-2.5">
-                <span className="text-[13px] font-bold text-accent-cyan tracking-widest uppercase">▶ 最大強化</span>
-                <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
-                  <DiffHighlight base={talent.description} enhanced={talent.descriptionMax!} refs={talent.descriptionRefs} />
-                </p>
-              </div>
-            )}
-          </>
-        )}
+          {hasMax && (
+            <div className="mt-2.5 rounded-lg bg-accent-cyan/5 border border-accent-cyan/25 px-3 py-2.5">
+              <span className="text-[13px] font-bold text-accent-cyan tracking-widest uppercase">▶ 最大強化</span>
+              <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
+                <DiffHighlight base={talent.description} enhanced={talent.descriptionMax!} refs={talent.descriptionRefs} />
+              </p>
+            </div>
+          )}
+        </>
+      )}
 
-        {SHOW_WEAPON_ENHANCE_IN_TALENT && weaponEnhanceText && (
-          <div className="mt-2 rounded-lg bg-accent-yellow/5 border border-accent-yellow/25 px-3 py-2.5">
-            <span className="text-[13px] font-bold text-accent-yellow tracking-widest uppercase">
-              ▶ 專武強化{weaponName ? ` · ${weaponName}` : ''}
-            </span>
-            <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
-              <DiffHighlight base={currentBase} enhanced={weaponEnhanceText} refs={{ ...talent.descriptionRefs, ...weaponEnhanceRefs }} />
-            </p>
-          </div>
-        )}
+      {SHOW_WEAPON_ENHANCE_IN_TALENT && weaponEnhanceText && (
+        <div className="mt-2 rounded-lg bg-accent-yellow/5 border border-accent-yellow/25 px-3 py-2.5">
+          <span className="text-[13px] font-bold text-accent-yellow tracking-widest uppercase">
+            ▶ 專武強化{weaponName ? ` · ${weaponName}` : ''}
+          </span>
+          <p className="text-sm text-text-secondary leading-relaxed mt-1.5">
+            <DiffHighlight base={currentBase} enhanced={weaponEnhanceText} refs={{ ...talent.descriptionRefs, ...weaponEnhanceRefs }} />
+          </p>
+        </div>
+      )}
 
-        <TalentNdPanel talent={talent} drives={drives} levels={levels} baseText={currentBase} viewMax={viewMax} />
-      </div>
-    </div>
+      <TalentNdPanel talent={talent} drives={drives} levels={levels} baseText={currentBase} viewMax={viewMax} />
+    </SkillEntry>
   )
 }
 
@@ -292,10 +292,68 @@ const SKILL_TYPE_CLS: Record<string, string> = {
   天賦技能: 'text-accent-orange bg-accent-orange/10 border-accent-orange/30',
 }
 
+// 手機（< sm）不畫邊框、只留底色，字小一號 —— 標題列要和圖示、AP／CD 擠同一行（見 SkillEntry）
 function SkillTypeBadge({ type }: { type: string }) {
   const cls = SKILL_TYPE_CLS[type] ?? 'text-text-dim bg-bg-dark border-border'
   return (
-    <span className={`px-2 py-0.5 rounded text-[13px] font-bold border ${cls}`}>{type}</span>
+    <span className={`px-1.5 rounded text-[12px] font-bold sm:px-2 sm:py-0.5 sm:text-[13px] sm:border ${cls}`}>{type}</span>
+  )
+}
+
+// ─── 技能列（天賦／技能／初始被動／神經驅動能力共用，2026-11-02 手機版面調整）──────
+//
+// 手機（< sm）：圖示縮小併進標題列，敘述從左緣通欄排起；卡片本身不畫框與底色，
+//   列與列之間靠父層的 `divide-y` 分隔（父層用 SKILL_LIST_CLS）。
+// 桌機（≥ sm）：維持原本的樣子 —— 圖示獨佔左欄、標題與敘述在右、外面一張卡。
+//
+// ⚠ 同一份 DOM 靠 grid 換位，**不是**渲染兩顆圖示再用 CSS 藏一顆：
+//   手機 2 欄×2 列（圖示｜標題 / 敘述跨兩欄），桌機圖示 `row-span-2`、敘述回到第 2 欄。
+// ⚠ 斷點用 CSS 的 sm，不是 `useIsMobile()`：那支 hook 判的是觸控裝置、不是寬度。
+// ⚠ 起因：375px 寬時，頁面 px-4 → 分頁卡 p-4 → 技能卡 p-3 → 圖示欄，四層疊下來
+//   敘述只剩 205px（每行約 12 字）；改完約 307px（約 18 字）。
+
+/** 一般技能卡（技能分頁、天賦分頁、初始被動能力）的外殼；桌機的框色另外疊 */
+const SKILL_CARD_CLS = 'gap-y-1.5 py-3 max-sm:first:pt-0 max-sm:last:pb-0 sm:p-3 sm:bg-bg-dark sm:rounded-xl sm:border'
+
+/** 裝 SkillEntry 的清單：手機用分隔線、桌機用卡片間距 */
+const SKILL_LIST_CLS = 'divide-y divide-border-subtle sm:divide-y-0'
+
+function SkillEntry({ icon, name, head, className, children }: {
+  icon?: string | null
+  /** 圖示的 alt */
+  name: string
+  /** 標題列（名稱＋徽章…），排在圖示右邊 */
+  head: React.ReactNode
+  /** 外殼樣式：內距、間距、桌機的框（SKILL_CARD_CLS 或自訂） */
+  className: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className={`grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2.5 sm:items-start sm:gap-x-3 ${className}`}>
+      <SkillIcon icon={icon} name={name} size="sm" className="sm:w-10 sm:h-10 sm:row-span-2" />
+      <div className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1 sm:gap-y-2">{head}</div>
+      {/* 手機上敘述裡的 [術語]（RefChip 是 <p> 內的 <button>）不從中間斷行：inline-block 讓它整顆換行，
+          max-w-full 保底 —— 真的比一整行還長時仍在內部折行，不會撐出橫向捲軸 */}
+      <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2 max-sm:[&_p_button]:inline-block max-sm:[&_p_button]:max-w-full">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+const META_TAG_CLS = {
+  ap: 'text-accent-yellow sm:bg-accent-yellow/10 sm:border-accent-yellow/30',
+  cd: 'text-accent-cyan sm:bg-accent-cyan/10 sm:border-accent-cyan/30',
+  pp: 'text-accent-green sm:bg-accent-green/10 sm:border-accent-green/30',
+  weapon: 'text-text-dim sm:bg-bg-card sm:border-border',
+} as const
+
+/** AP／CD／PP／武器限制。手機是純文字（顏色區分），桌機是原本的框 */
+function MetaTag({ kind, children }: { kind: keyof typeof META_TAG_CLS; children: React.ReactNode }) {
+  return (
+    <span className={`text-[12.5px] whitespace-nowrap sm:text-[13px] sm:px-2 sm:py-0.5 sm:rounded sm:border ${META_TAG_CLS[kind]}`}>
+      {children}
+    </span>
   )
 }
 
@@ -746,18 +804,21 @@ function NeuralDriveZoneCard({ nd, zoneName, className, expanded, onLevelHover, 
       </div>
       <div className="divide-y divide-border">
         {nd.levels.map((lv) => (
-          <div key={lv.level} className="flex gap-3 p-3 items-start">
-            <SkillIcon icon={lv.icon} name={lv.skillName} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-bold text-sm">{lv.skillName}</span>
-                <span className="text-[13px] text-text-dim">
-                  Lv.{lv.level}（芯片總計 ≥{lv.minSum}）
-                </span>
-              </div>
-              <p className="text-sm text-text-secondary leading-relaxed"><RefText text={lv.effect} refs={lv.descriptionRefs} /></p>
-            </div>
-          </div>
+          // 分區卡本身保留（它是 α／β／γ 的分組標題）；只把列內的圖示併進標題列，與技能卡同一套
+          <SkillEntry
+            key={lv.level}
+            icon={lv.icon}
+            name={lv.skillName}
+            className="gap-y-1 px-3 py-2.5 sm:p-3"
+            head={<>
+              <span className="font-bold text-sm">{lv.skillName}</span>
+              <span className="text-[13px] text-text-dim">
+                Lv.{lv.level}（芯片總計 ≥{lv.minSum}）
+              </span>
+            </>}
+          >
+            <p className="text-sm text-text-secondary leading-relaxed"><RefText text={lv.effect} refs={lv.descriptionRefs} /></p>
+          </SkillEntry>
         ))}
       </div>
     </div>
@@ -1152,10 +1213,10 @@ export default function PilotDetailPage() {
         {/* PLAN-034：算力覆寫表罩住三個分頁的引用渲染。ND 分區卡／能力卡另包
             NdOverrideEmpty 隔離——那裡是規則的宣告處，不該被自己宣告的規則改寫。 */}
         <NdOverrideContext.Provider value={ndOverrides}>
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           {activeSkillTab === '天賦' && (
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-            <div className="flex-1 min-w-0 space-y-3">
+            <div className={`flex-1 min-w-0 sm:space-y-3 ${SKILL_LIST_CLS}`}>
               {pilot.talents.map((t, i) => (
                 <TalentCard
                   key={i}
@@ -1186,38 +1247,24 @@ export default function PilotDetailPage() {
           )}
 
           {activeSkillTab === '技能' && (
-            <div className="space-y-3">
+            <div className={`sm:space-y-3 ${SKILL_LIST_CLS}`}>
               {regularSkills.map((sk, i) => (
-                <div key={i} className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-border">
-                  <SkillIcon icon={sk.icon} name={sk.name} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <span className="font-bold text-base">{sk.name}</span>
-                      <SkillTypeBadge type={sk.type} />
-                      {sk.ap && (
-                        <span className="text-[13px] text-accent-yellow bg-accent-yellow/10 border border-accent-yellow/30 px-2 py-0.5 rounded">
-                          AP {sk.ap}
-                        </span>
-                      )}
-                      {sk.cd && (
-                        <span className="text-[13px] text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/30 px-2 py-0.5 rounded">
-                          CD {sk.cd}
-                        </span>
-                      )}
-                      {sk.pp && (
-                        <span className="text-[13px] text-accent-green bg-accent-green/10 border border-accent-green/30 px-2 py-0.5 rounded">
-                          消耗 {sk.pp}PP
-                        </span>
-                      )}
-                      {sk.weapon && (
-                        <span className="text-[13px] text-text-dim bg-bg-card border border-border px-2 py-0.5 rounded">
-                          {formatWeaponReq(sk.weapon)}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
-                  </div>
-                </div>
+                <SkillEntry
+                  key={i}
+                  icon={sk.icon}
+                  name={sk.name}
+                  className={`${SKILL_CARD_CLS} sm:border-border`}
+                  head={<>
+                    <span className="font-bold text-base">{sk.name}</span>
+                    <SkillTypeBadge type={sk.type} />
+                    {sk.ap && <MetaTag kind="ap">AP {sk.ap}</MetaTag>}
+                    {sk.cd && <MetaTag kind="cd">CD {sk.cd}</MetaTag>}
+                    {sk.pp && <MetaTag kind="pp">消耗 {sk.pp}PP</MetaTag>}
+                    {sk.weapon && <MetaTag kind="weapon">{formatWeaponReq(sk.weapon)}</MetaTag>}
+                  </>}
+                >
+                  <p className="text-sm text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
+                </SkillEntry>
               ))}
             </div>
           )}
@@ -1267,18 +1314,20 @@ export default function PilotDetailPage() {
                     <ClassIcon pilotClass={pilot.class} size={14} decorative />
                     初始被動能力
                   </div>
-                  <div className="space-y-2">
+                  <div className={`sm:space-y-2 ${SKILL_LIST_CLS}`}>
                     {classSkills.map((sk, i) => (
-                      <div key={i} className="flex gap-3 p-3 bg-bg-dark rounded-xl border border-accent-green/20">
-                        <SkillIcon icon={sk.icon} name={sk.name} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <span className="font-bold text-base">{sk.name}</span>
-                            <SkillTypeBadge type={sk.type} />
-                          </div>
-                          <p className="text-sm text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
-                        </div>
-                      </div>
+                      <SkillEntry
+                        key={i}
+                        icon={sk.icon}
+                        name={sk.name}
+                        className={`${SKILL_CARD_CLS} sm:border-accent-green/20`}
+                        head={<>
+                          <span className="font-bold text-base">{sk.name}</span>
+                          <SkillTypeBadge type={sk.type} />
+                        </>}
+                      >
+                        <p className="text-sm text-text-secondary leading-relaxed"><RefText text={sk.description} refs={sk.descriptionRefs} /></p>
+                      </SkillEntry>
                     ))}
                   </div>
                 </div>
