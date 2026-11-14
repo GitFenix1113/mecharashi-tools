@@ -1,7 +1,7 @@
 import {
   ModuleSlot, MechPartPosition, ConditionalTrigger, WeaponType, WeaponKind,
   ComponentType, ConditionType, EffectType, ModuleSubtype, ComponentsWType,
-} from '../../../types/enums'
+} from '../../../types/enums.ts'   // 帶 .ts：constants.test.ts 用 node --test 直接載入本檔
 import type { GrayOpsCompany } from '../../../data/patchVersions'
 
 // ── 模組槽位 ──────────────────────────────────────────────────────────────────
@@ -120,6 +120,7 @@ export const WEAPON_KIND_BY_TYPE: Record<string, { value: string; label: string 
     { value: WeaponKind.PileBunker,     label: `打樁機（${WeaponKind.PileBunker}）` },
     { value: WeaponKind.Saw,            label: `電鋸（${WeaponKind.Saw}）` },
     { value: WeaponKind.Rod,            label: `長柄（${WeaponKind.Rod}）` },
+    { value: WeaponKind.FloatingBlade,  label: `浮游刃（${WeaponKind.FloatingBlade}）` },
   ],
   [WeaponType.Heavy]: [
     { value: WeaponKind.RailGun,     label: `電磁炮（${WeaponKind.RailGun}）` },

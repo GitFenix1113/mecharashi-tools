@@ -108,6 +108,17 @@
   <div class="section-label purple">v2.0 更新（PLAN-003）</div>
   <div class="section-title">Schema 重構說明</div>
 
+  <div class="changed-block" style="border-left-color:var(--accent-cyan);background:rgba(6,182,212,0.04);">
+    <strong>新武器種類「浮游刃」</strong>（2026-11-14，無 schema 變動）<br><br>
+    · <strong>enum 擴充</strong>：<code>WeaponKind</code> +「浮游刃」（格鬥），19 → 20 種。陸版 2026-11-19 改版新增，首把為「幻痛」（射程 1-3，<strong>第一把射程超過 1 的格鬥武器</strong>）。<br>
+    · <strong>先開值、後補資料</strong>：讓後台能先建佔位資料（見資料佔位慣例）。官方英文鍵（<code>EquipmentType_*</code>）、圖示前綴、射程形狀與裝備部位要等新參數包確認；
+      enum 的<strong>鍵名</strong>屆時可改（不落盤），<strong>值</strong>「浮游刃」會落盤，台版譯名若不同須遷移資料。<br>
+    · <strong>型別不動</strong>：<code>type</code> 仍是「格鬥」，形態過濾與元件 <code>allowedWeaponTypes</code>（以 type 為單位）自動涵蓋。<br>
+    · <strong>防呆</strong>：後台種類下拉 <code>WEAPON_KIND_BY_TYPE</code> 是手寫清單，新增 <code>src/pages/user/admin/constants.test.ts</code>：
+      enum 有、下拉沒有就紅燈（PLAN-040 加「固定武裝」時漏過一次，tsc 抓不到）。<br>
+    · <strong>順帶校正下方種類表</strong>：裝備部位原本是種類預設值的舊抄本，與正式庫不符的 5 列改為實測值（2026-11-14 唯讀盤點 195 筆）。
+  </div>
+
   <div class="changed-block" style="border-left-color:var(--accent-orange);background:rgba(249,115,22,0.04);">
     <strong>固定武裝的宿主規則</strong>（2026-10-10，無 schema 變動）<br><br>
     · <strong>一對一</strong>：每把 <code>isFixedArmament</code> 武器恰好一個宿主（一台機甲或一個機師形態）。站長判斷：固定武裝的造型與故事設定都綁死單台，幾乎不可能共用。
@@ -195,31 +206,36 @@
 <section class="section">
   <div class="section-label purple">WeaponKind</div>
   <div class="section-title">武器種類列表（WeaponKind Enum）</div>
-  <div class="section-desc">共 19 種（格鬥類 7 種、戰術類 5 種、突擊類 4 種、射擊類 2 種、特殊類 1 種），為模組條件篩選的關鍵維度。</div>
+  <div class="section-desc">共 20 種（格鬥類 8 種、戰術類 5 種、突擊類 4 種、射擊類 2 種、特殊類 1 種），為模組條件篩選的關鍵維度。</div>
 
   <div class="data-table-wrap">
     <table class="data-table">
-      <tr><th>Enum Key</th><th>值（string）</th><th>WeaponType（類型）</th><th>equipSlot（裝備部位）</th></tr>
-      <tr><td>LARGE_SHIELD</td><td>大盾</td><td>格鬥</td><td>雙手</td></tr>
-      <tr><td>HAND_SHIELD</td><td>手盾</td><td>格鬥</td><td>單手</td></tr>
-      <tr><td>BLADE</td><td>刀劍</td><td>格鬥</td><td>單手</td></tr>
-      <tr><td>KNUCKLE</td><td>拳套</td><td>格鬥</td><td>單手</td></tr>
-      <tr><td>PILE</td><td>打樁機</td><td>格鬥</td><td>單手</td></tr>
-      <tr><td>CHAINSAW</td><td>電鋸</td><td>格鬥</td><td>雙手</td></tr>
-      <tr><td>POLEARM</td><td>長柄</td><td>格鬥</td><td>雙手</td></tr>
-      <tr><td>RAILGUN</td><td>電磁炮</td><td>戰術</td><td>單手</td></tr>
-      <tr><td>FUNNEL</td><td>浮游炮</td><td>戰術</td><td>肩膀</td></tr>
-      <tr><td>MISSILE</td><td>導彈</td><td>戰術</td><td>肩膀</td></tr>
-      <tr><td>ROCKET</td><td>火箭</td><td>戰術</td><td>單手</td></tr>
+      <tr><th>Enum Key</th><th>值（string）</th><th>WeaponType（類型）</th><th>equipSlot（裝備部位，正式庫實測 2026-11-14）</th></tr>
+      <tr><td>Shield</td><td>大盾</td><td>格鬥</td><td>單手（限重型）</td></tr>
+      <tr><td>Buckler</td><td>手盾</td><td>格鬥</td><td>單手</td></tr>
+      <tr><td>Blade</td><td>刀劍</td><td>格鬥</td><td>單手</td></tr>
+      <tr><td>Knuckle</td><td>拳套</td><td>格鬥</td><td>單手</td></tr>
+      <tr><td>PileBunker</td><td>打樁機</td><td>格鬥</td><td>單手</td></tr>
+      <tr><td>Saw</td><td>電鋸</td><td>格鬥</td><td>雙手</td></tr>
+      <tr><td>Rod</td><td>長柄</td><td>格鬥</td><td>雙手</td></tr>
+      <tr><td>FloatingBlade</td><td>浮游刃</td><td>格鬥</td><td>待確認（2026-11-19 陸版新增，尚無資料）</td></tr>
+      <tr><td>RailGun</td><td>電磁炮</td><td>戰術</td><td>背後</td></tr>
+      <tr><td>Funnel</td><td>浮游炮</td><td>戰術</td><td>背後</td></tr>
+      <tr><td>Missile</td><td>導彈</td><td>戰術</td><td>肩膀</td></tr>
+      <tr><td>Rocket</td><td>火箭</td><td>戰術</td><td>肩膀</td></tr>
       <tr><td>ParticlePod</td><td>粒子莢艙</td><td>戰術</td><td>背後</td></tr>
-      <tr><td>SHOTGUN</td><td>霰彈槍</td><td>突擊</td><td>單手</td></tr>
-      <tr><td>MACHINEGUN</td><td>機槍</td><td>突擊</td><td>單手</td></tr>
-      <tr><td>HEAVY_MACHINEGUN</td><td>重機槍</td><td>突擊</td><td>雙手</td></tr>
-      <tr><td>FLAMETHROWER</td><td>噴火器</td><td>突擊</td><td>單手</td></tr>
-      <tr><td>SNIPER_LIGHT</td><td>輕型狙擊步槍</td><td>射擊</td><td>單手</td></tr>
-      <tr><td>SNIPER</td><td>狙擊步槍</td><td>射擊</td><td>單手</td></tr>
+      <tr><td>ShotGun</td><td>霰彈槍</td><td>突擊</td><td>單手</td></tr>
+      <tr><td>MachineGun</td><td>機槍</td><td>突擊</td><td>單手</td></tr>
+      <tr><td>HeavyMachineGun</td><td>重機槍</td><td>突擊</td><td>雙手</td></tr>
+      <tr><td>Flamethrower</td><td>噴火器</td><td>突擊</td><td>單手</td></tr>
+      <tr><td>LightSniper</td><td>輕型狙擊步槍</td><td>射擊</td><td>單手</td></tr>
+      <tr><td>HeavySniper</td><td>狙擊步槍</td><td>射擊</td><td>雙手</td></tr>
       <tr><td>FixedArmament</td><td>固定武裝</td><td>特殊</td><td>肩膀</td></tr>
     </table>
+  </div>
+  <div class="note-block">
+    Enum Key 欄改為 <code>src/types/enums.ts</code> 的實際鍵名（原表是 PLAN-003 時期的大寫舊鍵）。
+    2026-11-14 校正了 5 列裝備部位：大盾（原寫雙手）、電磁炮（原寫單手）、浮游炮（原寫肩膀）、火箭（原寫單手）、狙擊步槍（原寫單手）。
   </div>
   <div class="note-block">
     <strong>裝備部位（equipSlot）與武器種類通常有固定對應關係</strong>，但以武器本身的 equipSlot 欄位為準，種類表僅供參考。
@@ -270,7 +286,7 @@
       <tr><td>icon</td><td>string?</td><td>自訂圖路徑（站長編輯的非官方圖，放 public/images/weapons/，檔名不以 Icon_ 開頭）<br><small style="color:var(--text-dim)">只在沒有 gameId 時顯示；PLAN-056 C-5 之前還存著官方圖的舊路徑</small></td></tr>
       <tr class="group-header"><td colspan="3">▎分類</td></tr>
       <tr><td>type</td><td>WeaponType (Enum)</td><td>武器類型（大分類）：射擊 / 格鬥 / 突擊 / 戰術 / <strong>特殊</strong><br><small style="color:var(--text-dim)">原欄位名 category；「特殊」為 PLAN-040 新增，僅固定武裝使用，<strong>不進元件的 allowedWeaponTypes</strong></small></td></tr>
-      <tr><td>kind</td><td>WeaponKind (Enum)</td><td>武器種類（細分類）：機槍 / 狙擊步槍 / 刀劍…（共 19 種，見下方種類表）<br><small style="color:var(--text-dim)">原欄位名 type；PLAN-040 新增「粒子莢艙」（戰術）與「固定武裝」（特殊）</small></td></tr>
+      <tr><td>kind</td><td>WeaponKind (Enum)</td><td>武器種類（細分類）：機槍 / 狙擊步槍 / 刀劍…（共 20 種，見下方種類表）<br><small style="color:var(--text-dim)">原欄位名 type；PLAN-040 新增「粒子莢艙」（戰術）與「固定武裝」（特殊）；2026-11-14 新增「浮游刃」（格鬥）</small></td></tr>
       <tr><td>kindCoefficient</td><td>number</td><td>武器種類係數（狙擊步槍 = 5.92）<br><small style="color:var(--text-dim)">原欄位名 typeCoefficient</small></td></tr>
       <tr class="group-header"><td colspan="3">▎基礎屬性</td></tr>
       <tr><td>attack</td><td>number</td><td>攻擊力數值（整數）<br><small style="color:var(--text-dim)">API: WeaponBasicAttackingPower（清單 / detail 端點皆有）→ parseInt；原為 string 型，PLAN-007 修正後改為 number</small><br><small style="color:var(--accent-yellow)">⚠ <strong>戰術武器沒有「普通攻擊」</strong>（使用者實測，PLAN-040 Q1）：<code>type === '戰術'</code> 共 <strong>43 筆</strong>，它們的 <code>attack</code> / <code>hitCount</code> 服務的是<strong>武器天生配備的主動技能</strong>，不是普攻數值。未來寫傷害計算器時<strong>不可</strong>把這 43 筆的 <code>attack</code> 當普攻算。<br>兩個對照組把界線畫得很乾淨：千星的［虛粒子矩陣］造成 1.1 倍範圍傷害 → 千星有 <code>attack: 194</code> / <code>hitCount: 6</code>；衝擊炮的［退敵激波］<strong>純位移、不造成傷害</strong> → <code>attack</code> 列入 <code>naStats</code>、卡面顯示「—」。<br>承接待辦：這 43 把的天生主動技能<strong>全站完全未記錄</strong>（既不在 <code>skills</code> 也不在任何模組），PLAN-040 只掛了衝擊炮與千星兩筆。</small></td></tr>
@@ -528,8 +544,10 @@
       <tr><td>霰彈槍</td><td>manhattan</td><td>1-2</td><td>minRange:1, maxRange:2</td></tr>
       <tr><td>刀劍（ring）</td><td>ring</td><td>1+</td><td>minRange:0, maxRange:1</td></tr>
       <tr><td>大盾 / 拳套 / 打樁機</td><td>manhattan</td><td>1-1</td><td>minRange:1, maxRange:1</td></tr>
-      <tr><td>電磁炮</td><td>orthogonal</td><td>0-5</td><td>minRange:0, maxRange:5</td></tr>
-      <tr><td>導彈 / 火箭 / 浮游炮</td><td>manhattan</td><td>3-6 / 1-4</td><td>minRange:3, maxRange:6</td></tr>
+      <tr><td>浮游刃</td><td>待確認（暫用 manhattan）</td><td>1-3（幻痛）</td><td>minRange:1, maxRange:3</td></tr>
+      <tr><td>電磁炮</td><td>manhattan</td><td>1-5</td><td>minRange:1, maxRange:5<br><small style="color:var(--text-dim)">正式庫 12 把全是 manhattan；orthogonal 的正確性見 enums.ts RangeType 註解</small></td></tr>
+      <tr><td>導彈 / 火箭</td><td>manhattan</td><td>3-6</td><td>minRange:3, maxRange:6</td></tr>
+      <tr><td>浮游炮 / 粒子莢艙</td><td>manhattan</td><td>1-4</td><td>minRange:1, maxRange:4</td></tr>
       <tr><td>噴火器</td><td>ring</td><td>2+</td><td>minRange:0, maxRange:2</td></tr>
     </table>
   </div>
