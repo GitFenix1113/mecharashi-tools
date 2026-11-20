@@ -502,6 +502,7 @@
 
 ### 🔧 維護
 
+- **assets**: 更新圖片清單 manifest.json（卡池動態新貼圖） (`0e2bfe1`)
 - **assets**: 更新圖片清單 manifest.json（11-20 改版新圖） (`cdf86bb`)
 - 陸版 11-20 改版資料包與圖片擷取接上例行流程 (`7789010`)
 - **worker**: /api 來源檢查的 Referer 改成取 origin 後完全比對 (`86db0e6`)
