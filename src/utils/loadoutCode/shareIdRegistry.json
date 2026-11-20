@@ -25,7 +25,7 @@
       "aliases": {}
     },
     "module": {
-      "maxAssigned": 4032,
+      "maxAssigned": 4033,
       "aliases": {
         "mod_4001_2": 1500001,
         "mod_4002_2": 1500002,

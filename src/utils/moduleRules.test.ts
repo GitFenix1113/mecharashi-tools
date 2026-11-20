@@ -63,24 +63,24 @@ const POOL = moduleCandidates(MODULES)
 //   新增：機甲特性 5（千鳴陣列 mod_2084、猛禽單元、終焉鏈接、凜鋒增幅器、瞑刻模塊）、8 級 5（滿銳模組 mod_3070、先聲、游襲、獵軀、疊勢）、
 //   通用 1（浮游刃模組Ⅱ）、副模組 1（嵐調諧單元）、專屬 4（耶夢加得的新星框架 ×4）；
 //   解除 boundMechId：mod_3056、威障模組、乘勢模組（8 級，現在進候選池）。
-test('守門①：候選池恰為 200 筆', () => {
-  assert.equal(MODULES.length, 257, 'fixture 筆數變了 —— 官方改版後請重跑 gen-module-fixture.mjs')
-  assert.equal(MODULES.filter((m) => m.boundMechId == null).length, 213, '沒綁機甲的筆數')
-  assert.equal(POOL.length, 200, '候選池 ＝ 213 − 副模組 12 − mod_2030 1')
+test('守門①：候選池恰為 201 筆', () => {
+  assert.equal(MODULES.length, 258, 'fixture 筆數變了 —— 官方改版後請重跑 gen-module-fixture.mjs')
+  assert.equal(MODULES.filter((m) => m.boundMechId == null).length, 214, '沒綁機甲的筆數')
+  assert.equal(POOL.length, 201, '候選池 ＝ 214 − 副模組 12 − mod_2030 1')
 
-  // 組成也一起釘住：特性 79 ／ 8級 58 ／ 通用 63（挑選器的分類就照這個分）
+  // 組成也一起釘住：特性 79 ／ 8級 58 ／ 通用 64（挑選器的分類就照這個分）
   const bySlot: Record<string, number> = {}
   for (const m of POOL) bySlot[m.slot] = (bySlot[m.slot] ?? 0) + 1
-  assert.deepEqual(bySlot, { [ModuleSlot.SLOT_4]: 79, [ModuleSlot.SLOT_8]: 58, [ModuleSlot.UNIVERSAL]: 63 })
+  assert.deepEqual(bySlot, { [ModuleSlot.SLOT_4]: 79, [ModuleSlot.SLOT_8]: 58, [ModuleSlot.UNIVERSAL]: 64 })
 })
 
-test('守門②：Ⅰ型接口候選（rarity A）恰為 42 筆', () => {
+test('守門②：Ⅰ型接口候選（rarity A）恰為 43 筆', () => {
   const a = POOL.filter((m) => m.rarity === 'A')
-  assert.equal(a.length, 42, 'Ⅰ型接口只收 A 級 —— 這個數字就是那 16 台 A 級機甲的可選範圍')
+  assert.equal(a.length, 43, 'Ⅰ型接口只收 A 級 —— 這個數字就是那 16 台 A 級機甲的可選範圍')
   assert.equal(POOL.filter((m) => m.rarity === 'S').length, 158)
   // 兩型接口實際收到的筆數，就是上面兩個數字的組合
-  assert.equal(POOL.filter((m) => interfaceAcceptsRarity(PartInterface.TYPE_I, m.rarity)).length, 42)
-  assert.equal(POOL.filter((m) => interfaceAcceptsRarity(PartInterface.TYPE_II, m.rarity)).length, 200)
+  assert.equal(POOL.filter((m) => interfaceAcceptsRarity(PartInterface.TYPE_I, m.rarity)).length, 43)
+  assert.equal(POOL.filter((m) => interfaceAcceptsRarity(PartInterface.TYPE_II, m.rarity)).length, 201)
 })
 
 test('守門③：副模組 12 筆與 mod_2030 都不在池裡', () => {
@@ -111,13 +111,13 @@ test('守門④：候選池 levels[] 覆蓋率 100%，且長度只有 4 或 8', 
 
   const hist: Record<number, number> = {}
   for (const m of POOL) hist[m.levels.length] = (hist[m.levels.length] ?? 0) + 1
-  // ⚠ **不可假設固定 8 階**：142 筆是 4 階（計畫書決策四）
-  assert.deepEqual(hist, { 4: 142, 8: 58 })
+  // ⚠ **不可假設固定 8 階**：143 筆是 4 階（計畫書決策四）
+  assert.deepEqual(hist, { 4: 143, 8: 58 })
 })
 
 // ─── 分享碼索引健康度（進度表 A-1 第三項）──────────────────────────────────
 
-test('A-1：候選池 200/200 可分享、零撞號、零死別名', () => {
+test('A-1：候選池 201/201 可分享、零撞號、零死別名', () => {
   const index = buildShareIndex('module', MODULES.map((m) => m.id), MODULE_ALIASES)
 
   assert.deepEqual(index.collisions, [], '模組 shareId 撞號 —— 分享碼會解成另一顆模組')
@@ -130,7 +130,7 @@ test('A-1：候選池 200/200 可分享、零撞號、零死別名', () => {
     + '而不是讓它在分享碼裡靜默消失',
   )
 
-  // 推導 148 ＋ 別名 52 ＝ 200（2026-11-21：手建的 11 顆中文 ID 模組補了別名 1500042–1500052；
+  // 推導 149 ＋ 別名 52 ＝ 201（2026-11-21：浮游刃模組Ⅰ mod_4033 推導得出；手建的 11 顆中文 ID 模組補了別名 1500042–1500052；
   //   推導多的 3 顆是 mod_2084、mod_3070、mod_3056）。別名區的號碼一律 ≥ ALIAS_BASE。
   const aliased = POOL.filter((m) => index.toShareId(m.id)! >= 1_500_000)
   assert.equal(aliased.length, 52, '靠別名才分享得出去的候選模組筆數')
@@ -165,11 +165,11 @@ test('候選池 boundPart 全為 null —— 部位 gate 今天不必做（計�
 
 // ─── 讀數值一律走 levels[]（PLAN-052-G B-1）────────────────────────────────
 
-test('B-1 的依據：候選池 200 筆裡有 111 筆的頂層平坦欄位全 0', () => {
+test('B-1 的依據：候選池 201 筆裡有 112 筆的頂層平坦欄位全 0', () => {
   const zero = POOL.filter((m) => m.flatAllZero)
   // ⚠ 2026-11-21 由 128／58 改成 111／89：PLAN-058（10-13）起後台存檔會把 LV.MAX 鏡像到頂層，
-  //   之後存過檔的 25 顆頂層不再全 0；加上新增的 14 顆候選。結論不變：讀頂層仍有一半以上是 0。
-  assert.equal(zero.length, 111)
+  //   之後存過檔的 25 顆頂層不再全 0；加上新增的 15 顆候選（含浮游刃模組Ⅰ，全 0：浮游刃還沒有增傷欄位）。結論不變：讀頂層仍有一半以上是 0。
+  assert.equal(zero.length, 112)
 
   // ⚠ 這個數字**不是**計畫書原先記的 163 —— 那個數字重算不出來（2026-08-27 複查，
   //   全庫任一種分母／鍵空間組合都得不到 163），已在計畫書與進度表更正。
@@ -318,7 +318,7 @@ test('C-5：候選池 186 顆逐一走完 encode → decode，一顆都不掉', 
 // 每一顆 ＋`moduleAddLevel`，上限是該模組 `levels[]` 的階數。
 // 使用者的例子：四顆刀劍模組Ⅱ ⇒ Σ 8，但它只有 4 階 ⇒ 生效 Lv4、白費 4 級。
 
-test('C-7 守門：候選池去階後恰為 169 族，其中 31 個雙人族全部是 1＋2', () => {
+test('C-7 守門：候選池去階後恰為 169 族，其中 32 個雙人族全部是 1＋2', () => {
   const fam = new Map<string, typeof POOL>()
   for (const m of POOL) {
     const k = moduleFamilyKey(m)
@@ -329,12 +329,11 @@ test('C-7 守門：候選池去階後恰為 169 族，其中 31 個雙人族全�
 
   const sizes: Record<number, number> = {}
   for (const v of fam.values()) sizes[v.length] = (sizes[v.length] ?? 0) + 1
-  // 138 個單人族＝特性 79 ＋ 8級 58 ＋ 通用 1：浮游刃模組Ⅱ（mod_浮游刃）站上只建了Ⅱ型——
-  //   資料包有「浮游刃模组Ⅰ」，等Ⅰ型建檔後它就回到雙人族（那時這裡改成 137／32）
-  assert.deepEqual(sizes, { 1: 138, 2: 31 }, '138 個單人族（特性 79 ＋ 8級 58 ＋ 浮游刃模組Ⅱ）＋ 31 個通用模組的 Ⅰ／Ⅱ 配對')
+  // 137 個單人族＝特性 79 ＋ 8級 58；32 個雙人族＝通用模組的 Ⅰ／Ⅱ（2026-11-21 浮游刃模組Ⅰ mod_4033 建檔後補齊）
+  assert.deepEqual(sizes, { 1: 137, 2: 32 }, '137 個單人族（特性 79 ＋ 8級 58）＋ 32 個通用模組的 Ⅰ／Ⅱ 配對')
   assert.deepEqual(
-    [...fam.values()].filter((v) => v.length === 1 && v[0].slot === ModuleSlot.UNIVERSAL).map((v) => v[0].id), ['mod_浮游刃'],
-    '通用模組只有浮游刃模組Ⅱ落單（Ⅰ型未建檔）',
+    [...fam.values()].filter((v) => v.length === 1 && v[0].slot === ModuleSlot.UNIVERSAL).map((v) => v[0].id), [],
+    '通用模組出現落單的（只建了 Ⅰ 或 Ⅱ 其中一型）',
   )
 
   for (const [key, v] of fam) {
@@ -366,8 +365,7 @@ test('C-7 守門：三種槽位的 addLevel 與階數', () => {
     for (const m of g(slot)) t[`add${m.moduleAddLevel}/lv${m.levels.length}`] = (t[`add${m.moduleAddLevel}/lv${m.levels.length}`] ?? 0) + 1
     return t
   }
-  // add2 比 add1 多 1 顆＝浮游刃模組Ⅱ（Ⅰ型未建檔，見上一條）
-  assert.deepEqual(shape(ModuleSlot.UNIVERSAL), { 'add1/lv4': 31, 'add2/lv4': 32 })
+  assert.deepEqual(shape(ModuleSlot.UNIVERSAL), { 'add1/lv4': 32, 'add2/lv4': 32 })
   assert.deepEqual(shape(ModuleSlot.SLOT_4), { 'add1/lv4': 79 })
   // ⚠ 8 級模組有 8 階但 add 恆為 1 ⇒ 四個接口最多只給得出 4 級。
   //   差額來自機甲自帶的那一顆（等級隨品質階），站上目前只算接口這一段 —— 見 EightLevelNote。
@@ -457,7 +455,7 @@ test('C-7：stackLevelOf 對沒裝的模組回 0（＝「沒裝」，不是 0 �
 /** 已知不一致的族（`slot:基底名`）。每一筆都要寫清楚錯在哪，一個沒有理由的白名單沒有人敢動。 */
 const KNOWN_TIER_MISMATCH: Record<string, string> = {}
 
-test('資料守門：31 個 Ⅰ／Ⅱ 配對的階數一致（數值由 check-module-stat-drift.mjs 守）', () => {
+test('資料守門：32 個 Ⅰ／Ⅱ 配對的階數一致（數值由 check-module-stat-drift.mjs 守）', () => {
   const fam = new Map<string, Fixture[]>()
   for (const m of POOL) {
     const k = moduleFamilyKey(m)
@@ -469,7 +467,7 @@ test('資料守門：31 個 Ⅰ／Ⅱ 配對的階數一致（數值由 check-mo
   // 所以這一條守的是**階數**與**白名單本身**；數值的比對在產出 fixture 時做不到，
   // 由下面那條「白名單裡的族確實還在」＋ 人工的 data-patch 流程接手。
   const pairs = [...fam.entries()].filter(([, v]) => v.length === 2)
-  assert.equal(pairs.length, 31)
+  assert.equal(pairs.length, 32)   // 2026-11-21 浮游刃模組Ⅰ（mod_4033）建檔，浮游刃回到配對
 
   for (const [key, v] of pairs) {
     assert.equal(

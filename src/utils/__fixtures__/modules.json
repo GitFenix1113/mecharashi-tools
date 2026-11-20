@@ -6767,6 +6767,37 @@
   "flatAllZero": false
  },
  {
+  "id": "mod_4033",
+  "name": "浮游刃模組Ⅰ",
+  "slot": "通用模組",
+  "rarity": "A",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": true,
+  "moduleAddLevel": 1,
+  "source": [
+   "商店"
+  ],
+  "managedBy": "auto",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": true
+ },
+ {
   "id": "mod_末日中樞",
   "name": "末日中樞",
   "slot": "機甲特性模組",

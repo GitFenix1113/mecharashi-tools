@@ -484,11 +484,11 @@ test('moduleStacks：不傳 opts 時行為與 052-G 完全相同', () => {
 
 // ─── 啟用條件（A-5）────────────────────────────────────────────────────────
 
-test('unlockBlocker：沒有條件的模組恆為解鎖（257 筆裡 251 筆）', () => {
+test('unlockBlocker：沒有條件的模組恆為解鎖（258 筆裡 252 筆）', () => {
   const ctx = { levelOf: () => 0, maxLevelOf: () => 0 }
   const free = MODS.filter((m) => !m.unlockCondition)
-  // 2026-11-21 重出 fixture：新增的 16 顆都沒有條件；有條件的仍是那 6 顆
-  assert.equal(free.length, 251)
+  // 2026-11-21 重出 fixture：新增的 17 顆（含浮游刃模組Ⅰ）都沒有條件；有條件的仍是那 6 顆
+  assert.equal(free.length, 252)
   for (const m of free) assert.equal(unlockBlocker(m as unknown as Module, ctx), null, m.id)
 })
 
