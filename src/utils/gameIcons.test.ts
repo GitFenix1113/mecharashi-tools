@@ -52,8 +52,11 @@ test('舊編號經別名表解析到現行編號（圖庫只存一份）', () =>
     gameIconSources('Icon_skill_main_1043', '/images/skills/Icon_skill_main_1043.png'),
     [LIB('Icon_skill_main_1141'), '/images/skills/Icon_skill_main_1043.png'],
   )
-  // 笑謊者・重點關照：站上當初猜成 passive_1182，實際是 passive_1171
-  assert.equal(gameIconPath('Icon_skill_passive_1182'), LIB('Icon_skill_passive_1171'))
+  // 只帶 key（沒有舊路徑）也走別名
+  assert.equal(gameIconPath('Icon_skill_passive_1015'), LIB('Icon_skill_passive_1115'))
+  // 反例：官方之後把編號用在別張圖上時，別名要刪掉，否則新圖永遠被蓋掉（2026-11-21：
+  // passive_1182 原本別名到 1171〔笑謊者・重點關照當初猜錯的號〕，陸版 11-20 改版把 1182 給了蝕刃·奧菲利亞的「殘決」）
+  assert.equal(gameIconPath('Icon_skill_passive_1182'), LIB('Icon_skill_passive_1182'))
 })
 
 test('BUFF 字形在 buff 夾', () => {

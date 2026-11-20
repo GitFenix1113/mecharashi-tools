@@ -357,12 +357,13 @@ for (const [families, flag, title] of [
     lines: [`node scripts/import-game-assets.mjs ${SRC} ${flag}`],
   })
 }
-// 可抽機師的其他造型 → 封存（站上只用預設造型）
-const skins = pilotArts.filter((i) => playable.has(i.id) && !site.stems.has(i.name))
+// 可抽機師的其他造型 → 上站（PLAN-042-D 起：pilots/<gameId>/skins/，故事館的外觀切換讀這裡；10-13 以前是封存）
+// 排除的是 core 資料夾裡的預設立繪；skins/ 裡已有的照樣列出來、標 ✅
+const skins = pilotArts.filter((i) => playable.has(i.id) && !fs.existsSync(path.join(SITE, 'pilots', playable.get(i.id), `${i.name}.webp`)))
 if (skins.length) {
   step({
-    kind: 'archive', title: '既有機師的新造型 → repo 外封存（站上只用預設造型）',
-    targets: skins.map((i) => ({ name: i.name, ok: archived(`pilots/${playable.get(i.id)}/${i.name}`) })),
+    kind: 'public', title: '既有機師的新造型 → 上站（故事館的外觀切換；名稱在後台故事館編輯台 › 外觀設定）',
+    targets: skins.map((i) => ({ name: i.name, ok: site.stems.has(i.name), url: `images/game/pilots/${playable.get(i.id)}/skins/${i.name}.webp` })),
     lines: [uniq(skins.map(artName)).join('、'), `node scripts/import-game-assets.mjs ${SRC} --skins`],
   })
 }
