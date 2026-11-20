@@ -1,7 +1,7 @@
 {
   "fmt": 1,
   "note": "線上號碼的已核可快照，供 scripts/check-share-ids.mjs 對帳。前端不 import 這個檔；人工指派的別名在 src/utils/loadoutCode/shareIdRegistry.json。",
-  "updatedAt": "2026-10-17",
+  "updatedAt": "2026-11-20",
   "kinds": {
     "pilot": {
       "collection": "pilots",
@@ -97,7 +97,9 @@
         "89": "pilot_089_賽拉",
         "90": "pilot_090_珂賽特",
         "91": "pilot_091_索妮婭",
-        "92": "pilot_092_摩根娜"
+        "92": "pilot_092_摩根娜",
+        "93": "pilot_093_蝕刃奧菲利亞",
+        "94": "pilot_094_艾蔻"
       },
       "unshareable": []
     },
@@ -196,7 +198,8 @@
         "90": "mech_090_美杜莎MK2",
         "91": "mech_091_藍色魔鳥",
         "92": "mech_092_凜騎士",
-        "93": "mech_093_日蝕"
+        "93": "mech_093_日蝕",
+        "94": "mech_094_耶夢加得"
       },
       "unshareable": []
     },
@@ -395,7 +398,14 @@
         "190": "weapon_190_夜魘改",
         "191": "weapon_191_赤狐改",
         "192": "weapon_192_貝奧武夫改",
-        "193": "weapon_193_熔火改"
+        "193": "weapon_193_熔火改",
+        "194": "weapon_194_星輝",
+        "195": "weapon_195_緋色圓舞曲",
+        "196": "weapon_196_幻痛",
+        "197": "weapon_197_含光",
+        "198": "weapon_198_含光EX",
+        "199": "weapon_199_千棘之矛",
+        "200": "weapon_200_毒針"
       },
       "unshareable": []
     },
@@ -990,8 +1000,10 @@
         "mod_復仇女神_fixed_3",
         "mod_復仇女神_fixed_4",
         "mod_星夜女神_fixed_1",
+        "mod_浮游刃",
         "mod_游襲模組",
         "mod_猛禽單元",
+        "mod_獵軀模組",
         "mod_異械模組",
         "mod_疊勢模組",
         "mod_瞑刻模塊",
@@ -1001,6 +1013,7 @@
         "mod_破曉者-02_fixed_2",
         "mod_破曉者-02_fixed_3",
         "mod_破曉者-02_fixed_4",
+        "mod_終焉鏈接",
         "mod_輝曜核心",
         "mod_輝龍_fixed_1",
         "mod_輝龍_fixed_2",
@@ -1009,7 +1022,12 @@
         "sub_mod_出力模組",
         "sub_mod_回避模組",
         "sub_mod_增傷模組",
+        "sub_mod_嵐調諧單元",
         "sub_mod_承傷模組",
+        "sub_mod_新星框架BH型",
+        "sub_mod_新星框架ER型",
+        "sub_mod_新星框架HM型",
+        "sub_mod_新星框架SPC型",
         "sub_mod_暴擊模組",
         "sub_mod_校準模組",
         "sub_mod_火力模組",
@@ -1023,17 +1041,39 @@
       "collection": "pilotSkills",
       "derived": {},
       "unshareable": [
-        "skill_侵徹極意",
-        "skill_戮影鴉行",
-        "skill_掠食祭禮",
-        "skill_歿境命逐",
-        "skill_殉厄之約",
-        "skill_瀝血為契",
-        "skill_無妄無恕",
-        "skill_雙槍協力",
-        "skill_雙槍反擊",
-        "skill_雙槍普攻",
-        "skill_雙槍追擊"
+        "skill_信息共享",
+        "skill_傾輝之勢",
+        "skill_全面修復",
+        "skill_刃鳴無絕",
+        "skill_寒芒過處",
+        "skill_幹鋒掠影",
+        "skill_微觀視角",
+        "skill_易鋒移形",
+        "skill_晨星之芒",
+        "skill_架構演算",
+        "skill_歸寂",
+        "skill_殘決",
+        "skill_殛域狩刃",
+        "skill_注入指令",
+        "skill_流刃破嵐",
+        "skill_流刃鎖殺",
+        "skill_深度侵蝕",
+        "skill_災雲散布",
+        "skill_熾舞成雙",
+        "skill_燼火餘韻",
+        "skill_爆發侵蝕",
+        "skill_肅殺餘興",
+        "skill_自發修復",
+        "skill_萬敵之鋒",
+        "skill_虛妄",
+        "skill_蜂巢彈頭",
+        "skill_蜂群裝填",
+        "skill_踏鋒穿襲",
+        "skill_遊刃穿襲",
+        "skill_邀焰旋步",
+        "skill_還刃鎖襲",
+        "skill_金屬疲勞",
+        "skill_雙星破"
       ]
     }
   }
