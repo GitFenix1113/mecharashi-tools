@@ -129,9 +129,9 @@ test('規則表：B 級全 0（10 台真的沒有這個槽，不是未建檔）'
 
 // ─── 專屬模組：boundPart × levels.length ────────────────────────────────────
 
-test('exclusivePartLevel：24 顆專屬模組逐顆（levels.length > boundPart.length ⇒ 每部位 2）', () => {
+test('exclusivePartLevel：28 顆專屬模組逐顆（levels.length > boundPart.length ⇒ 每部位 2）', () => {
   const ex = MODS.filter((m) => m.slot === ModuleSlot.EXCLUSIVE)
-  assert.equal(ex.length, 24, '專屬模組筆數變了 —— 請重跑 gen-module-fixture.mjs 並複查下表')
+  assert.equal(ex.length, 28, '專屬模組筆數變了 —— 請重跑 gen-module-fixture.mjs 並複查下表')
 
   /** id → [綁定部位數, levels 階數, 每個綁定部位貢獻幾級]。第三欄是官方那側驗過的結果。 */
   const EXPECT: Record<string, [number, number, number]> = {
@@ -158,6 +158,10 @@ test('exclusivePartLevel：24 顆專屬模組逐顆（levels.length > boundPart.
     'mod_破曉者-01_fixed_1': [2, 2, 1], 'mod_破曉者-01_fixed_2': [2, 2, 1],
     'mod_復仇女神_fixed_1': [1, 1, 1], 'mod_復仇女神_fixed_2': [1, 1, 1],
     'mod_復仇女神_fixed_3': [1, 1, 1], 'mod_復仇女神_fixed_4': [1, 1, 1],
+    // 耶夢加得（3052）的〈新星框架〉四型，2026-11-21 登記：官方 TacticalUnitSuit 的
+    // Body／LeftArm／RightArm／LegHiddenWapEntry 各一筆、Level 1（品質 8 啟用）⇒ 一格一顆、那一格出 1 級
+    'sub_mod_新星框架SPC型': [1, 1, 1], 'sub_mod_新星框架ER型': [1, 1, 1],
+    'sub_mod_新星框架BH型': [1, 1, 1], 'sub_mod_新星框架HM型': [1, 1, 1],
   }
 
   for (const m of ex) {
@@ -480,10 +484,11 @@ test('moduleStacks：不傳 opts 時行為與 052-G 完全相同', () => {
 
 // ─── 啟用條件（A-5）────────────────────────────────────────────────────────
 
-test('unlockBlocker：沒有條件的模組恆為解鎖（241 筆裡 235 筆）', () => {
+test('unlockBlocker：沒有條件的模組恆為解鎖（257 筆裡 251 筆）', () => {
   const ctx = { levelOf: () => 0, maxLevelOf: () => 0 }
   const free = MODS.filter((m) => !m.unlockCondition)
-  assert.equal(free.length, 235)
+  // 2026-11-21 重出 fixture：新增的 16 顆都沒有條件；有條件的仍是那 6 顆
+  assert.equal(free.length, 251)
   for (const m of free) assert.equal(unlockBlocker(m as unknown as Module, ctx), null, m.id)
 })
 

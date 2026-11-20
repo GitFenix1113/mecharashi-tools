@@ -59,32 +59,36 @@ const POOL = moduleCandidates(MODULES)
 
 // ─── 守門斷言（進度表 A-5 的四條）───────────────────────────────────────────
 
-test('守門①：候選池恰為 186 筆', () => {
-  assert.equal(MODULES.length, 241, 'fixture 筆數變了 —— 官方改版後請重跑 gen-module-fixture.mjs')
-  assert.equal(MODULES.filter((m) => m.boundMechId == null).length, 198, '沒綁機甲的筆數')
-  assert.equal(POOL.length, 186, '候選池 ＝ 198 − 副模組 11 − mod_2030 1')
+// ⚠ 2026-11-21 重出 fixture（241 → 257 筆）：這段期間手建／腳本建了 16 顆、另有 3 顆解除綁定，fixture 一直沒重跑。
+//   新增：機甲特性 5（千鳴陣列 mod_2084、猛禽單元、終焉鏈接、凜鋒增幅器、瞑刻模塊）、8 級 5（滿銳模組 mod_3070、先聲、游襲、獵軀、疊勢）、
+//   通用 1（浮游刃模組Ⅱ）、副模組 1（嵐調諧單元）、專屬 4（耶夢加得的新星框架 ×4）；
+//   解除 boundMechId：mod_3056、威障模組、乘勢模組（8 級，現在進候選池）。
+test('守門①：候選池恰為 200 筆', () => {
+  assert.equal(MODULES.length, 257, 'fixture 筆數變了 —— 官方改版後請重跑 gen-module-fixture.mjs')
+  assert.equal(MODULES.filter((m) => m.boundMechId == null).length, 213, '沒綁機甲的筆數')
+  assert.equal(POOL.length, 200, '候選池 ＝ 213 − 副模組 12 − mod_2030 1')
 
-  // 組成也一起釘住：特性 74 ／ 8級 50 ／ 通用 62（挑選器的分類就照這個分）
+  // 組成也一起釘住：特性 79 ／ 8級 58 ／ 通用 63（挑選器的分類就照這個分）
   const bySlot: Record<string, number> = {}
   for (const m of POOL) bySlot[m.slot] = (bySlot[m.slot] ?? 0) + 1
-  assert.deepEqual(bySlot, { [ModuleSlot.SLOT_4]: 74, [ModuleSlot.SLOT_8]: 50, [ModuleSlot.UNIVERSAL]: 62 })
+  assert.deepEqual(bySlot, { [ModuleSlot.SLOT_4]: 79, [ModuleSlot.SLOT_8]: 58, [ModuleSlot.UNIVERSAL]: 63 })
 })
 
 test('守門②：Ⅰ型接口候選（rarity A）恰為 42 筆', () => {
   const a = POOL.filter((m) => m.rarity === 'A')
   assert.equal(a.length, 42, 'Ⅰ型接口只收 A 級 —— 這個數字就是那 16 台 A 級機甲的可選範圍')
-  assert.equal(POOL.filter((m) => m.rarity === 'S').length, 144)
+  assert.equal(POOL.filter((m) => m.rarity === 'S').length, 158)
   // 兩型接口實際收到的筆數，就是上面兩個數字的組合
   assert.equal(POOL.filter((m) => interfaceAcceptsRarity(PartInterface.TYPE_I, m.rarity)).length, 42)
-  assert.equal(POOL.filter((m) => interfaceAcceptsRarity(PartInterface.TYPE_II, m.rarity)).length, 186)
+  assert.equal(POOL.filter((m) => interfaceAcceptsRarity(PartInterface.TYPE_II, m.rarity)).length, 200)
 })
 
-test('守門③：副模組 11 筆與 mod_2030 都不在池裡', () => {
+test('守門③：副模組 12 筆與 mod_2030 都不在池裡', () => {
   const builtIn = MODULES.filter((m) => m.slot === ModuleSlot.BUILT_IN)
-  assert.equal(builtIn.length, 11)
+  assert.equal(builtIn.length, 12)
   for (const m of builtIn) assert.equal(isModuleCandidate(m), false, `${m.id} 不該進池`)
 
-  // ⚠ `available` **不可**當唯一 gate：11 筆副模組裡有 10 筆是 true（值域已漂移）。
+  // ⚠ `available` **不可**當唯一 gate：12 筆副模組裡只有 10 筆是 true（值域已漂移；2026-11-21 手建的嵐調諧單元沒有這個欄位）。
   //    這條斷言存在的理由就是攔住「改用 available 判比較直覺」那個念頭。
   assert.equal(builtIn.filter((m) => m.available === true).length, 10)
 
@@ -107,13 +111,13 @@ test('守門④：候選池 levels[] 覆蓋率 100%，且長度只有 4 或 8', 
 
   const hist: Record<number, number> = {}
   for (const m of POOL) hist[m.levels.length] = (hist[m.levels.length] ?? 0) + 1
-  // ⚠ **不可假設固定 8 階**：136 筆是 4 階（計畫書決策四）
-  assert.deepEqual(hist, { 4: 136, 8: 50 })
+  // ⚠ **不可假設固定 8 階**：142 筆是 4 階（計畫書決策四）
+  assert.deepEqual(hist, { 4: 142, 8: 58 })
 })
 
 // ─── 分享碼索引健康度（進度表 A-1 第三項）──────────────────────────────────
 
-test('A-1：候選池 186/186 可分享、零撞號、零死別名', () => {
+test('A-1：候選池 200/200 可分享、零撞號、零死別名', () => {
   const index = buildShareIndex('module', MODULES.map((m) => m.id), MODULE_ALIASES)
 
   assert.deepEqual(index.collisions, [], '模組 shareId 撞號 —— 分享碼會解成另一顆模組')
@@ -126,9 +130,10 @@ test('A-1：候選池 186/186 可分享、零撞號、零死別名', () => {
     + '而不是讓它在分享碼裡靜默消失',
   )
 
-  // 推導 145 ＋ 別名 41 ＝ 186（2026-08-27 盤點）。別名區的號碼一律 ≥ ALIAS_BASE。
+  // 推導 148 ＋ 別名 52 ＝ 200（2026-11-21：手建的 11 顆中文 ID 模組補了別名 1500042–1500052；
+  //   推導多的 3 顆是 mod_2084、mod_3070、mod_3056）。別名區的號碼一律 ≥ ALIAS_BASE。
   const aliased = POOL.filter((m) => index.toShareId(m.id)! >= 1_500_000)
-  assert.equal(aliased.length, 41, '靠別名才分享得出去的候選模組筆數')
+  assert.equal(aliased.length, 52, '靠別名才分享得出去的候選模組筆數')
 })
 
 // ─── 接口 gate 的行為 ───────────────────────────────────────────────────────
@@ -160,9 +165,11 @@ test('候選池 boundPart 全為 null —— 部位 gate 今天不必做（計�
 
 // ─── 讀數值一律走 levels[]（PLAN-052-G B-1）────────────────────────────────
 
-test('B-1 的依據：候選池 186 筆裡有 128 筆的頂層平坦欄位全 0', () => {
+test('B-1 的依據：候選池 200 筆裡有 111 筆的頂層平坦欄位全 0', () => {
   const zero = POOL.filter((m) => m.flatAllZero)
-  assert.equal(zero.length, 128)
+  // ⚠ 2026-11-21 由 128／58 改成 111／89：PLAN-058（10-13）起後台存檔會把 LV.MAX 鏡像到頂層，
+  //   之後存過檔的 25 顆頂層不再全 0；加上新增的 14 顆候選。結論不變：讀頂層仍有一半以上是 0。
+  assert.equal(zero.length, 111)
 
   // ⚠ 這個數字**不是**計畫書原先記的 163 —— 那個數字重算不出來（2026-08-27 複查，
   //   全庫任一種分母／鍵空間組合都得不到 163），已在計畫書與進度表更正。
@@ -176,7 +183,7 @@ test('B-1 的依據：候選池 186 筆裡有 128 筆的頂層平坦欄位全 0'
   //   （patch-module-weapon-dmg-fields）把 `dmg_fist` / `dmg_blade` / `dmg_funnel`
   //   寫進了 levels[]，鍵空間於是變大，拳套Ⅰ／刀劍Ⅰ／浮游炮Ⅰ 三顆的頂層值被納入檢查。
   //   fixture 那時沒重跑，這次 052-K 重跑才一起浮出來 —— 結論不變，只是分母更誠實。
-  assert.equal(POOL.length - zero.length, 58)
+  assert.equal(POOL.length - zero.length, 89)
 })
 
 test('B-1：levels[i].level 恆為 i + 1 —— 索引寫法今天等價，但本層仍用欄位比對', () => {
@@ -311,18 +318,24 @@ test('C-5：候選池 186 顆逐一走完 encode → decode，一顆都不掉', 
 // 每一顆 ＋`moduleAddLevel`，上限是該模組 `levels[]` 的階數。
 // 使用者的例子：四顆刀劍模組Ⅱ ⇒ Σ 8，但它只有 4 階 ⇒ 生效 Lv4、白費 4 級。
 
-test('C-7 守門：候選池去階後恰為 155 族，其中 31 個雙人族全部是 1＋2', () => {
+test('C-7 守門：候選池去階後恰為 169 族，其中 31 個雙人族全部是 1＋2', () => {
   const fam = new Map<string, typeof POOL>()
   for (const m of POOL) {
     const k = moduleFamilyKey(m)
     if (!fam.has(k)) fam.set(k, [])
     fam.get(k)!.push(m)
   }
-  assert.equal(fam.size, 155, '族數變了 —— 官方改了通用模組的 Ⅰ／Ⅱ 命名方式')
+  assert.equal(fam.size, 169, '族數變了 —— 官方改了通用模組的 Ⅰ／Ⅱ 命名方式')
 
   const sizes: Record<number, number> = {}
   for (const v of fam.values()) sizes[v.length] = (sizes[v.length] ?? 0) + 1
-  assert.deepEqual(sizes, { 1: 124, 2: 31 }, '124 個單人族（特性 74 ＋ 8級 50）＋ 31 個通用模組的 Ⅰ／Ⅱ 配對')
+  // 138 個單人族＝特性 79 ＋ 8級 58 ＋ 通用 1：浮游刃模組Ⅱ（mod_浮游刃）站上只建了Ⅱ型——
+  //   資料包有「浮游刃模组Ⅰ」，等Ⅰ型建檔後它就回到雙人族（那時這裡改成 137／32）
+  assert.deepEqual(sizes, { 1: 138, 2: 31 }, '138 個單人族（特性 79 ＋ 8級 58 ＋ 浮游刃模組Ⅱ）＋ 31 個通用模組的 Ⅰ／Ⅱ 配對')
+  assert.deepEqual(
+    [...fam.values()].filter((v) => v.length === 1 && v[0].slot === ModuleSlot.UNIVERSAL).map((v) => v[0].id), ['mod_浮游刃'],
+    '通用模組只有浮游刃模組Ⅱ落單（Ⅰ型未建檔）',
+  )
 
   for (const [key, v] of fam) {
     if (v.length !== 2) continue
@@ -353,11 +366,12 @@ test('C-7 守門：三種槽位的 addLevel 與階數', () => {
     for (const m of g(slot)) t[`add${m.moduleAddLevel}/lv${m.levels.length}`] = (t[`add${m.moduleAddLevel}/lv${m.levels.length}`] ?? 0) + 1
     return t
   }
-  assert.deepEqual(shape(ModuleSlot.UNIVERSAL), { 'add1/lv4': 31, 'add2/lv4': 31 })
-  assert.deepEqual(shape(ModuleSlot.SLOT_4), { 'add1/lv4': 74 })
+  // add2 比 add1 多 1 顆＝浮游刃模組Ⅱ（Ⅰ型未建檔，見上一條）
+  assert.deepEqual(shape(ModuleSlot.UNIVERSAL), { 'add1/lv4': 31, 'add2/lv4': 32 })
+  assert.deepEqual(shape(ModuleSlot.SLOT_4), { 'add1/lv4': 79 })
   // ⚠ 8 級模組有 8 階但 add 恆為 1 ⇒ 四個接口最多只給得出 4 級。
   //   差額來自機甲自帶的那一顆（等級隨品質階），站上目前只算接口這一段 —— 見 EightLevelNote。
-  assert.deepEqual(shape(ModuleSlot.SLOT_8), { 'add1/lv8': 50 })
+  assert.deepEqual(shape(ModuleSlot.SLOT_8), { 'add1/lv8': 58 })
 })
 
 test('C-7：使用者的例子 —— 四顆刀劍模組Ⅱ 合計 8 級，上限 4，白費 4 級', () => {

@@ -2072,7 +2072,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_2060",
@@ -2136,7 +2136,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_2062",
@@ -2168,7 +2168,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_2064",
@@ -2225,7 +2225,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_2067",
@@ -2257,7 +2257,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_2068",
@@ -2289,7 +2289,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_2069",
@@ -2321,11 +2321,43 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_2070",
   "name": "寂滅驅動",
+  "slot": "機甲特性模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": true,
+  "moduleAddLevel": 1,
+  "source": [
+   "拆機甲",
+   "商店"
+  ],
+  "managedBy": "auto",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
+  "id": "mod_2084",
+  "name": "千鳴陣列",
   "slot": "機甲特性模組",
   "rarity": "S",
   "boundMechId": null,
@@ -4429,7 +4461,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_3051",
@@ -4515,7 +4547,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_3053",
@@ -4556,7 +4588,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_3054",
@@ -4597,7 +4629,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_3055",
@@ -4640,14 +4672,14 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_3056",
   "name": "燎原模組",
   "slot": "機甲8級模組",
   "rarity": "S",
-  "boundMechId": "mech_054_奔霄",
+  "boundMechId": null,
   "boundPart": null,
   "available": true,
   "moduleAddLevel": 1,
@@ -4683,7 +4715,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_3057",
@@ -4726,11 +4758,54 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_3058",
   "name": "遙擊模組",
+  "slot": "機甲8級模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": true,
+  "moduleAddLevel": 1,
+  "source": [
+   "未知"
+  ],
+  "managedBy": "auto",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   },
+   {
+    "level": 5
+   },
+   {
+    "level": 6
+   },
+   {
+    "level": 7
+   },
+   {
+    "level": 8
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
+  "id": "mod_3070",
+  "name": "滿銳模組",
   "slot": "機甲8級模組",
   "rarity": "S",
   "boundMechId": null,
@@ -5480,7 +5555,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_4012_2",
@@ -5542,7 +5617,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_4013_2",
@@ -5604,7 +5679,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_4014_2",
@@ -5666,7 +5741,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_4015_2",
@@ -5728,7 +5803,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_4016_2",
@@ -5790,7 +5865,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_4017_2",
@@ -5852,7 +5927,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_4018_2",
@@ -5914,7 +5989,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_4019_2",
@@ -5976,7 +6051,7 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": null,
-  "flatAllZero": true
+  "flatAllZero": false
  },
  {
   "id": "mod_4020_2",
@@ -6723,6 +6798,49 @@
   "flatAllZero": false
  },
  {
+  "id": "mod_先聲模組",
+  "name": "先聲模組",
+  "slot": "機甲8級模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "機甲不可拆"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   },
+   {
+    "level": 5
+   },
+   {
+    "level": 6
+   },
+   {
+    "level": 7
+   },
+   {
+    "level": 8
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
   "id": "mod_折光陣列",
   "name": "折光陣列",
   "slot": "機甲特性模組",
@@ -6898,7 +7016,7 @@
   "name": "威障模組",
   "slot": "機甲8級模組",
   "rarity": "S",
-  "boundMechId": "mech_087_尼德霍格",
+  "boundMechId": null,
   "boundPart": null,
   "available": null,
   "moduleAddLevel": 1,
@@ -6961,10 +7079,10 @@
   ],
   "slotLevelMultiplier": null,
   "unlockCondition": {
-   "kind": "pilotOnly",
    "pilotIds": [
     "pilot_088_曜"
-   ]
+   ],
+   "kind": "pilotOnly"
   },
   "flatAllZero": true
  },
@@ -6973,7 +7091,7 @@
   "name": "乘勢模組",
   "slot": "機甲8級模組",
   "rarity": "S",
-  "boundMechId": "mech_085_奈芙蒂斯",
+  "boundMechId": null,
   "boundPart": null,
   "available": null,
   "moduleAddLevel": 1,
@@ -7053,6 +7171,37 @@
   "moduleAddLevel": 1,
   "source": [
    "拆機甲"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": true
+ },
+ {
+  "id": "mod_浮游刃",
+  "name": "浮游刃模組Ⅱ",
+  "slot": "通用模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 2,
+  "source": [
+   "未知"
   ],
   "managedBy": "manual",
   "levels": [
@@ -7249,6 +7398,37 @@
   "flatAllZero": false
  },
  {
+  "id": "mod_猛禽單元",
+  "name": "猛禽單元",
+  "slot": "機甲特性模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "拆機甲"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
   "id": "mod_異步感應器",
   "name": "異步感應器",
   "slot": "機甲特性模組",
@@ -7316,6 +7496,37 @@
    },
    {
     "level": 8
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
+  "id": "mod_終焉鏈接",
+  "name": "終焉鏈接",
+  "slot": "機甲特性模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "機甲不可拆"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
    }
   ],
   "slotLevelMultiplier": null,
@@ -7466,6 +7677,49 @@
   "flatAllZero": false
  },
  {
+  "id": "mod_游襲模組",
+  "name": "游襲模組",
+  "slot": "機甲8級模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "機甲不可拆"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   },
+   {
+    "level": 5
+   },
+   {
+    "level": 6
+   },
+   {
+    "level": 7
+   },
+   {
+    "level": 8
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
   "id": "mod_滅卻模組",
   "name": "滅卻模組",
   "slot": "機甲8級模組",
@@ -7509,6 +7763,37 @@
   "flatAllZero": false
  },
  {
+  "id": "mod_凜鋒增幅器",
+  "name": "凜鋒增幅器",
+  "slot": "機甲特性模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "拆機甲"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
   "id": "mod_影虎_fixed_1",
   "name": "虎魄·無束",
   "slot": "機甲專屬模組",
@@ -7532,6 +7817,37 @@
   "slotLevelMultiplier": null,
   "unlockCondition": null,
   "flatAllZero": true
+ },
+ {
+  "id": "mod_瞑刻模塊",
+  "name": "瞑刻模塊",
+  "slot": "機甲特性模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "拆機甲"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
  },
  {
   "id": "mod_輝龍_fixed_1",
@@ -7783,6 +8099,92 @@
   "flatAllZero": false
  },
  {
+  "id": "mod_獵軀模組",
+  "name": "獵軀模組",
+  "slot": "機甲8級模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "機甲不可拆"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   },
+   {
+    "level": 5
+   },
+   {
+    "level": 6
+   },
+   {
+    "level": 7
+   },
+   {
+    "level": 8
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
+  "id": "mod_疊勢模組",
+  "name": "疊勢模組",
+  "slot": "機甲8級模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "未知"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   },
+   {
+    "level": 5
+   },
+   {
+    "level": 6
+   },
+   {
+    "level": 7
+   },
+   {
+    "level": 8
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
   "id": "sub_mod_火力模組",
   "name": "火力模組",
   "slot": "機甲副模組",
@@ -7984,6 +8386,133 @@
   "slotLevelMultiplier": null,
   "unlockCondition": null,
   "flatAllZero": false
+ },
+ {
+  "id": "sub_mod_嵐調諧單元",
+  "name": "嵐調諧單元",
+  "slot": "機甲副模組",
+  "rarity": "S",
+  "boundMechId": null,
+  "boundPart": null,
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "機甲不可拆"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   },
+   {
+    "level": 2
+   },
+   {
+    "level": 3
+   },
+   {
+    "level": 4
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": true
+ },
+ {
+  "id": "sub_mod_新星框架BH型",
+  "name": "新星框架·BH型",
+  "slot": "機甲專屬模組",
+  "rarity": "S",
+  "boundMechId": "mech_094_耶夢加得",
+  "boundPart": [
+   "rightArm"
+  ],
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "未知"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": false
+ },
+ {
+  "id": "sub_mod_新星框架ER型",
+  "name": "新星框架·ER型",
+  "slot": "機甲專屬模組",
+  "rarity": "S",
+  "boundMechId": "mech_094_耶夢加得",
+  "boundPart": [
+   "leftArm"
+  ],
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "未知"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": true
+ },
+ {
+  "id": "sub_mod_新星框架HM型",
+  "name": "新星框架·HM型",
+  "slot": "機甲專屬模組",
+  "rarity": "S",
+  "boundMechId": "mech_094_耶夢加得",
+  "boundPart": [
+   "legs"
+  ],
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "未知"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": true
+ },
+ {
+  "id": "sub_mod_新星框架SPC型",
+  "name": "新星框架·SPC型",
+  "slot": "機甲專屬模組",
+  "rarity": "S",
+  "boundMechId": "mech_094_耶夢加得",
+  "boundPart": [
+   "torso"
+  ],
+  "available": null,
+  "moduleAddLevel": 1,
+  "source": [
+   "未知"
+  ],
+  "managedBy": "manual",
+  "levels": [
+   {
+    "level": 1
+   }
+  ],
+  "slotLevelMultiplier": null,
+  "unlockCondition": null,
+  "flatAllZero": true
  },
  {
   "id": "sub_mod_增傷模組",

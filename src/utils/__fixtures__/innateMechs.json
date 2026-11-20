@@ -181,7 +181,7 @@
  },
  {
   "id": "mech_019_塔納託斯",
-  "name": "塔納託斯",
+  "name": "塔納托斯",
   "quality": "S",
   "module4Id": "mod_2029",
   "module8Id": "mod_3016",
@@ -901,6 +901,62 @@
   "module8Id": "mod_滅卻模組",
   "moduleFixedIds": [
    "sub_mod_增傷模組"
+  ]
+ },
+ {
+  "id": "mech_091_藍色魔鳥",
+  "name": "藍色魔鳥",
+  "quality": "S",
+  "module4Id": "mod_猛禽單元",
+  "module8Id": "mod_游襲模組",
+  "moduleFixedIds": [
+   "sub_mod_增傷模組"
+  ]
+ },
+ {
+  "id": "mech_092_凜騎士",
+  "name": "凜騎士",
+  "quality": "S",
+  "module4Id": "mod_凜鋒增幅器",
+  "module8Id": "mod_先聲模組",
+  "moduleFixedIds": [
+   "sub_mod_火力模組"
+  ]
+ },
+ {
+  "id": "mech_093_日蝕",
+  "name": "日蝕",
+  "quality": "S",
+  "module4Id": "mod_瞑刻模塊",
+  "module8Id": "mod_疊勢模組",
+  "moduleFixedIds": [
+   "sub_mod_校準模組"
+  ]
+ },
+ {
+  "id": "mech_094_耶夢加得",
+  "name": "耶夢加得",
+  "quality": "S",
+  "module4Id": "mod_終焉鏈接",
+  "module8Id": "mod_獵軀模組",
+  "moduleFixedIds": [
+   "sub_mod_火力模組",
+   "sub_mod_新星框架ER型",
+   "sub_mod_新星框架SPC型",
+   "sub_mod_新星框架BH型",
+   "sub_mod_新星框架HM型",
+   "sub_mod_嵐調諧單元"
+  ]
+ },
+ {
+  "id": "mech_095_嘲鶇",
+  "name": "嘲鶇",
+  "quality": "S",
+  "module4Id": "mod_2084",
+  "module8Id": "mod_3070",
+  "moduleFixedIds": [
+   "sub_mod_校準模組",
+   "sub_mod_嵐調諧單元"
   ]
  }
 ]
