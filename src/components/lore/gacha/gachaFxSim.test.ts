@@ -73,6 +73,21 @@ test('先老化移除、再發射：上限 1 顆的光暈死掉的那一格就�
   }
 })
 
+test('旋轉方向：2D 起始旋轉取負（Unity 順時針），3D（rot3d）不取負——艾蔻 Glow03 的 −58° 要斜向窗外、不是蓋在臉上', () => {
+  const start = { mode: 0, scalar: -1.01788 } as const
+  const born = (over: Partial<FxSystem>) => { const s = new ParticleSim(sys({ initial: { ...sys().initial, rotation: start }, ...over }), seeded()); s.update(1); return s.parts[0].rot }
+  const rot2d = born({}), rot3d = born({ rot3d: true })
+  assert.equal(rot2d, 1.01788)
+  assert.equal(rot3d, -1.01788)
+  // 隨生命旋轉跟著同一個方向：每秒 +1 弧度 → 2D 往負、3D 往正
+  const spin = (over: Partial<FxSystem>) => {
+    const s = new ParticleSim(sys({ rotationOverLife: { mode: 0, scalar: 1 }, initial: { ...sys().initial, lifetime: { mode: 0, scalar: 10 } }, ...over }), seeded())
+    s.update(1); const r0 = s.parts[0].rot; s.update(0.5); return s.parts[0].rot - r0
+  }
+  assert.ok(spin({}) < 0, '2D：rotationOverLife 正值＝順時針（模擬值遞減）')
+  assert.ok(spin({ rot3d: true }) > 0, '3D：rotationOverLife 正值＝逆時針（模擬值遞增）')
+})
+
 test('預熱：建構完就已經有粒子（開場不是空的）', () => {
   const s = new ParticleSim(sys({ prewarm: true, initial: { ...sys().initial, maxParticles: 50, lifetime: { mode: 0, scalar: 3 } }, emission: { rate: { mode: 0, scalar: 10 }, bursts: [] } }), seeded())
   assert.ok(s.parts.length >= 25, `${s.parts.length} 顆`)

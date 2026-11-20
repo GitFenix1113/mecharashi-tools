@@ -163,6 +163,13 @@ export interface FxSystem {
   force?: { x: FxMinMax; y: FxMinMax; z: FxMinMax; world: boolean }
   clamp?: { magnitude: FxMinMax; dampen: number }
   noise?: { frequency: number; scroll: FxMinMax; strength: FxMinMax; amount: FxMinMax }
+  /**
+   * 粒子走 Unity 的 **3D 旋轉**（起始旋轉開了 3D，或隨生命／依速度旋轉勾了分軸）：平面上的轉向與 2D 相反（2026-11-21）。
+   * Unity 的 2D 粒子旋轉是順時針（所以模擬器存值取負），3D 旋轉照尤拉角是逆時針——同一個 −58° 在兩種模式轉到相反的兩邊。
+   * 站長對過遊戲畫面：艾蔻（10103189）的 Glow03／04 光束應從圓頂窗斜照兩側，取負的話整道光蓋在臉上。
+   * 只在旋轉不是 0、或有旋轉模組時輸出；省略＝2D
+   */
+  rot3d?: true
   rotationOverLife?: FxMinMax
   /** 依速度旋轉：粒子速率照 range 對到 0–1 取 curve（z 軸轉速，弧度／秒）；兩個常數之間隨機時跟速度無關 */
   rotationBySpeed?: { curve: FxMinMax; range: [number, number] }

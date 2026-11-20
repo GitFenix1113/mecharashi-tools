@@ -1070,6 +1070,11 @@ function particleSystem(n, at) {
     if (RS.separateAxes && (!isZeroCurve(RS.x) || !isZeroCurve(RS.y))) warn(`${n.name}：依速度旋轉的 x／y 軸引擎不支援（只轉 z）`)
     sys.rotationBySpeed = { curve: minMax(RS.curve), range: [num(RS.range?.x), num(RS.range?.y ?? 1)] }
   }
+  // 3D 旋轉（2026-11-21，FxSystem.rot3d）：Unity 只要起始旋轉開 3D、或隨生命／依速度旋轉勾分軸，粒子就走 3D 旋轉，
+  // 平面上的轉向與 2D 相反（2D 順時針、3D 照尤拉角逆時針）。站長對過遊戲畫面（艾蔻 Glow03／04）。
+  // 旋轉是 0 又沒有旋轉模組時方向沒差，不輸出（其他台的 JSON 不變）
+  const rot3d = !!(I.rotation3D || (RM?.enabled && RM.separateAxes) || (RS?.enabled && RS.separateAxes))
+  if (rot3d && (!isZeroCurve(I.startRotation) || sys.rotationOverLife || sys.rotationBySpeed)) sys.rot3d = true
   if (C?.enabled) sys.colorOverLife = minMaxGradient(C.gradient)
   if (Z?.enabled) sys.sizeOverLife = Z.separateAxes ? { x: minMax(Z.curve), y: minMax(Z.y) } : { x: minMax(Z.curve) }
   // 依速度縮放（10-29 補，10103118 艾達、10103154 蘿莎的 Particle_Glow_5）：速率照 range 對到 0–1 取曲線，乘在依壽命縮放之外

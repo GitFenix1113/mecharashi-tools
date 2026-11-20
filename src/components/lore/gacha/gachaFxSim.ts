@@ -351,7 +351,8 @@ export class ParticleSim {
       }
       this.parts.push({
         pos: lp, vel, vel3: [...vel], age: 0, life: Math.max(life, 1e-3),
-        size: size * sc[0], sizeY: sizeY * sc[1], rot: -evalMinMax(I.rotation, tn, R()),
+        // 2D 旋轉是順時針（取負）、3D 旋轉是逆時針（不取負），見 FxSystem.rot3d
+        size: size * sc[0], sizeY: sizeY * sc[1], rot: (S.rot3d ? 1 : -1) * evalMinMax(I.rotation, tn, R()),
         col: evalMinMaxGradient(I.color, tn, R()), r: [R(), R(), R(), R(), R()],
         ...(S.uv ? { uvr: [R(), R(), R()] as [number, number, number] } : {}),
         ...(trail ? { trail } : {}),
@@ -378,6 +379,7 @@ export class ParticleSim {
     }
     const dur = S.duration, tn = (this.t % dur) / dur
     const V = S.velocity, F = S.force, L = S.clamp, N = S.noise, RM = S.rotationOverLife, RS = S.rotationBySpeed
+    const rotSign = S.rot3d ? 1 : -1
     const grav = evalMinMax(S.initial.gravity, tn, 0.5) * 9.81
     for (let i = this.parts.length - 1; i >= 0; i--) {
       const q = this.parts[i]
@@ -461,9 +463,10 @@ export class ParticleSim {
         if (!last || Math.hypot(q.pos[0] - last[0], q.pos[1] - last[1], q.pos[2] - last[2]) >= S.trail!.minVertexDistance) T.pts.unshift([q.pos[0], q.pos[1], q.pos[2], this.t])
         this.trimTrail(T)
       }
-      if (RM) q.rot -= evalMinMax(RM, a, q.r[2]) * dt
+      // 轉向同起始旋轉（2D 順時針取負、3D 逆時針，見 FxSystem.rot3d；3D 這一側是照同一條繪製路徑推的，起始旋轉才有遊戲畫面佐證）
+      if (RM) q.rot += rotSign * evalMinMax(RM, a, q.r[2]) * dt
       // 依速度旋轉（10-29 補）：這一格實際速率（vel3）照 range 對到 0–1 取曲線，轉速的單位與方向同 rotationOverLife
-      if (RS) q.rot -= evalMinMax(RS.curve, speedT(RS.range, Math.hypot(...q.vel3)), q.r[2]) * dt
+      if (RS) q.rot += rotSign * evalMinMax(RS.curve, speedT(RS.range, Math.hypot(...q.vel3)), q.r[2]) * dt
     }
     // ⚠ 發射放在更新之後（Unity 的順序）：先老化、移除，再補新的——
     //   反過來的話「最多 1 顆」的光暈每輪都會斷一拍、整片閃爍（試作 10-16 修掉的關鍵）
