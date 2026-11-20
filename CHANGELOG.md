@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-11-14
+## [Unreleased] - 2026-11-20
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **pilots**: 機師圖鑑新增陸版新機師艾蔻 (`d04ef8d`)
 - **weapons**: 新增武器種類「浮游刃」（格鬥類） (`ebe3f60`)
 - **admin**: 傷害模擬驗證台 /admin/sim（PLAN-065-C Phase C） (`ebad426`)
 - **lore**: 機師艾達補上卡池動態（引擎支援 Image＋UI_General） (`d8d7895`)
@@ -498,6 +499,7 @@
 
 ### 🔧 維護
 
+- 陸版 11-20 改版資料包與圖片擷取接上例行流程 (`7789010`)
 - **worker**: /api 來源檢查的 Referer 改成取 origin 後完全比對 (`86db0e6`)
 - **sim**: PLAN-065-C Phase B 契約公開型別、配裝轉請求、模擬 API 用戶端 (`655d875`)
 - **raids**: PLAN-064 Phase B 武裝討伐集合接線與型別 (`278408b`)
