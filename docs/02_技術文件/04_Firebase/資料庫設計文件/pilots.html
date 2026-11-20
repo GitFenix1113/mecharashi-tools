@@ -55,8 +55,8 @@
       <tr><td>masterLevel</td><td>string</td><td>駕駛等級（如 "大師Ⅲ"）</td></tr>
       <tr><td>stats</td><td>object</td><td>滿級六維 { melee, assault, shooting, tactics, defense, engineering }</td></tr>
       <tr><td>statsBase</td><td>object</td><td>初始六維（同結構）</td></tr>
-      <tr><td>ap</td><td>object</td><td>滿級 AP { init, max, recovery }</td></tr>
-      <tr><td>apBase</td><td>object</td><td>初始 AP（同結構）</td></tr>
+      <tr><td>ap</td><td>object</td><td>潛能 5 的 AP { init, max, recovery }，不含神經驅動（加成存在 neuralDriveAbilities.apBonus）</td></tr>
+      <tr><td>apBase</td><td>object</td><td>潛能 0 的 AP（同結構）</td></tr>
       <tr><td>talents[]</td><td>array</td><td>天賦列表（嵌入式，見下方 SkillEntry 結構）</td></tr>
       <tr><td>skills[]</td><td>string[]</td><td>技能 ID 陣列（PLAN-004 單一資料源）：指向 <a href="pilotSkills.html" style="color:var(--accent-cyan)">pilotSkills 集合</a> 的文件 ID；共用技能多位機師指向同一文件，編輯一次全站生效。過渡期相容嵌入舊格式（<code>resolvePilotSkills</code> 解析），Stage 2 flip 後收斂為純 ID</td></tr>
       <tr><td>neuralDrive[]</td><td>array</td><td>神經驅動列表（嵌入式，見下方 SkillEntry 結構）。<strong>PLAN-023</strong> 進行中：將比照 skills 抽離為 neuralDriveAbilities 能力庫（能力名為鍵），level 改引用 abilityId</td></tr>

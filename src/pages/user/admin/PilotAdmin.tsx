@@ -32,7 +32,7 @@ import { PILOT_RARITY_CLASS } from './constants'
 import { withServerGameRef } from './gameRefGuard'
 
 // ─── 新機師預設值工廠（PLAN-025）─────────────────────────────────────────────────
-// 手建機師沒有官方爬蟲來源：statsBase 給空物件，apBase 複製 ap。
+// 手建機師沒有官方爬蟲來源：statsBase 給空物件；ap／apBase 先給 0，由管理者在「屬性數值・AP」分頁各自填（apBase 是潛能 0 的值，不是 ap 的副本）。
 // 人物檔案、簡介、英文名不在這裡（PLAN-042-E：住 pilotLore，第一次在故事館編輯台存檔時才建文件）。
 // manual:true 讓爬蟲補丁整筆跳過（防日後官方同名機師覆寫人工資料）。
 function makeDefaultPilot(id: string, name = ''): Pilot {
@@ -1248,7 +1248,9 @@ function PilotEditPanel({
 
   function update<K extends keyof Pilot>(key: K, value: Pilot[K]) { setForm((f) => ({ ...f, [key]: value })) }
   function updateStats(key: keyof Pilot['stats'], value: number) { setForm((f) => ({ ...f, stats: { ...f.stats, [key]: value } })) }
-  function updateAp(key: 'init' | 'max' | 'recovery', value: number) { setForm((f) => ({ ...f, ap: { ...f.ap, [key]: value } })) }
+  function updateAp(field: 'ap' | 'apBase', key: keyof Pilot['ap'], value: number) {
+    setForm((f) => ({ ...f, [field]: { ...(f[field] ?? { init: 0, max: 0, recovery: 0 }), [key]: value } }))
+  }
 
   /**
    * PLAN-034 E-3：擋下「掛了帶 buffUpgrades 的能力，但該級 minSum 仍是 0」。
@@ -1405,22 +1407,25 @@ function PilotEditPanel({
             </div>
             {/* AP 系統：原為獨立分頁，PLAN-033 C-1 併入本頁 */}
             <div className="pt-3 mt-4 border-t border-border/60 space-y-3">
-              <p className="text-xs text-text-dim font-medium tracking-wider uppercase">AP 系統 ap</p>
+              <p className="text-xs text-text-dim font-medium tracking-wider uppercase">AP 系統 ap（潛能 5）</p>
               <div className={`${GRID_AUTO_FIELDS} gap-3`}>
-                <Field label="初始 AP init"><input type="number" value={form.ap.init} onChange={(e) => updateAp('init', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="AP 上限 max"><input type="number" value={form.ap.max} onChange={(e) => updateAp('max', Number(e.target.value))} className="input-field" /></Field>
-                <Field label="AP 回復 recovery"><input type="number" value={form.ap.recovery} onChange={(e) => updateAp('recovery', Number(e.target.value))} className="input-field" /></Field>
+                <Field label="初始 AP init"><input type="number" value={form.ap.init} onChange={(e) => updateAp('ap', 'init', Number(e.target.value))} className="input-field" /></Field>
+                <Field label="AP 上限 max"><input type="number" value={form.ap.max} onChange={(e) => updateAp('ap', 'max', Number(e.target.value))} className="input-field" /></Field>
+                <Field label="AP 回復 recovery"><input type="number" value={form.ap.recovery} onChange={(e) => updateAp('ap', 'recovery', Number(e.target.value))} className="input-field" /></Field>
               </div>
-              {form.apBase && (
-                <div className="p-3 bg-bg-dark rounded-lg border border-border/60">
-                  <p className="text-[13px] text-text-dim font-medium tracking-wider uppercase mb-2">基礎值 apBase（參考，由爬蟲腳本管理）</p>
-                  <div className="grid grid-cols-3 gap-2 text-xs text-text-dim">
-                    <div>初始：{form.apBase.init}</div>
-                    <div>上限：{form.apBase.max}</div>
-                    <div>回復：{form.apBase.recovery}</div>
-                  </div>
-                </div>
-              )}
+              <p className="text-[11px] text-text-dim">
+                填不含神經驅動的值。機師頁括號裡「神經驅動滿配後」的加成，由各神經驅動能力的 AP 加成欄自動加總（神經驅動能力管理）。
+              </p>
+              <p className="text-xs text-text-dim font-medium tracking-wider uppercase pt-1">潛能 0 的 AP apBase</p>
+              <div className={`${GRID_AUTO_FIELDS} gap-3`}>
+                <Field label="初始 AP init"><input type="number" value={form.apBase?.init ?? 0} onChange={(e) => updateAp('apBase', 'init', Number(e.target.value))} className="input-field" /></Field>
+                <Field label="AP 上限 max"><input type="number" value={form.apBase?.max ?? 0} onChange={(e) => updateAp('apBase', 'max', Number(e.target.value))} className="input-field" /></Field>
+                <Field label="AP 回復 recovery"><input type="number" value={form.apBase?.recovery ?? 0} onChange={(e) => updateAp('apBase', 'recovery', Number(e.target.value))} className="input-field" /></Field>
+              </div>
+              <p className="text-[11px] text-text-dim">
+                上限與回復通常和潛能 5 相同；初始 AP 會差 0～2（看機師）。前台目前沒用到，先照官方填著備用。
+                {form.apBase && form.ap.max > 0 && form.apBase.max === 0 && <span className="text-accent-yellow"> ⚠ 還是 0，可能是漏填。</span>}
+              </p>
             </div>
           </div>
         )}

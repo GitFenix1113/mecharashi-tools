@@ -18,6 +18,7 @@ import { useGameData } from '../../contexts/GameDataContext'
 import { resolvePilotSkills, buildSkillMap } from '../../utils/pilotSkills'
 import { resolveWeaponSkills, type ResolvedWeaponSkill } from '../../utils/weaponSkills'
 import { resolveNeuralDriveLevel, buildNdAbilityMap } from '../../utils/neuralDriveAbilities'
+import { sumNdApBonus } from '../../utils/ndApBonus'
 import {
   isGammaZone, zonePower, defaultNdLevels, buildNdBuffOverrides,
   effectiveLevel, buildNumLevelOf, ndAffectZones as affectZonesOf, type NdOverrideEntry,
@@ -1119,9 +1120,9 @@ export default function PilotDetailPage() {
             })()}
           </div>
 
-          {/* AP */}
+          {/* AP：括號＝各神經驅動能力 apBonus 的加總（2026-11-21 起不再掃說明文字，見 utils/ndApBonus.ts） */}
           {(() => {
-            const ndAp = parseNdApBonus(resolvedNeuralDrive)
+            const ndAp = sumNdApBonus(pilot.neuralDrive, ndAbilityMap)
             const hasNdBonus = ndAp.init + ndAp.max + ndAp.recovery > 0
             return (
               <div className="mt-1">
@@ -1367,27 +1368,6 @@ export default function PilotDetailPage() {
 
     </div>
   )
-}
-
-// ─── AP Neural Drive Bonus Parser ────────────────────────────────────────────
-
-function parseNdApBonus(neuralDrive: NeuralDrive[] | undefined): {
-  init: number; max: number; recovery: number
-} {
-  const bonus = { init: 0, max: 0, recovery: 0 }
-  if (!neuralDrive) return bonus
-  for (const zone of neuralDrive) {
-    for (const lv of zone.levels) {
-      const t = lv.effect ?? ''
-      const m1 = t.match(/AP的?初始[值]?\+(\d+)/)
-      if (m1) bonus.init += parseInt(m1[1])
-      const m2 = t.match(/AP的?上限[值]?\+(\d+)/)
-      if (m2) bonus.max += parseInt(m2[1])
-      const m3 = t.match(/AP的?回復[值量]?\+(\d+)/)
-      if (m3) bonus.recovery += parseInt(m3[1])
-    }
-  }
-  return bonus
 }
 
 // ─── Small helpers ────────────────────────────────────────────────────────────

@@ -282,6 +282,26 @@ export interface NeuralDriveAbility {
    * **不進 buffPool**：模擬層維持滿級假設，由 Site.excludeFromPool 在 runSpec 內強制（決策七）。
    */
   buffUpgrades?: string[]
+  /**
+   * 本能力給的**永久、自身** AP 加成（2026-11-21）。機師詳情頁 AP 的括號值「神經驅動滿配後」
+   * ＝該機師各等級能力的這一欄加總（`sumNdApBonus()`，src/utils/ndApBonus.ts）。未填＝沒有 AP 加成。
+   *
+   * 只填無條件的：官方資料包把它們寫在被動技能的屬性上（352 初始／28 上限／32 回復），
+   * 全庫只有 AP優化1～4、動力革新1、機件維護2、追襲衝動2 與兩個 `_戰術家` 分身這 9 份。
+   * 「…時」的條件式（天才4、算無遺策3…）與給隊友的（元氣滿滿2「使目標AP上限+1」）**一律不填**，
+   * 效果照樣寫在 description 裡。
+   *
+   * ⚠ 以前是拿正規表示式掃 description，條件句也會掃中，92 位有 6 位多算——所以改成存數字，不再讀文字。
+   * 與官方的對帳：`node scripts/check-pilot-ap-drift.mjs`。
+   */
+  apBonus?: Partial<PilotAp>
+}
+
+/** 機師的 AP 三項（初始／上限／回復）。 */
+export interface PilotAp {
+  init: number
+  max: number
+  recovery: number
 }
 
 export interface NeuralDriveLevel {
@@ -378,8 +398,14 @@ export interface Pilot {
   debutVersion?: string
   stats: PilotStats
   statsBase: Record<string, number>
-  ap: { init: number; max: number; recovery: number }
-  apBase: { init: number; max: number; recovery: number }
+  /** 潛能 5（滿潛）的 AP。神經驅動的加成不含在這裡，由能力的 `apBonus` 加總（見 NeuralDriveAbility.apBonus）。 */
+  ap: PilotAp
+  /**
+   * 潛能 0 的 AP。上限與回復不隨潛能變，只有初始值會：官方有三種階梯（潛能 0→5）——
+   * 3,4,4,4,4,5（64 位）／3,3,3,3,3,4（18 位）／3,3,3,3,3,3（10 位），所以 `ap.init − apBase.init` 是 2／1／0。
+   * 前台目前沒讀它；人工維護（爬蟲 2026-10-11 退場後，後台改成可編輯）。
+   */
+  apBase: PilotAp
   talents: PilotTalent[]
   /**
    * PLAN-004 過渡型別：技能可能是嵌入物件（舊格式）或 pilotSkills 集合的 ID 字串（新格式／單一資料源）。

@@ -12,6 +12,7 @@ import { parseBuffRef, formatBuffRef } from '../../../utils/buffRef'
 import { isSelfBuff, pickLevel } from '../../../utils/ndOverrides'
 import { findBuffLevelRefs } from '../../../utils/buffLevelRefs'
 import { useRefScanData } from '../../../hooks/useRefScanData'
+import { AP_KEYS, hasApBonus, mentionsApBonus } from '../../../utils/ndApBonus'
 
 type NdFilters = { status: 'all' | 'noEffects' | 'unlinked' }
 
@@ -191,6 +192,62 @@ function collectMounts(pilots: Pilot[], abilityId: string): MountInfo[] {
   return out
 }
 
+// ─── AP 加成（2026-11-21）──────────────────────────────────────────────────────
+//
+// 機師詳情頁 AP 的括號值＝各等級能力這一欄的加總（utils/ndApBonus.ts）。以前是掃說明文字，
+// 「…時」的條件句也會被當成永久加成。所以這裡**只填永久、自身的**；條件式的留空、文字照寫。
+// 全 0 存成「沒有這個欄位」，不留一個空物件。
+const AP_LABELS: Record<(typeof AP_KEYS)[number], string> = { init: '初始 AP', max: 'AP 上限', recovery: 'AP 回復' }
+const AP_SHORT: Record<(typeof AP_KEYS)[number], string> = { init: '初始', max: '上限', recovery: '回復' }
+
+function ApBonusField({
+  value, onChange, description, pilotCount,
+}: {
+  value: NeuralDriveAbility['apBonus']
+  onChange: (next: NeuralDriveAbility['apBonus']) => void
+  description: string
+  pilotCount: number
+}) {
+  function set(k: (typeof AP_KEYS)[number], raw: string) {
+    const n = raw.trim() === '' ? 0 : Number(raw)
+    const next = { ...value, [k]: Number.isFinite(n) && n !== 0 ? n : undefined }
+    onChange(hasApBonus({ apBonus: next }) ? next : undefined)
+  }
+  const filled = hasApBonus({ apBonus: value })
+  return (
+    <div className="rounded-lg border border-border bg-bg-dark/40 px-3 py-2 space-y-2">
+      <p className="text-[12px] font-bold text-text-secondary">
+        AP 加成 apBonus（選填，<b className="text-accent-yellow">永久、自身</b>的才填）
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        {AP_KEYS.map((k) => (
+          <Field key={k} label={AP_LABELS[k]}>
+            <input
+              type="number"
+              value={value?.[k] ?? ''}
+              onChange={(e) => set(k, e.target.value)}
+              className="input-field"
+              placeholder="0"
+            />
+          </Field>
+        ))}
+      </div>
+      <p className="text-[11px] text-text-dim">
+        機師頁 AP 的括號值（神經驅動滿配後）由這一欄加總，不再讀說明文字。
+        「…時」的條件式（例：天才4）、加給隊友的（例：元氣滿滿2「使目標AP上限+1」）不要填。
+      </p>
+      {!filled && mentionsApBonus(description) && (
+        <p className="text-[11px] text-accent-yellow">
+          ⚠ 說明文字提到 AP 加成，這一欄卻是空的。永久加成（例：「AP的回復值+1」）請填上面；條件式的可以忽略這則提示。
+        </p>
+      )}
+      {filled && pilotCount >= 2 && (
+        <p className="text-[11px] text-accent-yellow">⚠ 共用能力：改這裡會改到所有掛載機師（{pilotCount} 位）的 AP 顯示。</p>
+      )}
+    </div>
+  )
+}
+
 // ─── 能力編輯面板 ──────────────────────────────────────────────────────────────
 function NdAbilityEditPanel({
   ability,
@@ -321,6 +378,13 @@ function NdAbilityEditPanel({
         <BuffUpgradesField
           value={form.buffUpgrades}
           onChange={(next) => update('buffUpgrades', next)}
+        />
+
+        <ApBonusField
+          value={form.apBonus}
+          onChange={(next) => update('apBonus', next)}
+          description={form.description}
+          pilotCount={pilotCount}
         />
       </div>
     </AdminModal>
@@ -466,6 +530,11 @@ export default function NeuralDriveAdmin({ initialSearch = '' }: { initialSearch
                   {(a.buffUpgrades?.length ?? 0) > 0 && (
                     <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-pink/40 bg-accent-pink/10 text-accent-pink shrink-0">
                       升階 {a.buffUpgrades!.length}
+                    </span>
+                  )}
+                  {hasApBonus(a) && (
+                    <span className="text-[12px] px-1.5 py-0.5 rounded border border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow shrink-0">
+                      AP {AP_KEYS.filter((k) => a.apBonus?.[k]).map((k) => `${AP_SHORT[k]}+${a.apBonus![k]}`).join(' ')}
                     </span>
                   )}
                 </div>

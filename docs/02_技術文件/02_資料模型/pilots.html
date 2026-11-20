@@ -56,11 +56,12 @@
       <tr><td>&nbsp;├ defense</td><td>number</td><td>防禦</td></tr>
       <tr><td>&nbsp;└ engineering</td><td>number</td><td>工程</td></tr>
       <tr><td>statsBase</td><td>Record&lt;string, number&gt;</td><td>六維屬性的<strong>基礎值版本</strong>（key 為屬性英文名）；參考用、由爬蟲腳本管理，stats 為顯示值，statsBase 保留原始基礎值供對照</td></tr>
-      <tr class="group-header"><td colspan="3">▎AP 系統 ap</td></tr>
+      <tr class="group-header"><td colspan="3">▎AP 系統 ap（潛能 5）</td></tr>
       <tr><td>&nbsp;├ init</td><td>number</td><td>初始 AP</td></tr>
       <tr><td>&nbsp;├ max</td><td>number</td><td>AP 上限</td></tr>
       <tr><td>&nbsp;└ recovery</td><td>number</td><td>AP 回復量</td></tr>
-      <tr><td>apBase</td><td>{ init, max, recovery }</td><td>AP 系統的<strong>基礎值版本</strong>（參考用，由爬蟲腳本管理；結構同 ap）</td></tr>
+      <tr><td colspan="3"><small style="color:var(--text-dim)">不含神經驅動。詳情頁括號裡「神經驅動滿配後」的加成由各等級能力的 <code>NeuralDriveAbility.apBonus</code> 加總（2026-11-21 起，原本是掃說明文字），見 neuralDriveAbilities 資料模型。</small></td></tr>
+      <tr><td>apBase</td><td>{ init, max, recovery }</td><td><strong>潛能 0</strong> 的 AP（結構同 ap）。上限與回復不隨潛能變，只有初始值會：官方三種階梯（潛能 0→5）3,4,4,4,4,5／3,3,3,3,3,4／3,3,3,3,3,3，所以 <code>ap.init − apBase.init</code> 是 2／1／0。前台目前沒讀它；人工維護，後台「屬性數值・AP」可編輯（爬蟲 2026-10-11 退場後，2026-11-21 補上 11 位當時是 0 的值）</td></tr>
       <tr><td>license</td><td><code>MechLicense</code></td><td>駕駛許可：輕型 / 中型 / 重型（實測 26／37／26）<br><small style="color:var(--text-dim)">PLAN-052-A D-1 由 <code>string</code> 收成 enum。⚠ 值域與 <code>ArmorType</code>（輕型／<strong>中甲</strong>／重型）<strong>只有中階不同名</strong>——模擬器原本寫 <code>license === '中甲'</code>，分支恆為 false，於是 37 位中型執照的機師看得到全部 90 台含重型。判定一律走 <code>licenseAllows()</code>（<code>src/utils/normalizeArmorType.ts</code>）。執照與裝甲是<strong>一對一</strong>對應（重型執照只能駕駛重型），不是階梯式包含——2026-08-25 修正。</small></td></tr>
       <tr><td>masterLevel</td><td>string</td><td>駕駛等級</td></tr>
       <tr><td>debutVersion</td><td>string?</td><td>登場版本：機師首次實裝的遊戲版本號（對應 patchVersions，如 <code>3.3</code>）；未設定＝尚未回填。後台從版本清單下拉選取，圖鑑可依此篩選</td></tr>
