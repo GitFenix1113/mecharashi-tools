@@ -69,9 +69,20 @@ if (WRITE && FROM_BACKUP) {
 }
 
 // ─── ① 擷取結果 ───────────────────────────────────────────────────────────
+/**
+ * 最新資料包的名字（＝擷取結果的 meta.build.package）。⚠ 與 scripts/lib/raid_db.py 的 latest_package() 同一套規則，改一邊要一起改：
+ * 遊戲參數資料包_<日期>\ 與 改版調查_<日期>\資料\ 都算；取日期最新的，同一天兩種都有時完整交付包優先。
+ */
 function latestPackage() {
-  const dirs = fs.readdirSync(DATA_ROOT).filter((d) => d.startsWith('遊戲參數資料包_') && fs.existsSync(path.join(DATA_ROOT, d, '遊戲資料.sqlite')))
-  return dirs.sort().at(-1)
+  const cands = []
+  for (const d of fs.readdirSync(DATA_ROOT)) {
+    if (d.startsWith('遊戲參數資料包_') && fs.existsSync(path.join(DATA_ROOT, d, '遊戲資料.sqlite'))) cands.push({ label: d, full: 1 })
+    else if (d.startsWith('改版調查_') && fs.existsSync(path.join(DATA_ROOT, d, '資料', '遊戲資料.sqlite'))) cands.push({ label: d, full: 0 })
+  }
+  const date = (label) => /_(\d{8})$/.exec(label)?.[1] ?? ''
+  const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0)
+  cands.sort((a, b) => cmp(date(a.label), date(b.label)) || a.full - b.full || cmp(a.label, b.label))
+  return cands.at(-1)?.label
 }
 function parserVersion() {
   const m = /^PARSER_VERSION\s*=\s*(\d+)/m.exec(fs.readFileSync(EXTRACT_SCRIPT, 'utf8'))

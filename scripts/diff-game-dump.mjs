@@ -229,11 +229,16 @@ const nextSteps = []
  * kind：public＝上站（之後要 commit、push）／archive＝repo 外封存（不必 commit）／manual＝要人改東西
  * targets：這一步負責的檔 { name, ok（目的地已有）, url（上站的才有，給清快取清單）}
  */
-function step({ targets, lines, ...s }) {
+/**
+ * notes：檔案都匯了也要讓人看到的提醒（對不到的卡池鍵、沒登記的兵裝）。有 notes 的步驟不算 ✅——
+ * 否則「新機師的卡池插畫沒人對照」會收在已完成底下看不到（2026-11-21 蝕刃·奧菲利亞／艾蔻就是這樣）。
+ */
+function step({ targets, lines, notes = [], ...s }) {
   const missing = targets.filter((t) => !t.ok)
   nextSteps.push({ ...s, total: targets.length, todo: missing.length, missing: missing.map((t) => t.name),
-    urls: targets.map((t) => t.url).filter(Boolean), lines: lines.map((l) => (l.startsWith('node ') ? l + DRY : l)) })
+    urls: targets.map((t) => t.url).filter(Boolean), lines: lines.map((l) => (l.startsWith('node ') ? l + DRY : l)), notes })
 }
+const isDone = (s) => s.kind !== 'manual' && !s.todo && !s.notes?.length
 
 // 新機師卡：Icon_item_<gameId>A（gameId 與 artKey 不互推——--art-key 由人確認後填）
 const cards = addedItems.filter((i) => i.kind === 'pilot' && i.part === 'card' && i.skin === 'A')
@@ -288,7 +293,8 @@ if (mechCore.length) {
     step({
       kind: 'public', title: '機甲塗裝、招募插畫、廠商舞台 → 上站（機甲故事館）',
       targets: [...targets.values()],
-      lines: [`node scripts/import-game-assets.mjs ${SRC} --mech-lore`,
+      lines: [`node scripts/import-game-assets.mjs ${SRC} --mech-lore`],
+      notes: [
         ...(armaments.size ? [`本體還沒登記的兵裝組件：${[...armaments].sort().map((w) => `Img_Skin_wap${w}`).join('、')}——查出是哪台的（scripts/lib/mechLoreAssets.mjs 的 ARMAMENT_SKINS 註解寫了怎麼查），在 ARMAMENT_SKINS 補一行 ${[...armaments][0]}: '<本體 wap>' 再跑上面那行`] : []),
         ...(unmapped.size ? [`對不到機甲的卡池鍵：${[...unmapped].sort().join('、')}——新機甲的專屬卡池就在 scripts/lib/mechGachaCards.json 補一行 "<wap>": "<卡池鍵>" 再跑上面那行；雙機池、常駐池、自選池不必補`] : [])],
     })
@@ -322,7 +328,8 @@ if (mechCore.length) {
       targets: [...targets.values()],
       lines: [
         ...(noFolder.size ? [`⚠ 這幾位站上還沒有機師資料夾，--pilot-lore 會跳過：${[...noFolder].sort().join('、')}——先做上面「新機師卡」那步（--id；NPC 轉正的卡號是 5 碼），再跑下面這行`] : []),
-        `node scripts/import-game-assets.mjs ${SRC} --pilot-lore`,
+        `node scripts/import-game-assets.mjs ${SRC} --pilot-lore`],
+      notes: [
         ...(unmapped.size ? [`對不到機師的卡池切片：${[...unmapped].sort().join('、')}——新機師的專屬卡池就在 scripts/lib/pilotGachaCards.json 補一行 "<gameId>": "<卡池鍵>"（卡池鍵＝卡池 prefab PilotGacha<鍵>ItemPrefab 的鍵）再跑上面那行；雙人池、常駐／預告／自選池不必補`] : [])],
     })
   }
@@ -383,7 +390,7 @@ if (unsorted.length) {
   nextSteps.push({ kind: 'manual', title: '字典沒登記的新模組 → 補 scripts/lib/gameUiModules.mjs 的 DICT（不補也已封存在 ui/_unsorted/，補了只是歸類更清楚）',
     total: unsorted.length, todo: unsorted.length, missing: [], urls: [], lines: unsorted })
 }
-const badge = (s) => s.kind === 'manual' ? '⚠ 要人處理' : !s.todo ? '✅ 已完成'
+const badge = (s) => s.kind === 'manual' ? '⚠ 要人處理' : isDone(s) ? '✅ 已完成' : !s.todo ? '⚠ 檔案都匯了，但有要人確認的'
   : s.todo === s.total ? `⬜ 待做（${s.total} 個檔）` : `◐ 做了一部分（還差 ${s.todo}／${s.total}）`
 /** 上站的新檔（部署前若有人開過網址，Cloudflare 會把 404 快取住，要清） */
 const publicUrls = nextSteps.filter((s) => s.kind === 'public').flatMap((s) => s.urls)
@@ -479,15 +486,16 @@ ol.steps{padding-left:22px}ol.steps>li{margin:10px 0}ol.steps>li.done{color:var(
 <table><tr><th></th>${SECTIONS.map(([, t]) => `<th>${esc(t.split('：')[0].split('（')[0])}</th>`).join('')}</tr>
 ${['added', 'changed', 'removed'].map((k) => `<tr><td>${{ added: '新增', changed: '內容變更', removed: '消失' }[k]}</td>${SECTIONS.map(([s]) => `<td>${summary[k][s] || ''}</td>`).join('')}</tr>`).join('')}</table>
 <p class="muted">sha256 不同 ${candidates.length} 筆，像素比對後真的變了 ${changed.length} 筆（其餘是圖集重新打包）。</p>
-<h2>下一步 <span class="count">（✅ ${nextSteps.filter((s) => s.kind !== 'manual' && !s.todo).length}／${nextSteps.length} 步）</span></h2>
+<h2>下一步 <span class="count">（✅ ${nextSteps.filter(isDone).length}／${nextSteps.length} 步）</span></h2>
 <p class="note">照順序做。每個指令先<b>不加</b> <code>--apply</code> 跑一次（dry-run，只報告、不寫任何東西），沒問題再加 <code>--apply</code> 重跑。
 這份報告是產生當下的快照：做完幾步後重跑 <code>node scripts/diff-game-dump.mjs</code>，狀態就會更新。
 「上站」的步驟做完要接下面的收尾；「封存」寫在 repo 外（<code>${esc(ARCHIVE_GAME)}</code>），不必 commit。</p>
 ${nextSteps.length ? `<ol class="steps">${nextSteps.map((s) => {
   const pre = `<pre>${s.lines.map(esc).join('\n')}</pre>`
-  const done = s.kind !== 'manual' && !s.todo
+  const notes = s.notes?.length ? `<pre>${s.notes.map(esc).join('\n')}</pre>` : ''
+  const done = isDone(s)
   return `<li class="${done ? 'done' : ''}"><b>${esc(badge(s))}</b>　${esc(s.title)}<span class="tag">${{ public: '上站', archive: '封存', manual: '人工' }[s.kind]}</span>
-${done ? `<details><summary>指令</summary>${pre}</details>` : pre}</li>`
+${notes}${s.kind !== 'manual' && !s.todo ? `<details><summary>指令</summary>${pre}</details>` : pre}</li>`
 }).join('\n')}</ol>` : '<p class="muted">沒有需要匯入的。</p>'}
 <h2>收尾（上站的步驟做完之後）</h2>
 <ol class="steps">
@@ -531,10 +539,11 @@ for (const [k, t] of SECTIONS) {
   const all = addedItems.filter((i) => i.kind === k)
   if (all.length) console.log(`  ${t.split('：')[0].split('（')[0].padEnd(8, '　')} ${all.filter((i) => i.fresh).length} / ${all.length}`)
 }
-console.log(`\n下一步（✅ ${nextSteps.filter((s) => s.kind !== 'manual' && !s.todo).length}／${nextSteps.length} 步）：`)
+console.log(`\n下一步（✅ ${nextSteps.filter(isDone).length}／${nextSteps.length} 步）：`)
 for (const s of nextSteps) {
   console.log(`\n${badge(s)}　${s.title}`)
   if (s.kind === 'manual' || s.todo) console.log(s.lines.map((l) => '  ' + l).join('\n'))
+  if (s.notes?.length) console.log(s.notes.map((l) => '  ' + l).join('\n'))
 }
 if (publicUrls.length) console.log('\n上站的步驟做完 → 收尾見報告最後（npm run dev 確認 → commit → npm run push → 等部署，必要時清 Cloudflare 快取）')
 console.log(`\n📝 報告：${path.relative(ROOT, outBase)}.html（＋ .json）`)

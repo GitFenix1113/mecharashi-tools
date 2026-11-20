@@ -100,6 +100,7 @@ const DICT = [
   ['uiworkshop', 'system', '工坊'],
   ['uipilot', 'system', '機師介面'],
   ['uipilotdevelop', 'system', '機師培養'],
+  ['uilinkpilot', 'system', '共鳴接口與鏈路（機師養成，2026-11 陸版新系統）'],
   ['uirnd', 'system', '研發'],
   ['uiguild', 'system', '公會'],
   ['uineuralfitdrive', 'system', '神經驅動'],

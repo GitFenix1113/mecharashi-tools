@@ -548,7 +548,7 @@ class Extractor:
 
 def main():
     ap = argparse.ArgumentParser(description='PLAN-064 武裝討伐擷取（唯讀資料包 → 中性 JSON）')
-    ap.add_argument('--src', help='資料包目錄（預設：E:\\Mecharashi_Data 底下最新的 遊戲參數資料包_*）')
+    ap.add_argument('--src', help='資料包目錄（預設：E:\\Mecharashi_Data 底下日期最新的 遊戲參數資料包_* 或 改版調查_*\\資料）')
     ap.add_argument('--out', help='輸出 JSON（預設：E:\\Mecharashi_Data\\raid-extract\\raid-extract_<BuildNum>.json）')
     args = ap.parse_args()
     sys.stdout.reconfigure(encoding='utf-8')

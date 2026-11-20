@@ -2,7 +2,7 @@
  "說明": "機甲故事館的招募插畫：每台機甲用哪一組卡池切片（PLAN-042-B F-2）。卡池鍵是擷取檔名 Img_1_mechcard_illustration_<卡池鍵><1|2>_Raw 裡的英文名，檔名裡沒有 wap，所以靠這張表人工對照。",
  "怎麼補": "新機甲有卡池時，node scripts/import-game-assets.mjs --src=latest --mech-lore 的報告會列出「對不到機甲的卡池鍵」；確認是哪台後在 cards 加一行 \"<wap>\": \"<卡池鍵>\"，再跑一次 --apply。雙機池（GlaDre、MalAgl）、常駐池（light／medium／heavy／featured）、自選池（Select、SelectSniper、SelectTactician、Suit）不是單台機甲的插畫，不必填。",
  "怎麼驗證": "不要只憑英文名猜：卡池鍵不一定是那台機甲的英文名（Ranger 是龍雀的卡池、遊騎兵的英文名卻也叫 Ranger，遊騎兵自己的是 Ranger02）。權威來源是遊戲參數資料包的 ConfigDataWapGachaPoolInfo：PrefabPath＝WapGacha<卡池鍵>PoolItemPrefab、ShowCaseWaps[].TemplateInfoId＝該池 UP 的機甲（ConfigDataTacticalUnitSuitInfo 的 ID；站上資料夾用的是它的 IconPath 圖示號，例：影子兔 1302 → wap2302）。前台若要例外，後台機甲管理可用 cardKey 改選或隱藏。",
- "來源": "2026-10-17 由 site-archive 的 extended 匯入結果（v3 對照）整理，3051 Eclipse＝日蝕（站長 10-12 確認）。2026-10-19 依 ConfigDataWapGachaPoolInfo 全面對帳：Ranger 由 3032 改給 3015 龍雀、3032 遊騎兵改用 Ranger02，補 1029 SEFAS（強電場，先前誤當自選池）與 1071 Nivequus（凜騎士）。",
+ "來源": "2026-10-17 由 site-archive 的 extended 匯入結果（v3 對照）整理，3051 Eclipse＝日蝕（站長 10-12 確認）。2026-10-19 依 ConfigDataWapGachaPoolInfo 全面對帳：Ranger 由 3032 改給 3015 龍雀、3032 遊騎兵改用 Ranger02，補 1029 SEFAS（強電場，先前誤當自選池）與 1071 Nivequus（凜騎士）。2026-11-21 依改版調查_20261120 的 ConfigDataWapGachaPoolInfo 補 2058 Mockingbird（嘲鶇，池 143）、3052 Jormungandr（耶夢加得，池 140）。",
  "cards": {
   "1011": "Dopplesoldner",
   "1012": "Rex",
@@ -43,6 +43,7 @@
   "2055": "Snowyowl",
   "2056": "Monarch",
   "2057": "Nightglow",
+  "2058": "Mockingbird",
   "2060": "Demiurge",
   "2061": "Fluorite",
   "2062": "Prisma",
@@ -66,6 +67,7 @@
   "3037": "Portents",
   "3047": "Nidhogg",
   "3051": "Eclipse",
+  "3052": "Jormungandr",
   "3301": "REV-00",
   "3302": "Ryuoumaru"
  }
