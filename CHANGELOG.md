@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-11-20
+## [Unreleased] - 2026-11-21
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **buffs**: BUFF 官方 ID（gameRef.bufIds），後台可編輯、回填腳本支援分級槽位 (`5880135`)
 - **modules**: 新增浮游刃模組Ⅰ（mod_4033） (`8c65f71`)
 - **lore**: 新卡池動態與 3D 旋轉修正，機甲嘲鶇上站 (`2e0077c`)
 - **assets**: 匯入陸版 11-20 改版圖片（艾蔻、蝕刃·奧菲利亞、新外觀與圖示） (`91e5d1f`)
