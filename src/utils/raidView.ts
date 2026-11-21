@@ -2,6 +2,7 @@
 
 import type { Boss, BossSkill, RaidReinforcement, RaidSeason, RaidStageVariant, RaidUnit, RaidWhen } from '../types/boss'
 import type { RaidDifficulty } from '../types/enums'
+import { halfListOf } from '../data/patchVersions/halves.ts'
 
 // ── ⟦…⟧ 引用記號 ──────────────────────────────────────────────────────────────
 //   ⟦buf:1⟧ ⟦buf:1|標籤⟧ ⟦main:1⟧ ⟦passive:1⟧ ⟦active:1⟧ ⟦terrain:1⟧ ⟦unit:853501⟧ ⟦em:2⟧
@@ -120,13 +121,13 @@ export const unitCount = (units: RaidUnit[]) => units.reduce((a, u) => a + u.cou
 interface HalfLike { armamentRaids?: { name: string; weapons?: string[]; weaponPilots?: string[]; backpacks?: string[] }[] }
 
 export function raidRewardsFromTimeline(
-  versions: { upper?: HalfLike; lower?: HalfLike }[],
+  versions: { upper?: HalfLike; middle?: HalfLike; lower?: HalfLike }[],
   seasonName: string,
 ): { weapons: { name: string; pilot?: string }[]; backpacks: string[] } | null {
   const norm = (s: string) => s.replace(/\s+/g, '')
   for (const v of versions) {
-    for (const half of [v.upper, v.lower]) {
-      const r = half?.armamentRaids?.find((x) => norm(x.name) === norm(seasonName))
+    for (const half of halfListOf(v)) {
+      const r = half.armamentRaids?.find((x) => norm(x.name) === norm(seasonName))
       if (r) {
         return {
           weapons: (r.weapons ?? []).map((name, i) => ({ name, ...(r.weaponPilots?.[i] ? { pilot: r.weaponPilots[i] } : {}) })),

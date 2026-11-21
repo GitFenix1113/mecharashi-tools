@@ -38,7 +38,12 @@ function applyPredictedByDate(versions: PatchVersion[]): PatchVersion[] {
     h.twIsPredicted !== undefined
       ? h
       : { ...h, twIsPredicted: !!h.twDate && parseVersionDate(h.twDate) > today }
-  return versions.map(v => ({ ...v, upper: decide(v.upper), lower: decide(v.lower) }))
+  return versions.map(v => ({
+    ...v,
+    upper: decide(v.upper),
+    ...(v.middle ? { middle: decide(v.middle) } : {}),
+    lower: decide(v.lower),
+  }))
 }
 
 /** 資料進前台前的統一正規化。順序有意義：isTwCurrent 的計算會跳過預測版本。 */

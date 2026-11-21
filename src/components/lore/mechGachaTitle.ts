@@ -4,6 +4,7 @@
 // 檔名沿用 mechGachaTitle（機甲先做）；機師呼叫時傳 kind = 'pilot'。
 
 import type { PatchVersion } from '../../data/patchVersions/types.ts'
+import { halfListOf } from '../../data/patchVersions/halves.ts'
 
 export interface GachaTitleSuggestion {
   title: string
@@ -34,8 +35,7 @@ export function gachaTitleSuggestions(
   const banner = BANNER[kind]
   const found = new Map<string, GachaTitleSuggestion>()
   for (const v of versions) {
-    for (const half of [v.upper, v.lower]) {
-      if (!half) continue
+    for (const half of halfListOf(v)) {
       for (const [server, list] of [['tw', half.twActivities], ['cn', half.cnActivities]] as const) {
         for (const act of list ?? []) {
           const title = act.name?.trim()

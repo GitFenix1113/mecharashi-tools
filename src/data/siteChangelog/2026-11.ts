@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const nov2026: ChangelogMonth = {
   month: '2026-11',
   entries: [
+    { date: '2026-11-21', type: 'feat', summary: '版本支援「<b>上／中／下半</b>」三段：週年版本（9 週、三位角色）在後台勾選後多出「中半」，'
+      + '版本時間線的甘特多一段、版本速覽多一列「中半更新」；一般的兩段版本顯示不變。' },
     { date: '2026-11-21', type: 'feat', summary: '後台 BUFF 管理新增「<b>官方 BUFF ID</b>」欄位（管理員限定）：分級 BUFF 每一級各填一份，列表可以篩出還沒填的；'
       + '已依遊戲資料替 230 份 BUFF 補上 ID，給日後的傷害模擬辨認 BUFF 用。' },
     { date: '2026-11-21', type: 'feat', summary: '模組圖鑑新增「<b>浮游刃模組Ⅰ</b>」（A 級通用模組，商店），配裝模擬器可以選用；'

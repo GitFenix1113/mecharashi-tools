@@ -2,6 +2,7 @@ import { Fragment, useMemo, useRef, useState } from 'react'
 import { toPng } from 'html-to-image'
 import type { PatchVersion } from '../../data/patchVersions'
 import { parseEntityIdValue } from '../../data/patchVersions/entityRef'
+import { halfListOf, hasMiddle } from '../../data/patchVersions/halves'
 import type { EntityRef, RefType } from '../../types'
 import { useReference } from '../../contexts/ReferenceContext'
 import { resolveIconSrc } from '../../utils/assets'
@@ -18,7 +19,7 @@ interface WeaponPilotPair {
 
 function getArmamentWeaponPairs(v: PatchVersion): WeaponPilotPair[] {
   const results: WeaponPilotPair[] = []
-  for (const half of [v.upper, v.lower]) {
+  for (const half of halfListOf(v)) {
     for (const r of half.armamentRaids ?? []) {
       for (let i = 0; i < (r.weapons?.length ?? 0); i++) {
         results.push({ weapon: r.weapons![i], pilot: r.weaponPilots?.[i] || undefined })
@@ -30,7 +31,7 @@ function getArmamentWeaponPairs(v: PatchVersion): WeaponPilotPair[] {
 
 function getArmamentBackpacks(v: PatchVersion) {
   const results: string[] = []
-  for (const half of [v.upper, v.lower]) {
+  for (const half of halfListOf(v)) {
     for (const r of half.armamentRaids ?? []) {
       if (r.backpacks?.length) results.push(...r.backpacks)
     }
@@ -40,7 +41,7 @@ function getArmamentBackpacks(v: PatchVersion) {
 
 function getBattlePassPilots(v: PatchVersion) {
   const results: string[] = []
-  for (const half of [v.upper, v.lower]) {
+  for (const half of halfListOf(v)) {
     if (half.battlePass?.pilots?.length) results.push(...half.battlePass.pilots)
   }
   return results
@@ -48,7 +49,7 @@ function getBattlePassPilots(v: PatchVersion) {
 
 function getBattlePassMechs(v: PatchVersion) {
   const results: string[] = []
-  for (const half of [v.upper, v.lower]) {
+  for (const half of halfListOf(v)) {
     if (half.battlePass?.mechs?.length) results.push(...half.battlePass.mechs)
   }
   return results
@@ -359,6 +360,11 @@ type SplitRow = {
   fnRight: (v: PatchVersion) => string[];
   lookupLeft?: LookupKey;
   lookupRight?: LookupKey;
+  /**
+   * 這一列只對部分版本有意義（目前只有「中半更新」：只有三段版本才有中半）。
+   * 畫面上 5 個版本都不適用時整列不出現；部分適用時，不適用的版本那格顯示「—」。
+   */
+  appliesTo?: (v: PatchVersion) => boolean;
 }
 type NormalRow = {
   key: string; label: string; split?: never; raid?: never;
@@ -373,6 +379,7 @@ type RowDef = SplitRow | NormalRow | RaidRow
 
 const ROW_DEFS: RowDef[] = [
   { key: 'upper',    label: '上半更新', split: true, fnLeft: v => v.upper.pilots ?? [], fnRight: v => v.upper.mechs ?? [], lookupLeft: 'pilots', lookupRight: 'mechs' },
+  { key: 'middle',   label: '中半更新', split: true, fnLeft: v => v.middle?.pilots ?? [], fnRight: v => v.middle?.mechs ?? [], lookupLeft: 'pilots', lookupRight: 'mechs', appliesTo: hasMiddle },
   { key: 'lower',    label: '下半更新', split: true, fnLeft: v => v.lower.pilots ?? [], fnRight: v => v.lower.mechs ?? [], lookupLeft: 'pilots', lookupRight: 'mechs' },
   { key: 'weapons',  label: '武裝生產', raid: true,  fn: getArmamentWeaponPairs },
   { key: 'backpack', label: '背包製作', fn: getArmamentBackpacks, lookup: 'backpacks' },
@@ -437,6 +444,13 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
       setExporting(false)
     }
   }
+
+  // 「中半更新」這類只對部分版本有意義的列：畫面上沒有任何版本適用就整列收掉，
+  // 一般（兩段）版本並排時表格與以前完全一樣。
+  const rowDefs = useMemo(
+    () => ROW_DEFS.filter(r => !('appliesTo' in r && r.appliesTo) || displayVersions.some(r.appliesTo)),
+    [displayVersions],
+  )
 
   const lookups = useMemo<Record<LookupKey, EntityLookup>>(() => {
     const icons: Record<LookupKey, Record<string, string>> = { pilots: {}, mechs: {}, weapons: {}, backpacks: {} }
@@ -547,15 +561,18 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
             </tr>
           </thead>
           <tbody>
-            {ROW_DEFS.map((row, rowIdx) => (
+            {rowDefs.map((row, rowIdx) => (
               <tr key={row.key} className={rowIdx % 2 === 1 ? 'bg-bg-card/30' : ''}>
                 <td className="sticky left-0 z-10 bg-bg-dark px-3 py-1.5 text-[14px] text-text-dim font-medium border-r border-r-border-accent border-b border-b-border whitespace-nowrap align-middle">
                   {row.label}
                 </td>
                 {displayVersions.map(v => {
                   const isCurrent = v.isTwCurrent ?? false
-                  const isPredicted = !isCurrent && !!(v.upper.twIsPredicted || v.lower.twIsPredicted)
+                  const isPredicted = !isCurrent && halfListOf(v).some(h => h.twIsPredicted)
                   if (row.split) {
+                    if (row.appliesTo && !row.appliesTo(v)) {
+                      return <Cell key={v.version} items={[]} isPredicted={false} isCurrent={isCurrent} />
+                    }
                     return (
                       <SplitCell
                         key={v.version}

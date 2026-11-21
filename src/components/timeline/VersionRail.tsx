@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { PatchVersion } from '../../data/patchVersions'
+import { halfListOf } from '../../data/patchVersions/halves'
 
 /**
  * 版本選擇列（PLAN-050 C-2）。
@@ -72,7 +73,7 @@ export default function VersionRail({
       {versions.map((v, i) => {
         const isActive = i === activeIndex
         const isCurrent = v.isTwCurrent
-        const isPredicted = !isCurrent && (v.upper.twIsPredicted || v.lower.twIsPredicted)
+        const isPredicted = !isCurrent && halfListOf(v).some(h => h.twIsPredicted)
         return (
           <button
             key={v.version}

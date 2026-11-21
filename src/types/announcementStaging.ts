@@ -1,5 +1,6 @@
 import type { Timestamp } from 'firebase/firestore'
 import type { TimedActivity } from '../data/patchVersions/types'
+import type { HalfKey } from '../data/patchVersions/halves'
 import type { InferredDuration } from '../utils/announcementMerge'
 
 // ─── 台版公告 staging（PLAN-048 Phase 2）────────────────────────────────────
@@ -205,7 +206,8 @@ export interface AnnouncementDraft {
 export interface MergeReceipt {
   /** patchVersions 的文件 ID，如 'v3.3' */
   versionId: string
-  half: 'upper' | 'lower'
+  /** 'middle' 只會出現在三段版本（週年版本） */
+  half: HalfKey
   /** 目前一律 'twActivities'（台版公告只餵台服欄位） */
   field: 'twActivities'
   /** 重定位錨點，不用 index */
@@ -278,7 +280,7 @@ export interface PendingActivity {
    * 推不出來（日期落在所有已知版本之外）時為 undefined，該筆會標 needsReview。
    */
   targetVersion?: string
-  targetHalf?: 'upper' | 'lower'
+  targetHalf?: HalfKey
 
   /** status='merged' 時的寫入收據 */
   mergedInto?: MergeReceipt

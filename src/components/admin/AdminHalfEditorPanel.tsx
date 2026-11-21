@@ -342,7 +342,7 @@ export default function AdminHalfEditorPanel({ value, onChange }: Props) {
         />
         <span className="text-xs text-text-dim">
           週 —— 留空即預設 {DEFAULT_HALF_WEEKS} 週。
-          <strong className="text-text-secondary">上半通常不必填</strong>：它的長度直接由下半起始日算出來，
+          <strong className="text-text-secondary">上半（三段版本的中半也是）通常不必填</strong>：它的長度直接由下一段的起始日算出來，
           比慣例可靠；這一格只在算不出來時才生效。
         </span>
       </div>

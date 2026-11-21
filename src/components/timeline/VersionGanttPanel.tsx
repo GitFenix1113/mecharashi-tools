@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useRaidSeasons } from '../../hooks/useFirestore'
 import type { PatchVersion, PatchHalf, VisibleActivity } from '../../data/patchVersions/types'
 import { activitiesOfHalf } from '../../data/patchVersions/legacyActivities'
+import { halvesOf, type HalfKey } from '../../data/patchVersions/halves'
 import { normalizeNotes } from '../../data/patchVersions/notes'
 import PatchInfoRow from './PatchInfoRow'
 import ActivityBar from './ActivityBar'
@@ -114,33 +115,56 @@ const TD = 'border border-[#2a3040] px-2 py-1 text-[14px] text-center align-midd
 const TH = 'border border-[#2a3040] px-2 py-1 text-center align-middle'
 const LABEL = 'border border-[#2a3040] px-3 py-1 text-left text-[13px] text-text-dim bg-[#0e1119] whitespace-nowrap'
 
+// ── 分段（上半／中半／下半）────────────────────────────────────────────────────
+//
+// 一般版本兩段、週年版本三段（halves.ts）。甘特把每一段當成週軸上連續的一截，
+// 顏色依段別固定：上半橘、中半粉、下半青 —— 中半不用紫，紫色是整版戰令列的顏色。
+
+interface SegmentTone {
+  /** 表頭（「上半版本 11/12～」） */
+  th: string
+  /** 資訊表的半期欄位底色 */
+  cell: string
+  /** 週欄表頭底色 */
+  weekBg: string
+  /** 週欄日期字色 */
+  weekText: string
+}
+
+/** 活動沒有 id 時的 key 字首（沿用舊的 u／l，既有 key 不變） */
+const KEY_PREFIX: Record<HalfKey, string> = { upper: 'u', middle: 'm', lower: 'l' }
+
+const SEGMENT_TONE: Record<HalfKey, SegmentTone> = {
+  upper:  { th: 'bg-[rgba(255,107,43,0.08)] text-accent-orange', cell: 'bg-[rgba(255,107,43,0.05)]', weekBg: 'bg-[#151a24]', weekText: 'text-accent-orange/70' },
+  middle: { th: 'bg-[rgba(236,72,153,0.08)] text-accent-pink',   cell: 'bg-[rgba(236,72,153,0.05)]', weekBg: 'bg-[#1a1522]', weekText: 'text-accent-pink/70' },
+  lower:  { th: 'bg-[rgba(6,182,212,0.08)] text-accent-cyan',    cell: 'bg-[rgba(6,182,212,0.05)]',  weekBg: 'bg-[#0e1820]', weekText: 'text-accent-cyan/70' },
+}
+
+/** 甘特上的一段半版本：在週軸上佔幾欄、從哪天開始、甘特已顯示了哪些自選池 */
+interface GanttSegment {
+  key: HalfKey
+  label: string
+  half: PatchHalf
+  startStr: string
+  /** 這一段在週軸上佔幾欄 */
+  count: number
+  /**
+   * 甘特上已經有自選池活動在顯示同一份名單 —— 資訊表就不再重複列出。
+   * 名單掛在活動上才對得起檔期；資訊表那兩列是**沒有活動時的退路**
+   * （實測 8 個半版本填了名單，其中 7 個的自選池活動還沒合併）。
+   */
+  covered: { pilot: boolean; mech: boolean }
+}
+
 // ── C-4: VersionInfoRows ───────────────────────────────────────────────────────
 
 function VersionInfoRows({
-  upper,
-  lower,
-  upperCount,
-  lowerCount,
+  segments,
   totalWeeks,
-  coveredByActivity,
 }: {
-  upper: PatchHalf
-  lower: PatchHalf
-  upperCount: number
-  lowerCount: number
+  segments: GanttSegment[]
   totalWeeks: number
-  /**
-   * 甘特上已經有自選池活動在顯示同一份名單的欄位 —— 這裡就不再重複列出。
-   * 名單掛在活動上才對得起檔期；資訊表這兩列是**沒有活動時的退路**
-   * （實測 8 個半版本填了名單，其中 7 個的自選池活動還沒合併）。
-   */
-  coveredByActivity: { pilotU: boolean; pilotL: boolean; mechU: boolean; mechL: boolean }
 }) {
-  const pilotsU = (upper.pilots ?? []).join('、')
-  const pilotsL = (lower.pilots ?? []).join('、')
-  const mechsU = (upper.mechs ?? []).join('、')
-  const mechsL = (lower.mechs ?? []).join('、')
-
   // 武裝關卡的名字連到 /raids/:seasonId（PLAN-064 E-7）：以台版期名對上已公開的 raidSeasons；對不到就照舊純文字
   const { data: raidSeasons } = useRaidSeasons()
   const norm = (x: string) => x.replace(/s+/g, '')
@@ -157,45 +181,31 @@ function VersionInfoRows({
       )
     })
   }
-  const raidNamesU = raidNames(upper)
-  const raidNamesL = raidNames(lower)
-  const weaponsU = (upper.armamentRaids ?? [])
-    .filter(r => r.weapons?.length)
-    .map(r => r.weapons!.join('/'))
-    .join('　')
-  const weaponsL = (lower.armamentRaids ?? [])
-    .filter(r => r.weapons?.length)
-    .map(r => r.weapons!.join('/'))
-    .join('　')
-  const backpacksU = (upper.armamentRaids ?? [])
-    .filter(r => r.backpacks?.length)
-    .map(r => `${r.backpacks!.join('/')}`)
-    .join('　')
-  const backpacksL = (lower.armamentRaids ?? [])
-    .filter(r => r.backpacks?.length)
-    .map(r => `${r.backpacks!.join('/')}`)
-    .join('　')
+  const raidList = (h: PatchHalf, pick: (r: NonNullable<PatchHalf['armamentRaids']>[number]) => string[] | undefined) =>
+    (h.armamentRaids ?? [])
+      .filter(r => pick(r)?.length)
+      .map(r => pick(r)!.join('/'))
+      .join('　')
 
-  const bpPilots = (upper.battlePass?.pilots ?? lower.battlePass?.pilots ?? []).join('、')
-  const bpMechs  = (upper.battlePass?.mechs  ?? lower.battlePass?.mechs  ?? []).join('、')
+  // 戰令橫跨整版：取第一個有填的段（與舊版「上半 ?? 下半」同語意，空陣列也算有填）
+  const bpPilots = (segments.map(s => s.half.battlePass?.pilots).find(x => x !== undefined) ?? []).join('、')
+  const bpMechs  = (segments.map(s => s.half.battlePass?.mechs).find(x => x !== undefined) ?? []).join('、')
 
   // 自選池的可選名單。與上面的「機師／機甲」（本期新登場）是兩回事：
   // 這裡是角雕特遣／跨域海運「這一期可以換誰」，多半是舊角色。
   // 走 halfRows 而不是像戰令那樣橫跨整版 —— 名單是每半期各自不同的。
-  const pilotSelU = coveredByActivity.pilotU ? '' : (upper.pilotSelection ?? []).join('、')
-  const pilotSelL = coveredByActivity.pilotL ? '' : (lower.pilotSelection ?? []).join('、')
-  const mechSelU  = coveredByActivity.mechU  ? '' : (upper.mechSelection  ?? []).join('、')
-  const mechSelL  = coveredByActivity.mechL  ? '' : (lower.mechSelection  ?? []).join('、')
-
-  const halfRows = [
-    { label: '機師',    u: pilotsU,    l: pilotsL    },
-    { label: '機甲',    u: mechsU,     l: mechsL     },
-    { label: '角色自選', u: pilotSelU,  l: pilotSelL,  small: true },
-    { label: '機甲自選', u: mechSelU,   l: mechSelL,   small: true },
-    { label: '武裝關卡', u: raidNamesU, l: raidNamesL },
-    { label: '討伐專武', u: weaponsU,   l: weaponsL   },
-    { label: '討伐背包', u: backpacksU, l: backpacksL },
-  ].filter(r => r.u || r.l)
+  const halfRowDefs: { label: string; small?: boolean; of: (h: PatchHalf, seg: GanttSegment) => ReactNode }[] = [
+    { label: '機師',     of: h => (h.pilots ?? []).join('、') },
+    { label: '機甲',     of: h => (h.mechs ?? []).join('、') },
+    { label: '角色自選', of: (h, seg) => seg.covered.pilot ? '' : (h.pilotSelection ?? []).join('、'), small: true },
+    { label: '機甲自選', of: (h, seg) => seg.covered.mech ? '' : (h.mechSelection ?? []).join('、'), small: true },
+    { label: '武裝關卡', of: h => raidNames(h) },
+    { label: '討伐專武', of: h => raidList(h, r => r.weapons) },
+    { label: '討伐背包', of: h => raidList(h, r => r.backpacks) },
+  ]
+  const halfRows = halfRowDefs
+    .map(def => ({ ...def, values: segments.map(seg => def.of(seg.half, seg)) }))
+    .filter(r => r.values.some(Boolean))
 
   const dash = <span className="opacity-30">—</span>
 
@@ -205,12 +215,15 @@ function VersionInfoRows({
         <tr key={row.label}>
           <td className={LABEL}>{row.label}</td>
           {/* small：自選名單動輒十幾個名字，用小一級字避免把整張表撐高 */}
-          <td colSpan={upperCount} className={`${TD} ${row.small ? 'text-[12px] leading-[1.6]' : ''} bg-[rgba(255,107,43,0.05)]`}>
-            {row.u || dash}
-          </td>
-          <td colSpan={lowerCount} className={`${TD} ${row.small ? 'text-[12px] leading-[1.6]' : ''} bg-[rgba(6,182,212,0.05)]`}>
-            {row.l || dash}
-          </td>
+          {segments.map((seg, i) => (
+            <td
+              key={seg.key}
+              colSpan={seg.count}
+              className={`${TD} ${row.small ? 'text-[12px] leading-[1.6]' : ''} ${SEGMENT_TONE[seg.key].cell}`}
+            >
+              {row.values[i] || dash}
+            </td>
+          ))}
         </tr>
       ))}
       {bpPilots && (
@@ -234,41 +247,29 @@ function VersionInfoRows({
 }
 
 /**
- * 摺疊時的濃縮列：只留機師與機甲（實測最常被查的兩項），仍沿用 upper/lower 的
+ * 摺疊時的濃縮列：只留機師與機甲（實測最常被查的兩項），仍沿用各段的
  * colSpan 切分，所以「哪一半有誰」的對照關係不會因為摺疊而消失。
  *
  * 為什麼不連週軸表頭一起收：那條軸是甘特長條的定位基準，也是使用者當初把甘特
  * 放在這裡的理由（對照版本週次）。收掉它，剩下的甘特就失去意義。
  */
-function CollapsedSummaryRow({
-  upper,
-  lower,
-  upperCount,
-  lowerCount,
-}: {
-  upper: PatchHalf
-  lower: PatchHalf
-  upperCount: number
-  lowerCount: number
-}) {
+function CollapsedSummaryRow({ segments }: { segments: GanttSegment[] }) {
   const summarize = (h: PatchHalf) =>
     [(h.pilots ?? []).join('、'), (h.mechs ?? []).join('、')].filter(Boolean).join('　·　')
 
-  const u = summarize(upper)
-  const l = summarize(lower)
-  if (!u && !l) return null
+  const values = segments.map(seg => summarize(seg.half))
+  if (!values.some(Boolean)) return null
 
   const dash = <span className="opacity-30">—</span>
 
   return (
     <tr>
       <td className={`${LABEL} text-[12px]`}>機師 · 機甲</td>
-      <td colSpan={upperCount} className={`${TD} text-[13px] bg-[rgba(255,107,43,0.05)]`}>
-        {u || dash}
-      </td>
-      <td colSpan={lowerCount} className={`${TD} text-[13px] bg-[rgba(6,182,212,0.05)]`}>
-        {l || dash}
-      </td>
+      {segments.map((seg, i) => (
+        <td key={seg.key} colSpan={seg.count} className={`${TD} text-[13px] ${SEGMENT_TONE[seg.key].cell}`}>
+          {values[i] || dash}
+        </td>
+      ))}
     </tr>
   )
 }
@@ -420,28 +421,28 @@ export default function VersionGanttPanel({
     else cardRefs.current.delete(key)
   }, [])
 
-  const { allWeeks, upperCount, lowerCount, items, upperStartStr, lowerStartStr, coveredByActivity } =
+  const { allWeeks, segments, items } =
     useMemo(() => {
-      const upperStartStr =
-        side === 'tw' ? (version.upper.twDate ?? '') : version.upper.cnDate
-      const lowerStartStr =
-        side === 'tw' ? (version.lower.twDate ?? '') : version.lower.cnDate
+      const startOf = (h: PatchHalf) => (side === 'tw' ? (h.twDate ?? '') : h.cnDate)
 
-      // legacy shim：新欄位缺席時，把 deprecated 欄位翻譯成 TimedActivity，
-      // 否則靜態 fallback 資料（v2.8–v3.3）在 Worker 掛掉時會顯示成空甘特
-      const upperActs = activitiesOfHalf(version.upper, side, halfSpan(upperStartStr, lowerStartStr))
-      const lowerActs = activitiesOfHalf(version.lower, side, halfSpan(lowerStartStr, null))
-
-      // 上半的邊界是下半的開始日（實際日期，最可靠）；缺下半日期時退回 weeks／慣例。
-      // 下半沒有「下一段」可用（下個版本不在這個元件的視野內），故走 weeks／慣例。
-      // 兩者都不再被活動撐長 —— 跨版本的長條在軸尾切平，見 generateWeeks 的說明。
-      const upperWeeks = upperStartStr
-        ? generateWeeks(upperStartStr, lowerStartStr || null, version.upper.weeks)
-        : []
-      const lowerWeeks = lowerStartStr
-        ? generateWeeks(lowerStartStr, null, version.lower.weeks)
-        : []
-      const allWeeks = [...upperWeeks, ...lowerWeeks]
+      // 每一段的邊界是**下一段**的開始日（實際日期，最可靠）；缺下一段日期時退回 weeks／慣例。
+      // 最後一段沒有「下一段」可用（下個版本不在這個元件的視野內），故走 weeks／慣例。
+      // 都不再被活動撐長 —— 跨版本的長條在軸尾切平，見 generateWeeks 的說明。
+      // 三段版本（週年）只是多一段，規則完全相同：上半止於中半、中半止於下半。
+      const halves = halvesOf<PatchHalf>(version)
+      const segs = halves.map((h, i) => {
+        const startStr = startOf(h.half)
+        const nextStr = i + 1 < halves.length ? startOf(halves[i + 1].half) : ''
+        return {
+          ...h,
+          startStr,
+          // legacy shim：新欄位缺席時，把 deprecated 欄位翻譯成 TimedActivity，
+          // 否則靜態 fallback 資料（v2.8–v3.3）在 Worker 掛掉時會顯示成空甘特
+          acts: activitiesOfHalf(h.half, side, halfSpan(startStr, nextStr || null)),
+          weeks: startStr ? generateWeeks(startStr, nextStr || null, h.half.weeks) : [],
+        }
+      })
+      const allWeeks = segs.flatMap(s => s.weeks)
 
       // 復刻判定要拿**該活動所屬那一半**的新增名單去比 —— 用錯半期就會把
       // 上半的新機師當成下半的，分類整個反過來。
@@ -458,22 +459,17 @@ export default function VersionGanttPanel({
         return undefined
       }
 
-      // 穩定 key：優先用 act.id（Phase 1 新欄位），未填時退回「半段+序號+名稱」。
+      // 穩定 key：優先用 act.id（Phase 1 新欄位），未填時退回「段別字首+序號+名稱」。
       // 純 index 會在陣列重排時讓選取狀態跳到別的活動身上。
-      const items: KeyedActivity[] = [
-        ...upperActs.map((act, i) => ({
-          key: act.id ?? `u${i}:${act.name}:${act.startDate}`,
+      // 字首沿用舊的 u／l（中半是 m），既有的 key 不會因為這次改版而變動。
+      const items: KeyedActivity[] = segs.flatMap(seg =>
+        seg.acts.map((act, i) => ({
+          key: act.id ?? `${KEY_PREFIX[seg.key]}${i}:${act.name}:${act.startDate}`,
           act,
-          rerun: rerunOf(act, version.upper),
-          selection: selectionOf(act, version.upper),
+          rerun: rerunOf(act, seg.half),
+          selection: selectionOf(act, seg.half),
         })),
-        ...lowerActs.map((act, i) => ({
-          key: act.id ?? `l${i}:${act.name}:${act.startDate}`,
-          act,
-          rerun: rerunOf(act, version.lower),
-          selection: selectionOf(act, version.lower),
-        })),
-      ]
+      )
 
       // ── 上一版跨進來的活動 ────────────────────────────────────────────────
       //
@@ -487,16 +483,16 @@ export default function VersionGanttPanel({
       const carried: KeyedActivity[] = []
       if (prevVersion && axisStart) {
         const prevLabel = `v${prevVersion.version}`
-        const prevUpperStart = side === 'tw' ? (prevVersion.upper.twDate ?? '') : prevVersion.upper.cnDate
-        const prevLowerStart = side === 'tw' ? (prevVersion.lower.twDate ?? '') : prevVersion.lower.cnDate
+        const prevHalves = halvesOf<PatchHalf>(prevVersion)
+        const thisStart = segs[0]?.startStr ?? ''
         // 保留「來自哪一半」—— 復刻判定要用該活動**原本那一版那一半**的新增名單，
         // 拿當前版本的名單去比會全部誤判成復刻（本版的新機師當然不在上一版名單裡）
-        const prevActs: { act: VisibleActivity; half: PatchHalf }[] = [
-          ...activitiesOfHalf(prevVersion.upper, side, halfSpan(prevUpperStart, prevLowerStart))
-            .map(act => ({ act, half: prevVersion.upper })),
-          ...activitiesOfHalf(prevVersion.lower, side, halfSpan(prevLowerStart, upperStartStr || null))
-            .map(act => ({ act, half: prevVersion.lower })),
-        ]
+        const prevActs: { act: VisibleActivity; half: PatchHalf }[] = prevHalves.flatMap((h, i) => {
+          const s = startOf(h.half)
+          // 上一版的最後一段止於本版的開始日
+          const next = i + 1 < prevHalves.length ? startOf(prevHalves[i + 1].half) : thisStart
+          return activitiesOfHalf(h.half, side, halfSpan(s, next || null)).map(act => ({ act, half: h.half }))
+        })
         // 本版已經有的同名同起始日不再重複帶入（維護者可能兩版都登錄了一次）
         const own = new Set(items.map(it => `${it.act.name}@${it.act.startDate}`))
         for (const [i, { act, half }] of prevActs.entries()) {
@@ -520,22 +516,16 @@ export default function VersionGanttPanel({
       // 讀半期層級那份，所以資訊表再列一次必然重複。
       const covers = (acts: VisibleActivity[], type: string) =>
         acts.some(a => a.type === type)
-      const coveredByActivity = {
-        pilotU: covers(upperActs, 'pilotMission'),
-        pilotL: covers(lowerActs, 'pilotMission'),
-        mechU: covers(upperActs, 'crossShipping'),
-        mechL: covers(lowerActs, 'crossShipping'),
-      }
+      const segments: GanttSegment[] = segs.map(seg => ({
+        key: seg.key,
+        label: seg.label,
+        half: seg.half,
+        startStr: seg.startStr,
+        count: seg.weeks.length,
+        covered: { pilot: covers(seg.acts, 'pilotMission'), mech: covers(seg.acts, 'crossShipping') },
+      }))
 
-      return {
-        allWeeks,
-        upperCount: upperWeeks.length,
-        lowerCount: lowerWeeks.length,
-        items,
-        upperStartStr,
-        lowerStartStr,
-        coveredByActivity,
-      }
+      return { allWeeks, segments, items }
     }, [side, version, prevVersion])
 
   const totalWeeks = allWeeks.length
@@ -567,8 +557,15 @@ export default function VersionGanttPanel({
     }
   }, [])
 
-  const upperLabel = upperStartStr ? fmtShort(parseDate(upperStartStr)) : '—'
-  const lowerLabel = lowerStartStr ? fmtShort(parseDate(lowerStartStr)) : '—'
+  // 每一週欄屬於哪一段（決定週欄表頭的底色與字色）
+  const weekSegKeys = useMemo(() => segments.flatMap(seg => Array<HalfKey>(seg.count).fill(seg.key)), [segments])
+  // 分段分界落在第幾欄之前（給軸線層畫分界線）
+  const boundaries = useMemo(() => {
+    const out: number[] = []
+    let acc = 0
+    for (const seg of segments.slice(0, -1)) out.push((acc += seg.count))
+    return out
+  }, [segments])
 
   // 兩個表格共用相同欄寬定義，確保固定內容與活動甘特的欄位對齊
   const Colgroup = () => (
@@ -648,24 +645,18 @@ export default function VersionGanttPanel({
                       </span>
                     </button>
                   </th>
-                  {upperCount > 0 && (
+                  {segments.map(seg => seg.count > 0 && (
                     <th
-                      colSpan={upperCount}
-                      className={`${TH} bg-[rgba(255,107,43,0.08)] text-accent-orange text-[14px] font-[Orbitron,sans-serif] tracking-wide py-2`}
+                      key={seg.key}
+                      colSpan={seg.count}
+                      className={`${TH} ${SEGMENT_TONE[seg.key].th} text-[14px] font-[Orbitron,sans-serif] tracking-wide py-2`}
                     >
-                      上半版本
-                      <span className="ml-1.5 text-[12px] opacity-70">{upperLabel}～</span>
+                      {seg.label}版本
+                      <span className="ml-1.5 text-[12px] opacity-70">
+                        {seg.startStr ? fmtShort(parseDate(seg.startStr)) : '—'}～
+                      </span>
                     </th>
-                  )}
-                  {lowerCount > 0 && (
-                    <th
-                      colSpan={lowerCount}
-                      className={`${TH} bg-[rgba(6,182,212,0.08)] text-accent-cyan text-[14px] font-[Orbitron,sans-serif] tracking-wide py-2`}
-                    >
-                      下半版本
-                      <span className="ml-1.5 text-[12px] opacity-70">{lowerLabel}～</span>
-                    </th>
-                  )}
+                  ))}
                   {totalWeeks === 0 && (
                     <th colSpan={6} className={`${TH} text-text-dim text-[14px]`}>
                       （{side === 'tw' ? '台版' : '陸版'}日期未定）
@@ -679,10 +670,10 @@ export default function VersionGanttPanel({
                       className={`${TH} text-[13px] py-1.5 transition-colors ${
                         isColActive(i)
                           ? 'bg-accent-cyan/20 shadow-[inset_0_0_0_1px_rgba(6,182,212,0.45)]'
-                          : i < upperCount ? 'bg-[#151a24]' : 'bg-[#0e1820]'
+                          : SEGMENT_TONE[weekSegKeys[i] ?? 'upper'].weekBg
                       }`}
                     >
-                      <div className={i < upperCount ? 'text-accent-orange/70' : 'text-accent-cyan/70'}>
+                      <div className={SEGMENT_TONE[weekSegKeys[i] ?? 'upper'].weekText}>
                         {fmtShort(week)}
                       </div>
                     </th>
@@ -696,21 +687,9 @@ export default function VersionGanttPanel({
               <tbody>
                 {totalWeeks > 0 && (
                   infoCollapsed ? (
-                    <CollapsedSummaryRow
-                      upper={version.upper}
-                      lower={version.lower}
-                      upperCount={upperCount}
-                      lowerCount={lowerCount}
-                    />
+                    <CollapsedSummaryRow segments={segments} />
                   ) : (
-                    <VersionInfoRows
-                      upper={version.upper}
-                      lower={version.lower}
-                      upperCount={upperCount}
-                      lowerCount={lowerCount}
-                      totalWeeks={totalWeeks}
-                      coveredByActivity={coveredByActivity}
-                    />
+                    <VersionInfoRows segments={segments} totalWeeks={totalWeeks} />
                   )
                 )}
               </tbody>
@@ -730,7 +709,7 @@ export default function VersionGanttPanel({
               {/* 共用軸線層：週格線 / 上下半分界 / 今日線 */}
               <GanttAxisOverlay
                 allWeeks={allWeeks}
-                upperCount={upperCount}
+                boundaries={boundaries}
                 labelColPx={LABEL_COL_PX}
               />
 

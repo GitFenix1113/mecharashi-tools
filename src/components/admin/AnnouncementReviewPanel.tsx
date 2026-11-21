@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { PendingActivity, PendingFlag } from '../../types/announcementStaging'
 import { PENDING_FLAG_LABEL } from '../../types/announcementStaging'
 import type { PatchVersion, TimedActivity } from '../../data/patchVersions/types'
+import { HALF_KEYS, halfLabel, halvesOf, isHalfKey, nextHalfOf } from '../../data/patchVersions/halves'
 import { ACTIVITY_TYPE_OPTIONS, isKnownActivityType } from '../timeline/activityTypeRegistry'
 // 與甘特週軸共用同一條「半版本多長」的規則，免得後台建議與前台畫面互相矛盾
 import { halfEndDate, suggestWeeksUntilHalfEnd, DEFAULT_HALF_WEEKS } from '../timeline/ganttGeometry'
@@ -150,7 +151,7 @@ export default function AnnouncementReviewPanel({
    * 卡池三類已由 item.inferred 預填（見檔頭），走到這裡的是推估規則不涵蓋的型別 ——
    * 這些仍維持「系統可以算給你看，但不會替你決定」；按下套用時一併標成推估。
    *
-   * 半版本結束日＝下一段的開始日（上半→下半、下半→下個版本的上半），
+   * 半版本結束日＝下一段的開始日（上半→（中半→）下半、下半→下個版本的上半），
    * 推不出來時退回 `PatchHalf.weeks` → 慣例 3 週，與甘特週軸同一條規則
    * （共用 `halfEndDate`），免得出現「後台建議 3 週、甘特畫成 2 週」。
    */
@@ -161,10 +162,9 @@ export default function AnnouncementReviewPanel({
     const cur = versions[idx]
     const half = cur[target.half]
     const halfStart = half?.twDate ?? half?.cnDate ?? ''
-    // 下一段：上半接下半，下半接「下一個版本的上半」（versions 依版本號遞增排序）
-    const next = target.half === 'upper'
-      ? cur.lower
-      : versions[idx + 1]?.upper
+    // 下一段：同版本的下一段（三段版本的上半接中半），最後一段接「下一個版本的上半」
+    // （versions 依版本號遞增排序）
+    const next = nextHalfOf(cur, target.half)?.half ?? versions[idx + 1]?.upper
     const nextStart = next?.twDate ?? next?.cnDate ?? null
     const end = halfEndDate(halfStart, nextStart, half?.weeks)
     const w = suggestWeeksUntilHalfEnd(form.startDate, end)
@@ -426,7 +426,7 @@ export default function AnnouncementReviewPanel({
             {!needsTargetInput && target && (
               <div className="text-[12.5px]">
                 <span className="px-2 py-1 rounded border bg-accent-cyan/10 text-accent-cyan border-accent-cyan/30">
-                  {target.half === 'lower' ? '下半' : '上半'}
+                  {halfLabel(target.half)}
                 </span>
                 <span className="text-text-dim ml-2 text-[11px]">
                   {target.versionId}（台版 {halfTwDate(versions, target) ?? '日期未填'} 起）· 由起始日推算
@@ -447,7 +447,14 @@ export default function AnnouncementReviewPanel({
                 <select
                   className={INPUT}
                   value={versionId}
-                  onChange={e => setOverride({ versionId: e.target.value, half: target?.half ?? 'upper' })}
+                  onChange={e => {
+                    // 換到沒有中半的版本時，原本選的「中半」就不成立了 —— 退回上半，
+                    // 免得寫進一個不存在的分段（合併端也會擋，但別讓人按到那一步）
+                    const nextId = e.target.value
+                    const nextV = versions.find(v => (v.id ?? `v${v.version}`) === nextId)
+                    const keep = target?.half && (!nextV || nextV[target.half]) ? target.half : 'upper'
+                    setOverride({ versionId: nextId, half: keep })
+                  }}
                 >
                   <option value="">（選版本）</option>
                   {versions.map(v => (
@@ -463,11 +470,15 @@ export default function AnnouncementReviewPanel({
                     // 版本還沒選就維持空字串：擅自套 versions[0] 會靜默寫到錯的版本去，
                     // 而 canMerge 檢查 versionId，空的話「放行」仍是停用狀態
                     versionId,
-                    half: e.target.value as 'upper' | 'lower',
+                    half: isHalfKey(e.target.value) ? e.target.value : 'upper',
                   })}
                 >
-                  <option value="upper">上半</option>
-                  <option value="lower">下半</option>
+                  {/* 選了版本就只列它實際有的分段（三段版本才有中半）；還沒選版本時列一般的上／下半 */}
+                  {(() => {
+                    const v = versions.find(x => (x.id ?? `v${x.version}`) === versionId)
+                    const keys = v ? halvesOf(v).map(h => h.key) : HALF_KEYS.filter(k => k !== 'middle')
+                    return keys.map(k => <option key={k} value={k}>{halfLabel(k)}</option>)
+                  })()}
                 </select>
               </div>
             )}

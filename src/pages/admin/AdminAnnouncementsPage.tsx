@@ -13,6 +13,7 @@ import {
 import type { AnnouncementDraft, PendingActivity, PendingStatus } from '../../types/announcementStaging'
 import { PENDING_FLAG_LABEL, PARSE_WARNING_LABEL } from '../../types/announcementStaging'
 import type { TimedActivity } from '../../data/patchVersions/types'
+import { halfLabel } from '../../data/patchVersions/halves'
 import { usePatchVersions, invalidatePatchVersionsCache } from '../../hooks/usePatchVersions'
 import AnnouncementReviewPanel from '../../components/admin/AnnouncementReviewPanel'
 import AnnouncementInsightsPanel from '../../components/admin/AnnouncementInsightsPanel'
@@ -188,7 +189,7 @@ export default function AdminAnnouncementsPage() {
       const res = await mergeIntoVersion(selected.id, activity, target)
       if (!res.ok) {
         const ow = window.confirm(
-          `${target.versionId} 的${target.half === 'upper' ? '上' : '下'}半已經有一筆「${activity.name}」`
+          `${target.versionId} 的${halfLabel(target.half)}已經有一筆「${activity.name}」`
           + `（${activity.startDate}）。要以這次的內容覆蓋它嗎？`,
         )
         if (!ow) { setMsg('已取消，該筆仍留在待審清單。'); return }
@@ -198,7 +199,7 @@ export default function AdminAnnouncementsPage() {
       // api 層已 bumpDataVersion（邊緣快取）；本地那層 module 快取由呼叫端清，
       // 否則後台自己重整也還看得到舊的（同 AdminVersionEditorPage.handleSave）
       invalidatePatchVersionsCache()
-      setMsg(`已合併進 ${target.versionId} ${target.half === 'upper' ? '上' : '下'}半，並已更新資料版本。`)
+      setMsg(`已合併進 ${target.versionId} ${halfLabel(target.half)}，並已更新資料版本。`)
       await load()
     } catch (err) {
       console.error('[AdminAnnouncementsPage] merge error:', err)
@@ -356,7 +357,7 @@ export default function AdminAnnouncementsPage() {
               {groups.map(([month, monthItems]) => {
                 const closed = isCollapsed(month)
                 const halves = [...new Set(monthItems.map(it =>
-                  it.targetVersion ? `${it.targetVersion} ${it.targetHalf === 'lower' ? '下' : '上'}半` : '版本未定'))]
+                  it.targetVersion ? `${it.targetVersion} ${halfLabel(it.targetHalf)}` : '版本未定'))]
                 return (
                   <div key={month}>
                     <button
@@ -386,7 +387,7 @@ export default function AdminAnnouncementsPage() {
                         </div>
                         <div className="text-[10.5px] text-text-dim mt-0.5">
                           {it.extracted?.startDate ?? '（無日期）'}
-                          {it.targetVersion ? ` · ${it.targetVersion} ${it.targetHalf === 'lower' ? '下' : '上'}半` : ' · 版本未定'}
+                          {it.targetVersion ? ` · ${it.targetVersion} ${halfLabel(it.targetHalf)}` : ' · 版本未定'}
                           {it.mergedInto?.actorUid === 'scheduler' && ' · 排程放行'}
                         </div>
                         {it.inferred && it.status !== 'merged' && (

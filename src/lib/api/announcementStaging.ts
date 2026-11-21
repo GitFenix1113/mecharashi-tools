@@ -17,6 +17,7 @@ import type {
 } from '../../types/announcementStaging'
 import { DRAFTS_COLLECTION, PENDING_COLLECTION } from '../../types/announcementStaging'
 import type { PatchVersion, TimedActivity } from '../../data/patchVersions/types'
+import type { HalfKey } from '../../data/patchVersions/halves'
 import { bumpDataVersion } from './versions'
 import { applyActivityToList } from '../../utils/announcementMerge'
 
@@ -102,7 +103,7 @@ export async function rejectPending(id: string, reason?: string): Promise<void> 
 
 export interface MergeTarget {
   versionId: string
-  half: 'upper' | 'lower'
+  half: HalfKey
 }
 
 export type MergeResult =
@@ -148,6 +149,9 @@ export async function mergeIntoVersion(
     if (!pendingSnap.exists()) throw new Error('待審活動已不存在')
 
     const version = versionSnap.data() as PatchVersion
+    // 中半只存在於三段版本。不擋的話，下面那行 `middle.twActivities` 的點路徑更新會在
+    // 兩段版本上憑空長出一個只有活動、沒有日期的中半 —— 前台就多出一段壞掉的分段。
+    if (!version[target.half]) throw new Error(`${target.versionId} 沒有這一段（${target.half}）—— 不是三段版本`)
     // 衝突判定、id 產生、「沒長度就隱藏」的不變式都在 applyActivityToList ——
     // 排程的自動放行走同一個函式，兩邊寫進去的東西才會一樣。
     const applied = applyActivityToList(version[target.half]?.twActivities, activity, opts)

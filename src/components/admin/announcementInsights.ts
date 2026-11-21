@@ -1,4 +1,5 @@
 import type { PatchVersion, TimedActivity } from '../../data/patchVersions/types.ts'
+import { halvesOf, type HalfKey } from '../../data/patchVersions/halves.ts'
 
 // PLAN-048 Phase 2：「規則待擴充」彙總
 //
@@ -11,7 +12,7 @@ import type { PatchVersion, TimedActivity } from '../../data/patchVersions/types
 export interface PendingFix {
   versionId: string
   version: string
-  half: 'upper' | 'lower'
+  half: HalfKey
   act: TimedActivity
   /** 缺哪些欄位（給後台一眼看出還差什麼） */
   missing: string[]
@@ -42,8 +43,8 @@ export function missingFields(act: TimedActivity): string[] {
 export function collectPendingFixes(versions: (PatchVersion & { id?: string })[]): PendingFix[] {
   const out: PendingFix[] = []
   for (const v of versions) {
-    for (const half of ['upper', 'lower'] as const) {
-      for (const act of v[half]?.twActivities ?? []) {
+    for (const { key: half, half: h } of halvesOf(v)) {
+      for (const act of h.twActivities ?? []) {
         if (act.hidden !== true && act.weeks !== undefined) continue
         out.push({
           versionId: v.id ?? `v${v.version}`,

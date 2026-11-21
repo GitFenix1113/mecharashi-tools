@@ -1,6 +1,8 @@
 export type { ArmamentRaid, BattlePass, PatchHalf, GrayOpsUpdate, GrayOpsCompany, PatchVersion, VersionIconUrls, VersionEntityIds, TimedActivity, ActivityType } from './types'
 export { parseEntityIdValue, formatEntityIdValue } from './entityRef'
 export { normalizeNotes } from './notes'
+export { HALF_KEYS, HALF_LABEL, HALF_SHORT, halvesOf, halfListOf, hasMiddle, nextHalfOf, halfLabel, isHalfKey } from './halves'
+export type { HalfKey, HalfEntry } from './halves'
 export { GRAY_OPS_BASE } from './base'
 
 import type { PatchVersion } from './types'

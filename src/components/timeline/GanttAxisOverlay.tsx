@@ -1,4 +1,4 @@
-// PLAN-048 Phase 1（任務 1-4）：共用軸線層 —— 週格線 / 上下半分界 / 今日線
+// PLAN-048 Phase 1（任務 1-4）：共用軸線層 —— 週格線 / 上中下半分界 / 今日線
 import { todayPct } from './ganttGeometry'
 
 /**
@@ -10,12 +10,15 @@ import { todayPct } from './ganttGeometry'
  */
 export default function GanttAxisOverlay({
   allWeeks,
-  upperCount,
+  boundaries,
   labelColPx,
 }: {
   allWeeks: Date[]
-  /** 上半版本佔幾欄；用來畫上下半的分界線 */
-  upperCount: number
+  /**
+   * 分段分界落在第幾欄之前（累計欄數）。兩段版本是 [上半欄數]，三段版本是 [上半, 上半＋中半]。
+   * 用來畫上／中／下半的分界線。
+   */
+  boundaries: number[]
   /** 左側標籤欄寬度（px），與 Colgroup 的第一欄一致 */
   labelColPx: number
 }) {
@@ -41,12 +44,15 @@ export default function GanttAxisOverlay({
         ),
       )}
 
-      {/* 上下半版本分界（比週格線重，因為它是語意邊界不只是刻度） */}
-      {upperCount > 0 && upperCount < total && (
-        <div
-          className="absolute inset-y-0 w-px bg-accent-cyan/35"
-          style={{ left: `${(upperCount / total) * 100}%` }}
-        />
+      {/* 上／中／下半版本分界（比週格線重，因為它是語意邊界不只是刻度） */}
+      {boundaries.map(b =>
+        b > 0 && b < total ? (
+          <div
+            key={b}
+            className="absolute inset-y-0 w-px bg-accent-cyan/35"
+            style={{ left: `${(b / total) * 100}%` }}
+          />
+        ) : null,
       )}
 
       {/* 今日線：站上第一次有「今天在哪」的錨點 */}

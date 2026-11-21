@@ -16,6 +16,7 @@
 
 import type { PatchHalf, PatchVersion, TimedActivity, VisibleActivity } from '../../data/patchVersions/types.ts'
 import { isVisibleActivity } from '../../data/patchVersions/legacyActivities.ts'
+import { HALF_LABEL, halvesOf, halfListOf, type HalfKey } from '../../data/patchVersions/halves.ts'
 import { activityStatus } from '../timeline/activityStatus.ts'
 import { bannerIsRerun } from '../timeline/activityTypeRegistry.ts'
 import { DAY_MS, parseDate } from '../timeline/ganttGeometry.ts'
@@ -67,7 +68,7 @@ export interface GachaBannerStatus {
   /** 開放中、即將開放的那一期 */
   current?: GachaBannerRun
   /** 新機甲／新機師：台版預計登場 */
-  debut?: { twDate: Date; cnDate?: Date; version: string; half: 'upper' | 'lower'; predicted: boolean; daysUntil: number }
+  debut?: { twDate: Date; cnDate?: Date; version: string; half: HalfKey; predicted: boolean; daysUntil: number }
   /** 已結束的各期，新到舊 */
   past: GachaBannerRun[]
   /** 時間線上該看哪個版本：當期 ＞ 登場的版本 ＞ 最近一期；都沒有就 undefined */
@@ -101,8 +102,7 @@ export function gachaBannerRuns(kind: GachaSubjectKind, subjectName: string | un
   if (!name) return []
   const runs: GachaBannerRun[] = []
   for (const v of versions) {
-    for (const half of [v.upper, v.lower] as (PatchHalf | undefined)[]) {
-      if (!half) continue
+    for (const half of halfListOf<PatchHalf>(v)) {
       for (const act of half.twActivities ?? []) {
         if (!act.name?.trim() || !isVisibleActivity(act)) continue
         const source = sourceOf(kind, act, half, name)
@@ -130,8 +130,8 @@ export function gachaBannerRuns(kind: GachaSubjectKind, subjectName: string | un
 function upcomingDebut(kind: GachaSubjectKind, name: string, versions: readonly PatchVersion[], now: Date): GachaBannerStatus['debut'] {
   const t = today(now).getTime()
   for (const v of versions) {
-    for (const [key, half] of [['upper', v.upper], ['lower', v.lower]] as const) {
-      if (!half?.twDate || !sameName(SUBJECT[kind].halfNew(half), name)) continue
+    for (const { key, half } of halvesOf<PatchHalf>(v)) {
+      if (!half.twDate || !sameName(SUBJECT[kind].halfNew(half), name)) continue
       const tw = parseDate(half.twDate)
       if (tw.getTime() <= t) continue
       return {
@@ -193,7 +193,6 @@ const md = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`
 export const ymd = (d: Date) => `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`
 /** 今年的日期只寫月／日，跨年才寫年 */
 const shortDate = (d: Date, now: Date) => (d.getFullYear() === now.getFullYear() ? md(d) : ymd(d))
-const HALF_LABEL = { upper: '上半', lower: '下半' } as const
 /** 開放中的標籤依種類（顏色同為開放中的綠） */
 const ONGOING_LABEL: Record<GachaBannerSource, string> = { banner: '開放中', select: '可自選' }
 

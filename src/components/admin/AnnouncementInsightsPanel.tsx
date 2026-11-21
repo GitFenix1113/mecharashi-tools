@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import type { PatchVersion } from '../../data/patchVersions/types'
+import { halfLabel } from '../../data/patchVersions/halves'
 import type { AnnouncementDraft, PendingActivity } from '../../types/announcementStaging'
 import { isKnownActivityType } from '../timeline/activityTypeRegistry'
 import {
@@ -56,7 +57,7 @@ export default function AnnouncementInsightsPanel({ versions, drafts, pending }:
                     to={`/admin/versions/${f.versionId.replace(/^v/, '')}`}
                     className="text-[12.5px] text-accent-cyan hover:underline"
                   >
-                    {f.versionId} {f.half === 'upper' ? '上半' : '下半'}
+                    {f.versionId} {halfLabel(f.half)}
                   </Link>
                   <span className="text-[12.5px] text-text-primary">{f.act.name || '（無名稱）'}</span>
                   <span className="text-[11px] text-text-dim">{f.act.startDate}</span>

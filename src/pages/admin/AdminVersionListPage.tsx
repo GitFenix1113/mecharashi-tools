@@ -1,20 +1,20 @@
 import { Link } from 'react-router-dom'
 import { usePatchVersions } from '../../hooks/usePatchVersions'
 import type { PatchVersion } from '../../data/patchVersions'
+import { halvesOf, halfListOf } from '../../data/patchVersions/halves'
 
+/** 每一段 × 兩服各算一格；三段版本（週年）就是 6 格 */
 function activityProgress(v: PatchVersion) {
-  const filled = [
-    (v.upper.cnActivities?.length ?? 0) > 0,
-    (v.upper.twActivities?.length ?? 0) > 0,
-    (v.lower.cnActivities?.length ?? 0) > 0,
-    (v.lower.twActivities?.length ?? 0) > 0,
-  ].filter(Boolean).length
+  const halves = halfListOf(v)
+  const slots = halves.flatMap(h => [h.cnActivities, h.twActivities])
+  const filled = slots.filter(list => (list?.length ?? 0) > 0).length
+  const total = slots.length
   return {
     filled,
-    total: 4,
-    pct: Math.round((filled / 4) * 100),
-    cnCount: (v.upper.cnActivities?.length ?? 0) + (v.lower.cnActivities?.length ?? 0),
-    twCount: (v.upper.twActivities?.length ?? 0) + (v.lower.twActivities?.length ?? 0),
+    total,
+    pct: total ? Math.round((filled / total) * 100) : 0,
+    cnCount: halves.reduce((n, h) => n + (h.cnActivities?.length ?? 0), 0),
+    twCount: halves.reduce((n, h) => n + (h.twActivities?.length ?? 0), 0),
   }
 }
 
@@ -93,8 +93,11 @@ export default function AdminVersionListPage() {
                       )}
                     </div>
                     <div className="flex flex-wrap gap-x-6 gap-y-0.5 text-xs text-text-dim">
-                      <span>上半 陸 {v.upper.cnDate}{v.upper.twDate ? ` / 台 ${v.upper.twDate}${v.upper.twIsPredicted ? ' ⌛' : ''}` : ''}</span>
-                      <span>下半 陸 {v.lower.cnDate}{v.lower.twDate ? ` / 台 ${v.lower.twDate}${v.lower.twIsPredicted ? ' ⌛' : ''}` : ''}</span>
+                      {halvesOf(v).map(({ key, label, half }) => (
+                        <span key={key}>
+                          {label} 陸 {half.cnDate}{half.twDate ? ` / 台 ${half.twDate}${half.twIsPredicted ? ' ⌛' : ''}` : ''}
+                        </span>
+                      ))}
                     </div>
                   </div>
 

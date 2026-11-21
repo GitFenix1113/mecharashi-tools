@@ -40,7 +40,7 @@
     <strong>📌 用途說明</strong><br>
     <code>scripts/scrape-tw-announcements.mjs</code> 抓台版官方公告（<code>ma.tentree-games.com</code>）、
     以 <code>scripts/lib/parseAnnouncement.mjs</code> 解析出活動檔期，先落在這兩個集合，
-    再合併進 <code>patchVersions</code> 的 <code>upper/lower.twActivities</code>：
+    再合併進 <code>patchVersions</code> 的 <code>upper/middle/lower.twActivities</code>（<code>middle</code> 只在三段版本）：
     <strong>可直接放行的由同一支排程自動合併（2026-10-11 起）</strong>，其餘經 <code>/admin/announcements</code> 人工審核。<br>
     · <strong>announcementDrafts</strong>：一則公告的原文草稿（含 <code>rawText</code> 與解析統計）。<br>
     · <strong>pendingActivities</strong>：解析出的待審活動，<strong>一則公告 n 筆</strong>。<br>
@@ -101,7 +101,7 @@
       <tr><td>excerpt</td><td>string</td><td>原文片段（不是整篇）。後台左欄只載這段，免得每開一筆就傳 16 KB 全文</td></tr>
       <tr><td>excerptStart</td><td>number?</td><td>片段在 <code>rawText</code> 內的起始位移，供「看完整原文」捲到正確位置</td></tr>
       <tr><td>rawTypeLabel</td><td>string?</td><td>型別未命中 registry 時，從公告抄下的原始段落標題</td></tr>
-      <tr><td>targetVersion / targetHalf</td><td>string? / 'upper'|'lower'?</td><td>依 <code>startDate</code> 推測的目標版本半期。<strong>只是預填</strong>；推不出來時該筆一律 <code>needsReview</code>（猜錯版本比沒猜更難發現）</td></tr>
+      <tr><td>targetVersion / targetHalf</td><td>string? / 'upper'|'middle'|'lower'?</td><td>依 <code>startDate</code> 推測的目標版本半期（三段版本才可能推出 <code>middle</code>）。<strong>只是預填</strong>；推不出來時該筆一律 <code>needsReview</code>（猜錯版本比沒猜更難發現）</td></tr>
       <tr><td>mergedInto</td><td>MergeReceipt?</td><td>寫入收據，見下方 04</td></tr>
       <tr><td>rejectReason</td><td>string?</td><td>判定不進時間線的理由（選填）</td></tr>
       <tr><td>reviewerUid / reviewerName / reviewedAt</td><td>string? / string? / Timestamp?</td><td>審核者。status 進入 merged / rejected 時寫入</td></tr>
@@ -215,7 +215,7 @@
     <table class="data-table orange-head">
       <tr><th>欄位</th><th>型別</th><th>說明</th></tr>
       <tr><td>versionId</td><td>string</td><td>patchVersions 文件 ID，如 <code>v3.3</code></td></tr>
-      <tr><td>half</td><td>'upper' | 'lower'</td><td>寫進上半或下半</td></tr>
+      <tr><td>half</td><td>'upper' | 'middle' | 'lower'</td><td>寫進哪一段（<code>middle</code> 只存在於三段版本；目標版本沒有中半時合併會被擋下）</td></tr>
       <tr><td>field</td><td>'twActivities'</td><td>目前一律台服欄位（台版公告只餵台服）</td></tr>
       <tr><td>anchor</td><td>{ name, startDate }</td><td><strong>重定位錨點，不用 index</strong></td></tr>
       <tr><td>at / actorUid / actorName</td><td>Timestamp / string / string</td><td>何時、由誰合併。人工＝Firebase uid；排程自動放行＝<code>'scheduler'</code>；一次性腳本＝<code>'script'</code></td></tr>

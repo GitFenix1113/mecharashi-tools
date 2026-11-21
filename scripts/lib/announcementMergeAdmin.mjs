@@ -41,7 +41,7 @@ export function stripUndefined(obj) {
  * @param {object} p
  * @param {string} p.pendingId
  * @param {object} p.activity        toMergeableActivity 的輸出
- * @param {{versionId: string, half: 'upper'|'lower'}} p.target
+ * @param {{versionId: string, half: 'upper'|'middle'|'lower'}} p.target  middle 只存在於三段版本（週年）
  * @param {{uid: string, name: string}} p.actor
  * @param {boolean} [p.overwrite]    同名同日已存在時覆蓋（預設不覆蓋、回 conflict）
  * @param {string[]} [p.expectStatus] 待審文件必須處於這些狀態才寫（防排程與人同時處理同一筆）
@@ -59,6 +59,10 @@ export async function mergeIntoVersionAdmin(db, FieldValue, { pendingId, activit
 
     const status = pendingSnap.get('status')
     if (expectStatus && !expectStatus.includes(status)) return { ok: false, reason: 'stale', status }
+
+    // 中半只存在於三段版本。不擋的話，下面 `middle.twActivities` 的點路徑更新會在兩段版本上
+    // 憑空長出一個只有活動、沒有日期的中半（與前台 mergeIntoVersion 同一道防線）
+    if (!versionSnap.get(target.half)) throw new Error(`${target.versionId} 沒有這一段（${target.half}）—— 不是三段版本`)
 
     const applied = applyActivityToList(versionSnap.get(target.half)?.twActivities, clean, { overwrite })
     if (!applied.ok) return { ok: false, reason: 'conflict', existing: applied.existing }

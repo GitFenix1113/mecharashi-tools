@@ -7,6 +7,7 @@ import { bumpDataVersion } from '../../lib/firestoreApi'
 import type { PatchVersion, PatchHalf, VersionIconUrls, VersionEntityIds } from '../../data/patchVersions/types'
 import { formatEntityIdValue, parseEntityIdValue } from '../../data/patchVersions/entityRef'
 import { normalizeNotes } from '../../data/patchVersions/notes'
+import { halvesOf, halfListOf, hasMiddle, isHalfKey, type HalfKey } from '../../data/patchVersions/halves'
 import type { Pilot, Mech, Weapon, Backpack, RefType } from '../../types'
 import { resolveIconSrc, mechIconUrl, pilotPortraitPath } from '../../utils/assets'
 import { equipIconPath } from '../../utils/gameIcons'
@@ -15,7 +16,7 @@ import AdminHalfEditorPanel from '../../components/admin/AdminHalfEditorPanel'
 
 // ── 常數 / 工具 ────────────────────────────────────────────────────────────────
 
-type Tab = 'core' | 'upper' | 'lower' | 'icons'
+type Tab = 'core' | HalfKey | 'icons'
 type SaveStatus = null | 'saving' | 'success' | 'error'
 
 type IconCategory = keyof VersionIconUrls
@@ -73,7 +74,7 @@ function collectVersionNames(fd: PatchVersion): Record<IconCategory, string[]> {
   const weapons   = new Set<string>()
   const backpacks = new Set<string>()
 
-  for (const half of [fd.upper, fd.lower]) {
+  for (const half of halfListOf(fd)) {
     for (const n of half.pilots    ?? []) pilots.add(n)
     for (const n of half.mechs     ?? []) mechs.add(n)
     for (const n of half.battlePass?.pilots ?? []) pilots.add(n)
@@ -95,6 +96,19 @@ function collectVersionNames(fd: PatchVersion): Record<IconCategory, string[]> {
 }
 
 const EMPTY_HALF: PatchHalf = { cnDate: '' }
+
+/**
+ * 中半裡有沒有維護者填過的東西（決定關掉三段版本時要不要先確認）。
+ * 只有空的 cnDate 不算 —— 那是剛勾開關時自動塞的骨架。
+ */
+function halfHasContent(h: PatchHalf | undefined): boolean {
+  if (!h) return false
+  return Object.entries(h).some(([k, v]) => {
+    if (k === 'cnDate') return !!v
+    if (Array.isArray(v)) return v.length > 0
+    return v !== undefined && v !== '' && v !== false
+  })
+}
 
 const EMPTY_VERSION: PatchVersion = {
   version: '',
@@ -441,8 +455,29 @@ export default function AdminVersionEditorPage() {
     setFormData(prev => ({ ...prev, ...patch }))
   }
 
-  function updateHalf(half: 'upper' | 'lower', newHalf: PatchHalf) {
+  function updateHalf(half: HalfKey, newHalf: PatchHalf) {
     setFormData(prev => ({ ...prev, [half]: newHalf }))
+  }
+
+  /**
+   * 開關「週年三段版本」：開 → 多一段空白的中半；關 → 整段中半（含活動）移除。
+   * 存檔是 setDoc 整筆覆寫，所以 formData 沒有 middle 鍵就等於從 Firestore 刪掉它。
+   */
+  function setThreePart(on: boolean) {
+    if (on) {
+      setFormData(prev => (prev.middle ? prev : { ...prev, middle: { ...EMPTY_HALF } }))
+      return
+    }
+    if (halfHasContent(formData.middle) &&
+        !window.confirm('中半已經有資料（日期／名單／活動）。關掉三段版本會把整段中半一起移除（存檔後生效），確定嗎？')) {
+      return
+    }
+    setFormData(prev => {
+      const next = { ...prev }
+      delete next.middle
+      return next
+    })
+    if (activeTab === 'middle') setActiveTab('core')
   }
 
   // ── 渲染條件 ────────────────────────────────────────────────────────────────
@@ -471,12 +506,13 @@ export default function AdminVersionEditorPage() {
   // 只有尚未攤平的舊字串才走 normalize
   const notes = Array.isArray(formData.notes) ? formData.notes : normalizeNotes(formData.notes)
 
+  // 分段分頁跟著資料走：三段版本才有「中半」
   const TABS: { key: Tab; label: string }[] = [
     { key: 'core',  label: '核心資訊' },
-    { key: 'upper', label: '上半' },
-    { key: 'lower', label: '下半' },
+    ...halvesOf(formData).map(h => ({ key: h.key, label: h.label })),
     { key: 'icons', label: 'Icon URLs' },
   ]
+  const activeHalf = isHalfKey(activeTab) ? formData[activeTab] : undefined
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 pb-24 bg-bg-dark/10 backdrop-blur-sm rounded-2xl">
@@ -586,6 +622,23 @@ export default function AdminVersionEditorPage() {
             )}
           </div>
 
+          <SectionLabel>版本分段</SectionLabel>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hasMiddle(formData)}
+              onChange={e => setThreePart(e.target.checked)}
+              className="accent-accent-pink w-4 h-4"
+            />
+            <div>
+              <span className="text-sm text-text-primary font-medium">週年三段版本（上半 → 中半 → 下半）</span>
+              <p className="text-xs text-text-dim mt-0.5">
+                週年版本是 9 週、三位角色，勾選後多出「中半」分頁；一般版本（6 週、兩段）不要勾。
+                中半的開始日同時是上半的結束日，前台甘特與版本速覽會自動多出一段。
+              </p>
+            </div>
+          </label>
+
           <SectionLabel>台服設定</SectionLabel>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -652,19 +705,13 @@ export default function AdminVersionEditorPage() {
         </div>
       )}
 
-      {/* ── Tab 2：上半 ── */}
-      {activeTab === 'upper' && (
+      {/* ── 分段分頁：上半／（中半）／下半 ──
+          key 綁分段：切分頁時重新掛載，各段的檢視狀態（看哪一服）不互相沿用 */}
+      {isHalfKey(activeTab) && activeHalf && (
         <AdminHalfEditorPanel
-          value={formData.upper}
-          onChange={half => updateHalf('upper', half)}
-        />
-      )}
-
-      {/* ── Tab 3：下半 ── */}
-      {activeTab === 'lower' && (
-        <AdminHalfEditorPanel
-          value={formData.lower}
-          onChange={half => updateHalf('lower', half)}
+          key={activeTab}
+          value={activeHalf}
+          onChange={half => updateHalf(activeTab, half)}
         />
       )}
 

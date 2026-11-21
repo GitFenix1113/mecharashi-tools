@@ -15,6 +15,7 @@
 //   排程在 Vite 以外的環境執行，那會讓它在 GitHub Actions 上直接崩潰。
 
 import type { TimedActivity } from '../data/patchVersions/types'
+import type { HalfKey } from '../data/patchVersions/halves'
 
 // ── 寫入前正規化 ────────────────────────────────────────────────────────────
 
@@ -153,6 +154,8 @@ export interface VersionLike {
   id?: string
   version?: string
   upper?: HalfLike
+  /** 只有三段版本（週年）才有 */
+  middle?: HalfLike
   lower?: HalfLike
 }
 
@@ -208,7 +211,7 @@ function isWeekendEvent(name: string | undefined): boolean {
  */
 export function inferOpenEndedDuration(
   a: Partial<TimedActivity>,
-  target: { versionId: string; half: 'upper' | 'lower' } | null | undefined,
+  target: { versionId: string; half: HalfKey } | null | undefined,
   versions: VersionLike[],
 ): InferredDuration | null {
   if (a.weeks !== undefined || !a.startDate || !a.type || !target?.versionId) return null

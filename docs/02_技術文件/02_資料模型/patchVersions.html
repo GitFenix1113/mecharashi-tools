@@ -173,6 +173,7 @@
   name?: <span class="ty">string</span>               <span class="cm">// 版本副標，如 "黃昏紀元"</span>
   bannerImage?: <span class="ty">string</span>        <span class="cm">// 版本前瞻圖路徑（/images/banners/v2.8.jpg）</span>
   upper: <span class="ty">PatchHalf</span>            <span class="cm">// 上半版本</span>
+  middle?: <span class="ty">PatchHalf</span>          <span class="cm">// 中半版本：只有三段版本（週年 9 週）才有；未填＝兩段版本</span>
   lower: <span class="ty">PatchHalf</span>            <span class="cm">// 下半版本</span>
   crisisShop?: <span class="ty">string</span>[]       <span class="cm">// 危境重構可兌換機師</span>
   memoryStorm?: <span class="ty">string</span>        <span class="cm">// 記憶風暴說明</span>
@@ -207,6 +208,25 @@
       <td class="field-type">string?</td>
       <td><span class="badge badge-opt">選填</span></td>
       <td>版本前瞻圖路徑，相對於 <code>public/</code>，如 <code>/images/banners/v2.8.jpg</code>。</td>
+    </tr>
+    <tr>
+      <td class="field-name">upper / lower</td>
+      <td class="field-type">PatchHalf</td>
+      <td><span class="badge badge-req">必填</span></td>
+      <td>上半／下半版本。一般版本 6 週、兩段各 3 週（一段一位新角色）。</td>
+    </tr>
+    <tr>
+      <td class="field-name">middle</td>
+      <td class="field-type">PatchHalf?</td>
+      <td><span class="badge badge-opt">選填</span></td>
+      <td>
+        中半版本，<strong>只有三段版本才有</strong>（週年版本 9 週、三位角色，如 v4.0）；未填＝兩段版本（現行模式），既有文件不必遷移。
+        時間順序 上半 → 中半 → 下半，每段的結束日＝下一段的開始日。後台「核心資訊 → 版本分段」的開關控制它存不存在，
+        關掉時整段（含活動）一起移除。<br>
+        讀取端一律走 <code>halvesOf()</code>（<code>src/data/patchVersions/halves.ts</code>）列舉分段，
+        <strong>不要</strong>自己寫 <code>[v.upper, v.lower]</code> —— 那會把中半靜默略過。
+        合併公告活動時若目標是 <code>middle</code> 而該版本沒有中半，前後台合併函式都會擋下（點路徑更新會憑空長出一個壞掉的中半）。
+      </td>
     </tr>
     <tr>
       <td class="field-name">isTwCurrent</td>
@@ -244,7 +264,7 @@
 <!-- ── PatchHalf ── -->
 <section class="section">
   <div class="section-label purple">PatchHalf</div>
-  <div class="section-title">PatchHalf — 半版本（上半 / 下半）</div>
+  <div class="section-title">PatchHalf — 半版本（上半 / 中半 / 下半）</div>
 
   <div class="code-block">
 <span class="kw">export interface</span> <span class="ty">PatchHalf</span> {
@@ -789,10 +809,10 @@ upper: {
       <li><strong>週單位</strong>：以週四作為每週起始日（<code>weekStart</code>），一週 = 週四到下週三</li>
       <li><strong>活動結束日</strong>：<code>endDate = startDate + weeks × 7</code>（exclusive）</li>
       <li><strong>週格是否啟用</strong>：<code>actStart ≤ weekStart &lt; actEnd</code></li>
-      <li><strong>上半週列範圍</strong>：從 <code>upper.cnDate</code>（或 <code>twDate</code>）到 <code>lower.cnDate</code>（若活動延伸則擴展）</li>
-      <li><strong>下半週列範圍</strong>：從 <code>lower.cnDate</code> 延伸到最後一個活動的結束日（最少 3 週）</li>
+      <li><strong>分段週列範圍</strong>：依 <code>halvesOf()</code> 的順序（上半 →〔中半 →〕下半），每段從自己的 <code>cnDate</code>（或 <code>twDate</code>）到<strong>下一段</strong>的開始日；最後一段沒有下一段，走 <code>weeks</code>／慣例 3 週。週軸不被活動撐長，跨版活動在軸尾切平</li>
+      <li><strong>三段版本</strong>：中半只是多一段，規則相同；甘特以上半橘、中半粉、下半青區分（紫色保留給整版戰令列）</li>
       <li><strong>跨半版本活動</strong>：上半活動延伸到下半的週格會在分界線兩側連續顯示色塊，不需特殊處理</li>
-      <li><strong>Tracks（欄道）</strong>：<code>upper + lower</code> 所有 activities 合併為欄道列表；上/下半共用同一組欄道</li>
+      <li><strong>Tracks（欄道）</strong>：各段所有 activities 合併為欄道列表；各段共用同一組欄道</li>
     </ul>
   </div>
 

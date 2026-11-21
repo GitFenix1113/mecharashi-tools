@@ -264,6 +264,14 @@ export interface PatchVersion {
   name?: string
   bannerImage?: string
   upper: PatchHalf
+  /**
+   * 中半：只有三段版本才有（週年版本 9 週、三位角色，例如 v4.0）。**未填＝兩段版本**（現行模式）。
+   *
+   * 時間順序是 上半 → 中半 → 下半。讀取端一律走 `halvesOf()`（halves.ts）列舉分段，
+   * 不要自己寫 `[v.upper, v.lower]` —— 那會把中半靜默略過。
+   * 後台的「週年三段版本」開關控制它存不存在；關掉時整段（含活動）一起移除。
+   */
+  middle?: PatchHalf
   lower: PatchHalf
   crisisShop?: string[]
   memoryStorm?: string

@@ -167,7 +167,8 @@ async function loadSite() {
 function timelineRaids(patchVersions) {
   const out = []
   for (const v of patchVersions) {
-    for (const half of ['upper', 'lower']) {
+    // 中半只有三段版本（週年）才有；沒有的版本 v.middle 是 undefined，下一行就是空陣列
+    for (const half of ['upper', 'middle', 'lower']) {
       for (const r of v[half]?.armamentRaids || []) {
         if (r?.name) out.push({ name: r.name, versionId: v.id, half, twDate: v[half].twDate || null, weapons: r.weapons || [], backpacks: r.backpacks || [] })
       }

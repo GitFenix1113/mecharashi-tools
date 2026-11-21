@@ -59,6 +59,7 @@ import {
   applyActivityToList,
   describeInferred,
 } from '../src/utils/announcementMerge.ts'
+import { HALF_LABEL } from '../src/data/patchVersions/halves.ts'
 import {
   mergeIntoVersionAdmin,
   bumpPatchVersions,
@@ -258,7 +259,8 @@ export function guessTarget(startDate, versions) {
   if (Number.isNaN(t)) return {}
   let best = null
   for (const v of versions) {
-    for (const half of ['upper', 'lower']) {
+    // 中半只有三段版本（週年版本）才有；兩段版本的 v.middle 是 undefined，下一行就略過
+    for (const half of ['upper', 'middle', 'lower']) {
       const d = v[half]?.twDate
       if (!d || v[half]?.twIsPredicted) continue
       const ts = new Date(String(d).replace(/^[^0-9]+/, '').replace(/\//g, '-')).getTime()
@@ -667,11 +669,12 @@ async function autoMerge(db, { staged, versions, blocked }) {
       if (!DRY_RUN) await db.collection(PENDING).doc(id).update({ status: 'needsReview' })
       continue
     }
-    const where = `${target.versionId} ${target.half === 'upper' ? '上' : '下'}半`
+    const where = `${target.versionId} ${HALF_LABEL[target.half] ?? '上半'}`
 
     if (DRY_RUN) {
       const v = sim.get(target.versionId)
       if (!v) { failed.push({ label, message: `找不到版本 ${target.versionId}` }); continue }
+      if (!v[target.half]) { failed.push({ label, message: `${target.versionId} 沒有${where.split(' ')[1]}（不是三段版本）` }); continue }
       const applied = applyActivityToList(v[target.half]?.twActivities, activity)
       if (!applied.ok) { conflicts.push(`${label} → ${where}`); continue }
       v[target.half] = { ...(v[target.half] ?? {}), twActivities: applied.list }
