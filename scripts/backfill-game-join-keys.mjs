@@ -27,12 +27,20 @@
  *   --from-backup <dir>   不連 Firestore，改讀本機備份（_local-notes/db-backup-*）：離線試跑，不能和 --write 一起用
  *   --rollback <dir>      依 --write 留下的備份夾把 gameRef 還原成寫入前的值（預設只預覽；加 --write 才執行）
  *
+ * ── BUFF（buffs）：分級槽位、後台可編輯 ─────────────────────────────────────────
+ *   BUFF 的 gameRef（官方 BUFF 記錄 ID，types/gameRef.ts 的 BuffGameRef）一份文件有好幾個槽位：
+ *   頂層 gameRef，以及分級 BUFF 每一級的 levels[].gameRef。建議檔一個槽位一筆，帶 level 的就是那一級；
+ *   報告與 accept 檔用「buffs/文件 ID@等級」表示（與站上 id@N 的寫法一致）。
+ *   這是唯一一種後台可以編輯的 gameRef：站上已有值（不論是人填的還是上次寫的）一律不覆寫，不同就列衝突。
+ *   分級槽位的寫入是把 levels 整個陣列寫回（Firestore 不能只改陣列裡的一格）：以寫入前讀到的那份為底、
+ *   只換目標那幾級的 gameRef，加上 updateTime precondition——讀取之後有人存過檔，那一批就整批失敗、不覆蓋。
+ *
  * ── 寫入規則 ────────────────────────────────────────────────────────────
  *   unique → 寫；equivalent → 只有 --accept-equivalent 才寫；needsConfirm → 只有列在 accept 檔才寫；
  *   unmatched／notApplicable → 不寫，只列報告。
  *   站上已是相同 gameRef → 略過（所以寫過的條目重跑時不必再帶 accept）；站上已有不同的 → 衝突，不寫、不覆蓋；
  *   站上找不到文件 → 列報告。陣列（技能候選 ID）視為集合：排序去重後比較與寫入。
- *   只 update `gameRef` 一個欄位（不 set 整份）。這 8 個集合的文件沒有 updatedAt 欄位，所以也不寫 updatedAt
+ *   只 update `gameRef` 一個欄位（不 set 整份；BUFF 的分級槽位例外，見上）。這些集合的文件沒有 updatedAt 欄位，所以也不寫 updatedAt
  *   （後台存檔同樣不寫；變更歷史 changeHistory 只有後台存檔會記，腳本寫入不記）。
  *
  * ── 備份與版本 bump：都是本腳本內建 ─────────────────────────────────────────
@@ -75,12 +83,16 @@ export const GAME_REF_FIELDS = {
   backpacks:   { backpackInfoId: 'int' },
   pilotSkills: { mainSkillIds: 'int[]?', passiveSkillIds: 'int[]?', activeSkillIds: 'int[]?' },
   forms:       { passiveSkillId: 'int' },
+  buffs:       { bufIds: 'int[]' },
 }
 /** 集合 → src/types/gameRef.ts 的型別名（測試用） */
 export const GAME_REF_TYPE_NAMES = {
   pilots: 'PilotGameRef', mechs: 'MechGameRef', weapons: 'WeaponGameRef', modules: 'ModuleGameRef',
   components: 'ComponentGameRef', backpacks: 'BackpackGameRef', pilotSkills: 'SkillGameRef', forms: 'FormGameRef',
+  buffs: 'BuffGameRef',
 }
+/** 有分級槽位的集合：頂層＋每一級各一個 gameRef（buffs：GameBuff.gameRef／BuffLevel.gameRef）。建議檔的 level 只在這些集合有效。 */
+export const LEVELED_COLLECTIONS = new Set(['buffs'])
 export const COLLECTIONS = Object.keys(GAME_REF_FIELDS)
 export const STATUSES = ['unique', 'equivalent', 'needsConfirm', 'unmatched', 'notApplicable']
 const WRITABLE_STATUSES = new Set(['unique', 'equivalent', 'needsConfirm'])
@@ -98,7 +110,7 @@ export const ACTIONS = {
   invalid:        '格式不對',
 }
 const STATUS_LABEL = { unique: '唯一', equivalent: '等價', needsConfirm: '待確認', unmatched: '找不到', notApplicable: '不需要', invalid: '格式不對' }
-const COLLECTION_LABEL = { pilots: '機師', mechs: '機甲', weapons: '武器', modules: '模組', components: '元件', backpacks: '背包', pilotSkills: '技能', forms: '形態' }
+const COLLECTION_LABEL = { pilots: '機師', mechs: '機甲', weapons: '武器', modules: '模組', components: '元件', backpacks: '背包', pilotSkills: '技能', forms: '形態', buffs: 'BUFF' }
 
 // 集合鍵漂移守門：gameRef 寫進的集合必須是前台快取層認得的 CollectionKey，否則 bump 等於沒 bump
 for (const c of COLLECTIONS) {
@@ -162,7 +174,21 @@ export function formatGameRef(ref) {
 
 // ─── 純函式：建議檔與 accept 檔 ───────────────────────────────────────────────
 
-export const itemKey = (collection, docId) => `${collection}/${docId}`
+/** 「集合/文件 ID」；分級槽位再加「@等級」（站上 id@N 的寫法） */
+export const itemKey = (collection, docId, level) => `${collection}/${docId}${level != null ? `@${level}` : ''}`
+
+/**
+ * 站上的一個槽位：一般集合就是文件本身；分級集合帶 level 時是那一級。
+ * @param {Map<string, {name?:string, gameRef?:object, levels?:{level:number, gameRef?:object}[]}>|undefined} docs
+ * @returns {{name?:string, gameRef?:object}|undefined|null} undefined＝文件不存在；null＝文件在、但沒有這一級
+ */
+export function siteSlot(docs, item) {
+  const d = docs?.get(item.docId)
+  if (!d) return undefined
+  if (item.level == null) return d
+  const lv = (d.levels || []).find((l) => l?.level === item.level)
+  return lv ? { name: d.name, gameRef: lv.gameRef } : null
+}
 
 /** 檔案層級檢查：schema 不對、items 不是陣列 → 直接丟錯（整份不能用） */
 export function checkProposalsFile(json) {
@@ -183,6 +209,10 @@ export function itemProblems(item) {
   if (!COLLECTIONS.includes(item.collection)) problems.push(`collection「${item.collection}」不在 ${COLLECTIONS.join('／')}`)
   if (typeof item.docId !== 'string' || !item.docId || item.docId.includes('/')) problems.push('docId 必須是非空字串、不含 /')
   if (!STATUSES.includes(item.status)) problems.push(`status「${item.status}」不在 ${STATUSES.join('／')}`)
+  if (item.level != null) {
+    if (!LEVELED_COLLECTIONS.has(item.collection)) problems.push(`${item.collection} 沒有分級槽位，不應帶 level`)
+    else if (!isPosInt(item.level)) problems.push('level 必須是正整數')
+  }
   if (problems.length) return problems
   if (WRITABLE_STATUSES.has(item.status)) {
     if (item.gameRef === undefined) problems.push(`${item.status} 必須帶 gameRef`)
@@ -220,14 +250,14 @@ export function parseAcceptFile(json) {
  * 一筆建議 → 動作。
  * @param {object} item       建議檔的一筆
  * @param {{name?:string, gameRef?:object}|undefined} siteDoc 站上現值（undefined＝站上找不到這份文件）
- * @param {{acceptEquivalent?:boolean, accepted?:Set<string>, problems?:string[]}} opts
+ * @param {{acceptEquivalent?:boolean, accepted?:Set<string>, problems?:string[], missingReason?:string}} opts
  * @returns {{action:string, reason:string, before:object|null, after:object|null}}
  */
-export function decideAction(item, siteDoc, { acceptEquivalent = false, accepted = new Set(), problems } = {}) {
+export function decideAction(item, siteDoc, { acceptEquivalent = false, accepted = new Set(), problems, missingReason } = {}) {
   const probs = problems ?? itemProblems(item)
   const before = canonicalGameRef(siteDoc?.gameRef)
   if (probs.length) return { action: 'invalid', reason: probs.join('；'), before, after: null }
-  if (!siteDoc) return { action: 'missingDoc', reason: '站上沒有這份文件（改名、刪除，或建議檔用了舊的站上匯出）', before: null, after: null }
+  if (!siteDoc) return { action: 'missingDoc', reason: missingReason ?? '站上沒有這份文件（改名、刪除，或建議檔用了舊的站上匯出）', before: null, after: null }
   if (item.status === 'unmatched') return { action: 'unmatched', reason: before ? '站上已有 gameRef，但建議檔找不到對照' : '', before, after: null }
   if (item.status === 'notApplicable') return { action: 'notApplicable', reason: before ? '站上已有 gameRef，但建議檔認為不需要' : '', before, after: null }
 
@@ -236,7 +266,7 @@ export function decideAction(item, siteDoc, { acceptEquivalent = false, accepted
   if (before && sameGameRef(before, after)) return { action: 'same', reason: '', before, after }
   if (before) return { action: 'conflict', reason: '站上已有不同的 gameRef', before, after }
   if (item.status === 'equivalent' && !acceptEquivalent) return { action: 'holdEquivalent', reason: '等價記錄：C14 裁決接受後加 --accept-equivalent', before, after }
-  if (item.status === 'needsConfirm' && !accepted.has(itemKey(item.collection, item.docId))) return { action: 'holdConfirm', reason: '待確認：同意的話寫進 accept 檔', before, after }
+  if (item.status === 'needsConfirm' && !accepted.has(itemKey(item.collection, item.docId, item.level))) return { action: 'holdConfirm', reason: '待確認：同意的話寫進 accept 檔', before, after }
   return { action: 'write', reason: item.status === 'unique' ? '' : item.status === 'equivalent' ? '已依 --accept-equivalent 取代表記錄' : '已列在 accept 檔', before, after }
 }
 
@@ -249,16 +279,18 @@ export function planBackfill({ proposals, site, acceptEquivalent = false, accept
   const keyCount = new Map()
   for (const it of items) {
     if (isPlainObject(it) && typeof it.collection === 'string' && typeof it.docId === 'string') {
-      const k = itemKey(it.collection, it.docId)
+      const k = itemKey(it.collection, it.docId, it.level)
       keyCount.set(k, (keyCount.get(k) || 0) + 1)
     }
   }
   const rows = items.map((item, index) => {
-    const key = isPlainObject(item) ? itemKey(item.collection, item.docId) : `#${index}`
+    const key = isPlainObject(item) ? itemKey(item.collection, item.docId, item.level) : `#${index}`
     const problems = itemProblems(item)
-    if ((keyCount.get(key) || 0) > 1) problems.push('同一份文件在建議檔出現不只一次')
-    const siteDoc = isPlainObject(item) ? site[item.collection]?.get(item.docId) : undefined
-    const decision = decideAction(item, siteDoc, { acceptEquivalent, accepted, problems })
+    if ((keyCount.get(key) || 0) > 1) problems.push('同一份文件（槽位）在建議檔出現不只一次')
+    const slot = isPlainObject(item) ? siteSlot(site[item.collection], item) : undefined
+    const siteDoc = slot ?? undefined
+    const missingReason = slot === null ? `站上這份文件沒有 Lv${item.level}（等級改過或刪掉了）——用最新的站上資料重產建議檔` : undefined
+    const decision = decideAction(item, siteDoc, { acceptEquivalent, accepted, problems, missingReason })
     const nameDiffers = !!(siteDoc && item.siteName && siteDoc.name && item.siteName !== siteDoc.name)
     return { index, key, item, siteName: siteDoc?.name ?? item?.siteName ?? '', nameDiffers, ...decision }
   })
@@ -269,6 +301,7 @@ export function planBackfill({ proposals, site, acceptEquivalent = false, accept
     .map((k) => ({ key: k, reason: byKey.has(k) ? `這筆是 ${byKey.get(k).item.status}，accept 檔對它沒有作用` : '建議檔沒有這筆' }))
 
   // 站上有、建議檔沒列到的文件（之後會顯示「未連結」，B-6 例行檢查也會列）
+  // 分級集合看每一級；分級 BUFF 的頂層只放關鍵字記錄、本來就可以沒有，不列
   const listed = new Set(rows.map((r) => r.key))
   const uncovered = {}
   for (const c of COLLECTIONS) {
@@ -276,8 +309,14 @@ export function planBackfill({ proposals, site, acceptEquivalent = false, accept
     if (!docs) continue
     const list = []
     for (const [id, d] of docs) {
-      if (listed.has(itemKey(c, id))) continue
-      list.push({ docId: id, name: d.name ?? '', hasGameRef: !isEmptyGameRef(d.gameRef) })
+      const levels = LEVELED_COLLECTIONS.has(c) ? (d.levels || []).filter((l) => isPosInt(l?.level)) : []
+      const slots = levels.length
+        ? levels.map((l) => ({ key: itemKey(c, id, l.level), docId: `${id}@${l.level}`, name: `${d.name ?? ''} Lv${l.level}`, gameRef: l.gameRef }))
+        : [{ key: itemKey(c, id), docId: id, name: d.name ?? '', gameRef: d.gameRef }]
+      for (const sl of slots) {
+        if (listed.has(sl.key)) continue
+        list.push({ docId: sl.docId, name: sl.name, hasGameRef: !isEmptyGameRef(sl.gameRef) })
+      }
     }
     if (list.length) uncovered[c] = list
   }
@@ -289,8 +328,8 @@ export function planBackfill({ proposals, site, acceptEquivalent = false, accept
 /** 要寫入的那些 → 依集合分組（集合照 COLLECTIONS 順序、文件照 docId 排序） */
 export function buildDiff(rows) {
   const entries = rows.filter((r) => r.action === 'write')
-    .map((r) => ({ collection: r.item.collection, docId: r.item.docId, siteName: r.siteName, status: r.item.status, before: r.before, after: r.after }))
-    .sort((a, b) => COLLECTIONS.indexOf(a.collection) - COLLECTIONS.indexOf(b.collection) || (a.docId < b.docId ? -1 : a.docId > b.docId ? 1 : 0))
+    .map((r) => ({ collection: r.item.collection, docId: r.item.docId, ...(r.item.level != null && { level: r.item.level }), siteName: r.siteName, status: r.item.status, before: r.before, after: r.after }))
+    .sort((a, b) => COLLECTIONS.indexOf(a.collection) - COLLECTIONS.indexOf(b.collection) || (a.docId < b.docId ? -1 : a.docId > b.docId ? 1 : 0) || (a.level ?? 0) - (b.level ?? 0))
   const byCollection = {}
   for (const e of entries) (byCollection[e.collection] ||= []).push(e)
   return { entries, byCollection, collections: Object.keys(byCollection), total: entries.length }
@@ -343,17 +382,48 @@ export function compareDeclaredSummary(declared, stats) {
 }
 
 /**
+ * 同一份文件要寫的槽位 → 一次 update 的內容。
+ * 頂層槽位（level 為空）→ gameRef；分級槽位 → 整個 levels 陣列：以寫入前讀到的 levels 為底，
+ * 只換目標那幾級的 gameRef（after 為 null＝拿掉那一級的 gameRef），其餘欄位與其他級原封不動。
+ * @param {object[]|undefined} levels  寫入前讀到的 levels
+ * @param {{level?:number, after:object|null}[]} slotWrites
+ * @param {unknown} deleteSentinel  FieldValue.delete()（測試可傳任意記號）
+ */
+export function buildUpdatePayload(levels, slotWrites, deleteSentinel) {
+  const payload = {}
+  const top = slotWrites.find((w) => w.level == null)
+  if (top) payload.gameRef = top.after ?? deleteSentinel
+  const byLevel = new Map(slotWrites.filter((w) => w.level != null).map((w) => [w.level, w.after]))
+  if (byLevel.size) {
+    payload.levels = (levels || []).map((l) => {
+      if (!isPlainObject(l) || !byLevel.has(l.level)) return l
+      const { gameRef: _old, ...rest } = l
+      const after = byLevel.get(l.level)
+      return after ? { ...rest, gameRef: after } : rest
+    })
+  }
+  return payload
+}
+
+/** 讀到的文件 → 某個槽位的現值；null＝那一級已不存在 */
+export function slotOfDocData(data, level) {
+  if (level == null) return { gameRef: data?.gameRef }
+  const lv = (data?.levels || []).find((l) => l?.level === level)
+  return lv ? { gameRef: lv.gameRef } : null
+}
+
+/**
  * --rollback：備份夾的寫入紀錄 × 站上現值 → 每筆要不要還原。
  * 只還原「現值仍是當初寫入的值」的；之後又被改過的不碰（不覆蓋別人的修改）。
- * @param {{collection:string, docId:string, before:object|null, after:object}[]} writes
- * @param {Map<string, {gameRef?:object}|null>} current  key＝集合/文件 ID；null＝文件已不存在
+ * @param {{collection:string, docId:string, level?:number, before:object|null, after:object}[]} writes
+ * @param {Map<string, {gameRef?:object}|null>} current  key＝itemKey（分級槽位帶 @等級）；null＝文件（或那一級）已不存在
  */
 export function planRollback(writes, current) {
   return writes.map((w) => {
-    const key = itemKey(w.collection, w.docId)
+    const key = itemKey(w.collection, w.docId, w.level)
     const cur = current.get(key)
-    const base = { key, collection: w.collection, docId: w.docId, before: canonicalGameRef(w.before), after: canonicalGameRef(w.after), current: canonicalGameRef(cur?.gameRef) }
-    if (!cur) return { ...base, action: 'skip', reason: '文件已不存在' }
+    const base = { key, collection: w.collection, docId: w.docId, ...(w.level != null && { level: w.level }), before: canonicalGameRef(w.before), after: canonicalGameRef(w.after), current: canonicalGameRef(cur?.gameRef) }
+    if (!cur) return { ...base, action: 'skip', reason: w.level != null ? '文件或這一級已不存在' : '文件已不存在' }
     if (sameGameRef(cur.gameRef, w.after)) return { ...base, action: 'restore', reason: '' }
     if (sameGameRef(cur.gameRef, w.before)) return { ...base, action: 'skip', reason: '已是寫入前的值' }
     return { ...base, action: 'skip', reason: '寫入後又被改過，不覆蓋' }
@@ -397,7 +467,8 @@ export function nextSteps(model) {
     : `${a.missingDoc} 筆站上找不到文件（改名、刪除，或建議檔用了舊的站上匯出）——用最新的站上資料重產建議檔` })
   if (nameMismatch) steps.push({ ok: false, text: `${nameMismatch} 筆名稱與站上不同（多半是站上改過名）——不影響寫入（以文件 ID 為準），重產建議檔後會消失` })
   steps.push({ ok: a.conflict === 0, text: a.conflict === 0 ? '沒有衝突'
-    : `${a.conflict} 筆衝突：站上已有不同的 gameRef，本腳本不會覆蓋——逐筆看「衝突」：站上值對 → 不用動，回報開發者修 pipeline；建議值對 → 到 Firebase Console 刪掉那份文件的 gameRef 欄位，再重跑` })
+    : `${a.conflict} 筆衝突：站上已有不同的 gameRef，本腳本不會覆蓋——逐筆看「衝突」：站上值對 → 不用動，回報開發者修 pipeline；建議值對 → 到 Firebase Console 刪掉那份文件的 gameRef 欄位，再重跑`
+      + (model.conflictBuffs ? `（其中 ${model.conflictBuffs} 筆是 BUFF：BUFF 的官方 ID 後台可以改——站上值是有人填的，多半以它為準；建議值對的話直接在後台 BUFF 頁改，不必動 Console）` : '') })
   steps.push({ ok: a.holdConfirm === 0, text: a.holdConfirm === 0 ? '待確認的都已處理'
     : `${a.holdConfirm} 筆待確認——逐筆看「待確認」，同意的把「集合/文件 ID」寫進 accept 檔（底下有現成樣板，刪掉不同意的行），存成 ${cmd.acceptPath}；不同意的別寫，回報開發者` })
   steps.push({ ok: a.holdEquivalent === 0, text: a.holdEquivalent === 0 ? '等價記錄都已處理'
@@ -453,11 +524,11 @@ export function renderReport(model) {
     + (stats['（不明）'] ? statRow('（集合不明）', stats['（不明）'], '') : '')
     + statRow('合計', tot, statCols.reduce((n, c) => n + uncMissing(c), 0)).replace('<tr>', '<tr class="sum">') + '</table>'
 
-  const writtenKeys = new Set((writeResult?.written || []).map((w) => itemKey(w.collection, w.docId)))
+  const writtenKeys = new Set((writeResult?.written || []).map((w) => itemKey(w.collection, w.docId, w.level)))
   const rowByKey = new Map(rows.map((r) => [r.key, r]))
   const diffHtml = diff.collections.map((c) => `<h3>${COLLECTION_LABEL[c]} ${c}（${diff.byCollection[c].length}）</h3>`
     + table(['文件', '名稱', '分類', '寫入值', '佐證'], diff.byCollection[c].map((e) => {
-      const r = rowByKey.get(itemKey(e.collection, e.docId))
+      const r = rowByKey.get(itemKey(e.collection, e.docId, e.level))
       const mark = writeResult ? (writtenKeys.has(r.key) ? '✅ ' : '⬜ ') : ''
       return `<tr><td>${mark}<code>${esc(r.key)}</code></td><td>${esc(r.siteName)}</td><td>${esc(STATUS_LABEL[e.status])}${r.reason ? `<div class="dim">${esc(r.reason)}</div>` : ''}</td><td><code>${esc(formatGameRef(e.after))}</code></td><td class="dim">${esc(r.item.evidence)}</td></tr>`
     }))).join('')
@@ -489,7 +560,7 @@ export function renderReport(model) {
 <li>備份：<code>${esc(w.backupDir)}</code>（還原：<code>${esc(model.cmd.rollback)}</code>，先預覽、加 --write 才執行）</li>
 <li>已寫入 ${w.written.length} 筆${w.error ? `；<span class="warn">中斷：${esc(w.error)}</span>` : ''}</li>
 <li>bump：${w.bump ? `${esc(w.bump.collections.join('、'))} → ${esc(w.bump.version)}（${w.bump.verified ? '重讀確認生效' : `<span class="warn">未生效：${esc(w.bump.failed.join('、'))}</span>`}）` : '無'}</li>
-${w.skipped.map((s) => `<li class="warn">寫入前複查擋下：<code>${esc(itemKey(s.collection, s.docId))}</code>——${esc(s.reason)}</li>`).join('')}
+${w.skipped.map((s) => `<li class="warn">寫入前複查擋下：<code>${esc(itemKey(s.collection, s.docId, s.level))}</code>——${esc(s.reason)}</li>`).join('')}
 </ul>` : ''
 
   const headline = model.headline
@@ -593,21 +664,28 @@ async function connectFirestore(writing) {
   return { db: admin.firestore(), FieldValue: admin.firestore.FieldValue }
 }
 
-/** 站上現值：每集合 Map(docId → {name, gameRef}) */
+/** 一份站上文件 → 比對用的精簡形：{name, gameRef}，分級集合另帶 levels:[{level, gameRef}] */
+function siteEntry(collection, d) {
+  const e = { name: d.name, gameRef: d.gameRef }
+  if (LEVELED_COLLECTIONS.has(collection)) e.levels = (Array.isArray(d.levels) ? d.levels : []).map((l) => ({ level: l?.level, gameRef: l?.gameRef }))
+  return e
+}
+
+/** 站上現值：每集合 Map(docId → {name, gameRef[, levels]}) */
 async function loadSite(args) {
   const docs = {}
   if (args.fromBackup) {
     for (const c of COLLECTIONS) {
       const f = path.join(args.fromBackup, `${c}.json`)
       if (!fs.existsSync(f)) throw new Error(`備份裡沒有 ${c}.json：${f}`)
-      docs[c] = new Map(readJson(f).docs.map((d) => [d.id, { name: d.name, gameRef: d.gameRef }]))
+      docs[c] = new Map(readJson(f).docs.map((d) => [d.id, siteEntry(c, d)]))
     }
     return { mode: 'backup', docs, label: `備份 ${path.basename(path.resolve(args.fromBackup))}` }
   }
   const fb = await connectFirestore(args.write)
-  // 只取 name／gameRef 兩欄（讀取次數不變、傳輸量小）；要寫的那幾份在寫入前另外整份讀來備份
-  const snaps = await Promise.all(COLLECTIONS.map((c) => fb.db.collection(c).select('name', 'gameRef').get()))
-  COLLECTIONS.forEach((c, i) => { docs[c] = new Map(snaps[i].docs.map((d) => [d.id, { name: d.get('name'), gameRef: d.get('gameRef') }])) })
+  // 只取 name／gameRef 兩欄（讀取次數不變、傳輸量小；分級集合多取 levels）；要寫的那幾份在寫入前另外整份讀來備份
+  const snaps = await Promise.all(COLLECTIONS.map((c) => fb.db.collection(c).select(...(LEVELED_COLLECTIONS.has(c) ? ['name', 'gameRef', 'levels'] : ['name', 'gameRef'])).get()))
+  COLLECTIONS.forEach((c, i) => { docs[c] = new Map(snaps[i].docs.map((d) => [d.id, siteEntry(c, d.data())])) })
   return { mode: 'firestore', docs, label: process.env.FIRESTORE_EMULATOR_HOST ? '模擬器' : '正式庫', ...fb }
 }
 
@@ -624,13 +702,15 @@ function writeBackup(targets, manifestExtra, suffix) {
   fs.mkdirSync(dir, { recursive: true })
   const exportedAt = new Date().toISOString()
   const byCol = {}
-  for (const t of targets) (byCol[t.collection] ||= []).push({ id: t.snap.id, ...t.snap.data() })
-  for (const [c, docs] of Object.entries(byCol)) {
+  // 分級集合的同一份文件可能有好幾個槽位要寫，備份只存一份
+  for (const t of targets) (byCol[t.collection] ||= new Map()).set(t.snap.id, { id: t.snap.id, ...t.snap.data() })
+  for (const [c, m] of Object.entries(byCol)) {
+    const docs = [...m.values()]
     fs.writeFileSync(path.join(dir, `${c}.json`), JSON.stringify({ collection: c, exportedAt, count: docs.length, docs }, null, 2), 'utf8')
   }
   fs.writeFileSync(path.join(dir, '_manifest.json'), JSON.stringify({
     schema: BACKUP_SCHEMA, createdAt: localIso(), ...manifestExtra,
-    writes: targets.map((t) => ({ collection: t.collection, docId: t.docId, before: t.before ?? null, after: t.after ?? null })),
+    writes: targets.map((t) => ({ collection: t.collection, docId: t.docId, ...(t.level != null && { level: t.level }), before: t.before ?? null, after: t.after ?? null })),
   }, null, 2), 'utf8')
   return dir
 }
@@ -646,34 +726,50 @@ async function bumpVersions(db, FieldValue, collections) {
 }
 
 /**
- * 每筆 target＝{collection, docId, before, after}：把 gameRef 從 before 改成 after（after 為 null＝刪掉欄位）。
- * 依序：寫入前複查（現值必須仍是 before）→ 備份 → 分批 update（precondition＝備份當下的 updateTime）→ bump。
- * 某一批失敗就停（之前的批次已生效）；已生效的集合照樣 bump。
+ * 每筆 target＝{collection, docId, level?, before, after}：把那個槽位的 gameRef 從 before 改成 after（after 為 null＝刪掉）。
+ * 依序：寫入前複查（現值必須仍是 before）→ 備份 → 依文件分組、分批 update（precondition＝讀取當下的 updateTime）→ bump。
+ * 同一份文件的多個槽位合成一次 update（buildUpdatePayload）。某一批失敗就停（之前的批次已生效）；已生效的集合照樣 bump。
  */
 async function applyUpdates({ db, FieldValue }, targets, { manifestExtra, suffix }) {
-  const snaps = await getAllChunked(db, targets.map((t) => db.collection(t.collection).doc(t.docId)))
+  const docKeyOf = (t) => itemKey(t.collection, t.docId)
+  const docKeys = [...new Set(targets.map(docKeyOf))]
+  const refOf = (k) => { const i = k.indexOf('/'); return db.collection(k.slice(0, i)).doc(k.slice(i + 1)) }
+  const snapList = await getAllChunked(db, docKeys.map(refOf))
+  const snapBy = new Map(docKeys.map((k, i) => [k, snapList[i]]))
   const ok = []
   const skipped = []
-  targets.forEach((t, i) => {
-    const s = snaps[i]
+  for (const t of targets) {
+    const s = snapBy.get(docKeyOf(t))
+    const cur = s.exists ? slotOfDocData(s.data(), t.level) : undefined
     const why = !s.exists ? '寫入前複查：文件已不存在'
-      : sameGameRef(s.get('gameRef'), t.before) ? null : `寫入前複查：gameRef 在讀取後被改動（現值 ${formatGameRef(s.get('gameRef'))}）`
+      : cur === null ? `寫入前複查：Lv${t.level} 已不存在`
+      : sameGameRef(cur.gameRef, t.before) ? null : `寫入前複查：gameRef 在讀取後被改動（現值 ${formatGameRef(cur.gameRef)}）`
     if (why) skipped.push({ ...t, reason: why })
     else ok.push({ ...t, snap: s })
-  })
+  }
   if (!ok.length) return { backupDir: null, written: [], skipped, bump: null, error: null }
   const backupDir = writeBackup(ok, manifestExtra, suffix)
-  console.log(`  備份：${path.relative(ROOT, backupDir)}（${ok.length} 份）`)
+  console.log(`  備份：${path.relative(ROOT, backupDir)}（${new Set(ok.map(docKeyOf)).size} 份文件、${ok.length} 個槽位）`)
+  const groups = new Map()
+  for (const t of ok) {
+    const k = docKeyOf(t)
+    if (!groups.has(k)) groups.set(k, [])
+    groups.get(k).push(t)
+  }
+  const groupList = [...groups.values()]
   const written = []
   let error = null
-  for (let i = 0; i < ok.length; i += BATCH_SIZE) {
-    const chunk = ok.slice(i, i + BATCH_SIZE)
+  for (let i = 0; i < groupList.length; i += BATCH_SIZE) {
+    const chunk = groupList.slice(i, i + BATCH_SIZE)
     const batch = db.batch()
-    // 只 update gameRef 一個欄位；precondition：備份之後文件又被改過 → 這一批整批失敗，不覆蓋
-    for (const t of chunk) batch.update(t.snap.ref, { gameRef: t.after ?? FieldValue.delete() }, { lastUpdateTime: t.snap.updateTime })
+    // 一般集合只 update gameRef；分級槽位連 levels 一起（以讀到的那份為底）。precondition：讀取之後文件又被改過 → 這一批整批失敗，不覆蓋
+    for (const g of chunk) {
+      const snap = g[0].snap
+      batch.update(snap.ref, buildUpdatePayload(snap.get('levels'), g, FieldValue.delete()), { lastUpdateTime: snap.updateTime })
+    }
     try {
       await batch.commit()
-      written.push(...chunk)
+      for (const g of chunk) written.push(...g)
       console.log(`  寫入 ${written.length}／${ok.length}`)
     } catch (e) {
       error = `${e.code ?? ''} ${e.message}`.trim()
@@ -684,7 +780,7 @@ async function applyUpdates({ db, FieldValue }, targets, { manifestExtra, suffix
   const cols = COLLECTIONS.filter((c) => written.some((t) => t.collection === c))
   const bump = cols.length ? await bumpVersions(db, FieldValue, cols) : null
   if (bump) console.log(`  bump：${cols.join('、')} → ${bump.version}${bump.verified ? '（已確認）' : `（✗ 未生效：${bump.failed.join('、')}）`}`)
-  const strip = ({ snap, ...t }) => t
+  const strip = ({ snap: _snap, ...t }) => t
   return { backupDir: path.relative(ROOT, backupDir), written: written.map(strip), skipped: skipped.map(strip), bump, error }
 }
 
@@ -696,20 +792,25 @@ async function runRollback(args) {
   // 還原留下的備份夾也能再還原（＝把還原撤掉）：manifest 記的都是「這次操作的 before → after」
   if (manifest.schema !== BACKUP_SCHEMA || !['gameref-backfill', 'gameref-rollback'].includes(manifest.purpose)) throw new Error(`${args.rollback} 不是本腳本 --write 留下的備份夾（_manifest.json 的 schema／purpose 不符）`)
   const fb = await connectFirestore(args.write)
-  const snaps = await getAllChunked(fb.db, manifest.writes.map((w) => fb.db.collection(w.collection).doc(w.docId)))
-  const current = new Map(manifest.writes.map((w, i) => [itemKey(w.collection, w.docId), snaps[i].exists ? { gameRef: snaps[i].get('gameRef') } : null]))
+  const docKeys = [...new Set(manifest.writes.map((w) => itemKey(w.collection, w.docId)))]
+  const snaps = await getAllChunked(fb.db, docKeys.map((k) => { const i = k.indexOf('/'); return fb.db.collection(k.slice(0, i)).doc(k.slice(i + 1)) }))
+  const snapBy = new Map(docKeys.map((k, i) => [k, snaps[i]]))
+  const current = new Map(manifest.writes.map((w) => {
+    const sn = snapBy.get(itemKey(w.collection, w.docId))
+    return [itemKey(w.collection, w.docId, w.level), sn.exists ? slotOfDocData(sn.data(), w.level) : null]
+  }))
   const plan = planRollback(manifest.writes, current)
   const todo = plan.filter((p) => p.action === 'restore')
   console.log(`還原預覽：備份 ${path.basename(path.resolve(args.rollback))}（${manifest.createdAt}）共 ${plan.length} 筆；會還原 ${todo.length}、略過 ${plan.length - todo.length}`)
   for (const p of plan.filter((x) => x.action === 'skip')) console.log(`  略過 ${p.key}：${p.reason}`)
   if (!args.write) { console.log('  （預覽：沒有寫入任何東西；確認後加 --write）'); return }
   // 還原這次操作的方向：現值（＝當初寫入的值）→ 寫入前的值（null＝刪掉欄位）
-  const targets = todo.map((p) => ({ collection: p.collection, docId: p.docId, before: p.after, after: p.before }))
+  const targets = todo.map((p) => ({ collection: p.collection, docId: p.docId, ...(p.level != null && { level: p.level }), before: p.after, after: p.before }))
   const res = await applyUpdates(fb, targets, {
     manifestExtra: { purpose: 'gameref-rollback', rollbackOf: path.resolve(args.rollback) },
     suffix: 'gameref-rollback',
   })
-  for (const s of res.skipped) console.log(`  擋下 ${itemKey(s.collection, s.docId)}：${s.reason}`)
+  for (const s of res.skipped) console.log(`  擋下 ${itemKey(s.collection, s.docId, s.level)}：${s.reason}`)
   console.log(`✓ 已還原 ${res.written.length} 筆${res.skipped.length ? `；複查擋下 ${res.skipped.length}` : ''}${res.error ? `；✗ 中斷：${res.error}` : ''}`)
   if (res.error) process.exitCode = 1
 }
@@ -773,6 +874,7 @@ async function main() {
     },
     mode: site.mode, stats, tot, rows: plan.rows, diff, unusedAccept: plan.unusedAccept, uncovered: plan.uncovered, uncoveredMissing,
     nameMismatch: plan.rows.filter((r) => r.nameDiffers).length,
+    conflictBuffs: plan.rows.filter((r) => r.action === 'conflict' && LEVELED_COLLECTIONS.has(r.item?.collection)).length,
     summaryMismatch, fileWarnings, writeResult, writeRefused, acceptedList: [...accepted],
     cmd: {
       acceptPath,

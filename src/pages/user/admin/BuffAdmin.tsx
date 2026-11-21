@@ -15,6 +15,8 @@ import { checkBuffLevelName } from '../../../utils/ndOverrides'
 import { findRemovedLevelsInUse, sortLevelsAscending } from '../../../utils/buffLevelRefs'
 import { useRefScanData } from '../../../hooks/useRefScanData'
 import { buffLevelRefs, generalTextHasNumber } from '../../../utils/buffDescription'
+import { BuffGameRefField, BuffGameRefBadge } from '../../../components/admin/BuffGameRefField'
+import { buffLinkState, indexBufIds, isKeywordBufId, type BufIdHolder } from '../../../utils/buffGameRef'
 
 // ─── BuffType 顯示對照 ──────────────────────────────────────────────────────────
 const BUFF_TYPE_OPTIONS: { value: string; label: string }[] = [
@@ -78,15 +80,21 @@ function TermRefField({
 // ─── 階梯等級項（PLAN-024）：折疊式單級編輯，比照 ModuleLevelItem ──────────────────
 function BuffLevelItem({
   levelData,
+  buffId,
   buffName,
+  bufIdIndex,
   sharedRefs,
   sharedTexts,
   onChange,
   onRemove,
 }: {
   levelData: BuffLevel
+  /** 母 buff 文件 ID：官方 ID 重複偵測時排除自己 */
+  buffId: string
   /** 母 buff 名稱，供階名軟驗證比對前綴 */
   buffName: string
+  /** 全部 BUFF 的官方 ID 索引（重複偵測） */
+  bufIdIndex: Map<number, BufIdHolder[]>
   /** 頂層引用表：本級沒有自己的引用表時前台沿用它（PLAN-058，與模組一致） */
   sharedRefs?: DescriptionRefs
   /** 共用頂層引用表的其他正文（通用說明＋其他級），本級沿用時供孤兒偵測 */
@@ -152,6 +160,14 @@ function BuffLevelItem({
               </button>
             )}
           </div>
+          {/* 官方 ID（types/gameRef.ts 的 BuffGameRef）：分級 BUFF 每一級各自一份 */}
+          <BuffGameRefField
+            label="這一級的官方 BUFF ID（選填，可多個）"
+            value={levelData.gameRef}
+            onChange={(v) => upd('gameRef', v)}
+            selfId={buffId}
+            index={bufIdIndex}
+          />
           {/* PLAN-058：分級 BUFF 的各級描述是正本（前台浮窗、形態卡都讀它），所以和頂層一樣給 textarea＋引用 */}
           <Field label="該級描述 description（正本：前台顯示的就是這段）">
             <textarea
@@ -229,6 +245,9 @@ function BuffEditPanel({
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState<string | null>(null)
   const { data: scanData, missingColls } = useRefScanData()
+  const gd = useGameData()
+  // 官方 ID 重複偵測用：以已存檔的全部 BUFF 為準（自己這份在欄位裡排除，所以不必換成表單現值）
+  const bufIdIndex = useMemo(() => indexBufIds(gd.buffs), [gd.buffs])
 
   useEffect(() => { setForm({ ...buff }) }, [buff])
 
@@ -245,6 +264,8 @@ function BuffEditPanel({
     (form.effects?.length ?? 0) > 0 && 'effects',
   ].filter(Boolean) as string[]
   const hasStaleTop = isLeveled && staleTop.length > 0
+  // 分級 BUFF 的頂層只放關鍵字記錄（900xxx）；其他 ID 應該填在各級（只提示、不擋存檔）
+  const topNonKeyword = isLeveled ? (form.gameRef?.bufIds ?? []).filter((id) => !isKeywordBufId(id)) : []
 
   // PLAN-058：通用說明的軟警示（只提示、不擋存檔）
   const generalText = (form.description ?? '').trim()
@@ -323,6 +344,28 @@ function BuffEditPanel({
               {BUFF_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </Field>
+        </div>
+
+        {/* 官方 ID（types/gameRef.ts 的 BuffGameRef）：唯一一種後台可以改的 gameRef。回填腳本只補空欄、不覆寫這裡填的值 */}
+        <div className="rounded-lg border border-border/60 bg-bg-dark/40 p-3">
+          <BuffGameRefField
+            label={isLeveled
+              ? '官方 BUFF ID：關鍵字記錄（選填；各級的 ID 在下方「階梯等級」逐級填）'
+              : '官方 BUFF ID（選填，可多個）'}
+            value={form.gameRef}
+            onChange={(v) => update('gameRef', v)}
+            selfId={form.id}
+            index={bufIdIndex}
+            hint={isLeveled
+              ? <>這裡只放 900000 起的關鍵字記錄（說明文字裡的連結，沒有數值）。不知道就留空。</>
+              : <>同一個狀態在官方常有好幾筆（每個來源各一份、或持續回合不同），全部填上，傷害模擬才認得出每一份；
+                900000 起的關鍵字記錄也可以一起填。<b>不知道就留空</b>——傷害模擬會把它當「未連結」，不影響前台顯示。</>}
+          />
+          {topNonKeyword.length > 0 && (
+            <p className="text-[12px] text-accent-yellow mt-1 leading-relaxed">
+              ⚠ 這是分級 BUFF，頂層卻填了非關鍵字的 ID（{topNonKeyword.join('、')}）。各級的 ID 請填在下方對應的等級裡。
+            </p>
+          )}
         </div>
 
         {/* PLAN-058 決策四：有等級時頂層是「通用說明」——只在引用沒指定等級時顯示，選填、不寫數字。
@@ -461,7 +504,9 @@ function BuffEditPanel({
                   <BuffLevelItem
                     key={idx}
                     levelData={lv}
+                    buffId={form.id}
                     buffName={form.name}
+                    bufIdIndex={bufIdIndex}
                     sharedRefs={form.descriptionRefs}
                     sharedTexts={[form.description, ...(form.levels ?? []).filter((_, i) => i !== idx).map((l) => l.description)]}
                     onChange={(updated) => { const arr = [...(form.levels ?? [])]; arr[idx] = updated; update('levels', arr) }}
@@ -488,14 +533,15 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
     items: filtered, loading, error, hasMore, search, setSearch,
     submitSearch, loadMore, upsert,
     filters, setFilter,
-  } = useClientPaged<GameBuff, { noIcon: boolean }>({
+  } = useClientPaged<GameBuff, { noIcon: boolean; unlinked: boolean }>({
     source: gd.buffs,
     initialSearch,
-    initialFilters: { noIcon: false },
-    // PLAN-055 D-4：BUFF 圖示由維護者慢慢補——「只看沒圖示」就是待辦清單
-    matchFilters: (b, f) => !f.noIcon || !b.icon,
+    initialFilters: { noIcon: false, unlinked: false },
+    // PLAN-055 D-4：BUFF 圖示由維護者慢慢補——「只看沒圖示」就是待辦清單；官方 ID 同理（含分級 BUFF 只填了部分等級的）
+    matchFilters: (b, f) => (!f.noIcon || !b.icon) && (!f.unlinked || buffLinkState(b) !== 'linked'),
   })
   const missingIcons = useMemo(() => gd.buffs.filter((b) => !b.icon).length, [gd.buffs])
+  const unlinkedCount = useMemo(() => gd.buffs.filter((b) => buffLinkState(b) !== 'linked').length, [gd.buffs])
 
   // 新建對話框先選分類，分類寫入 buffType 欄位、不進 ID（決策二：前綴統一 buff_）
   const [newBuffType, setNewBuffType] = useState<string>(BuffType.STATE)
@@ -553,6 +599,10 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
         <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-secondary text-sm cursor-pointer select-none">
           <input type="checkbox" checked={filters.noIcon} onChange={(e) => setFilter('noIcon', e.target.checked)} />
           只看沒圖示（{missingIcons}）
+        </label>
+        <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-dark border border-border text-text-secondary text-sm cursor-pointer select-none">
+          <input type="checkbox" checked={filters.unlinked} onChange={(e) => setFilter('unlinked', e.target.checked)} />
+          只看缺官方 ID（{unlinkedCount}）
         </label>
       </div>
 
@@ -618,6 +668,7 @@ export default function BuffAdmin({ initialSearch = '' }: { initialSearch?: stri
                 <span className="text-[13px] px-1.5 py-0.5 rounded border border-accent-orange/30 bg-accent-orange/10 text-accent-orange shrink-0">
                   {BUFF_TYPE_LABEL[buff.buffType] ?? buff.buffType}
                 </span>
+                <BuffGameRefBadge buff={buff} />
               </div>
               <p className="text-[13px] text-text-secondary truncate mt-0.5">{buff.description || '（無說明）'}</p>
             </div>

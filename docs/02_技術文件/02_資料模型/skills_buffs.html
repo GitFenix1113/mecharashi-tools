@@ -142,6 +142,9 @@
       <tr><td>effects</td><td>SkillEffect[]</td><td>✅ PLAN-001</td><td>Buff active 時提供的效果列表<br><small style="color:var(--accent-yellow)">⚠ PLAN-065-A 起凍結：不再人工輸入，數值由遊戲資料帶出（型別保留，前台讀取與顯示照舊）</small></td></tr>
       <tr><td>levels</td><td>BuffLevel[]?</td><td>🆕 PLAN-024</td><td>階梯 buff 各等級能力；無 = 普通 buff。各級 maxStack/effects 由此提供，同 buff 不同 level 天然互斥（計算器取最高）；引用以 &lt;id.lvN.attr&gt; 指定級、buffIds 以 id@N 賦予級</td></tr>
       <tr><td>termRef</td><td>string?</td><td>🆕 PLAN-024</td><td>掛載 glossaryTerm ID；填了則詳情卡改以該詞條的官方說明為顯示來源（取代本 buff description，單一真相源，為技能庫鋪路）</td></tr>
+      <tr><td>gameRef</td><td>BuffGameRef?</td><td>🆕 2026-11-21</td><td><strong>官方 BUFF 記錄 ID</strong>（傷害模擬用）：<code>{ bufIds: number[] }</code>，可多個——同一個狀態在官方常有多筆記錄（每個來源各一份副本，或同一級、持續回合不同），全部列入。900000 起的「關鍵字記錄」（沒有數值、只給說明文字連結用）也放這裡。<br>
+        無等級 BUFF 的 ID 放這裡；<strong>分級 BUFF 的各級 ID 放 <code>levels[].gameRef</code></strong>，頂層只放關鍵字記錄。未設定＝未連結。<br>
+        <small style="color:var(--text-dim)">⚠ 與其他 8 種實體的 gameRef 不同，這一種<strong>後台可以編輯</strong>（BuffAdmin「官方 BUFF ID」欄）：BUFF 本來就是人工建檔的概念，文件 ID 維持用名稱，沒有解包的管理者照樣能新增 BUFF，只是不填 ID。<code>scripts/backfill-game-join-keys.mjs</code> 也會補（對照建議由私有 repo 產生），但<strong>只補空欄、不覆寫人工填的值</strong>；後台存檔照表單上的值寫，不經 <code>gameRefGuard</code>。型別見 <code>src/types/gameRef.ts</code>。</small></td></tr>
     </table>
   </div>
 
@@ -159,6 +162,7 @@
       <tr><td>maxTriggers</td><td>number?</td><td>該級生效次數（效果可觸發 N 次後耗盡）</td></tr>
       <tr><td>effects</td><td>SkillEffect[]?</td><td>該級的數值效果（數值型各級的數值差異在此；結構型通常不填）<br><small style="color:var(--accent-yellow)">⚠ PLAN-065-A 起凍結：不再人工輸入，數值由遊戲資料帶出（型別保留，前台讀取與顯示照舊）</small></td></tr>
       <tr><td>icon</td><td>string?</td><td>該級專屬字形 key（選填；不填沿用 buff.icon；底色一律跟 buff 本身）</td></tr>
+      <tr><td>gameRef</td><td>BuffGameRef?</td><td>🆕 2026-11-21：這一級的官方 BUFF 記錄 ID（<code>{ bufIds: number[] }</code>，可多個；後台可編輯）。官方分級有兩種做法：每級一筆記錄（傷害提升），或同一筆掛上時帶等級（幹勁、掠食）——後者每一級都填同一個 ID。說明見上方 <code>GameBuff.gameRef</code></td></tr>
     </table>
   </div>
 

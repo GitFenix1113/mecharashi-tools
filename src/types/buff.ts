@@ -1,6 +1,7 @@
 // ─── 技能 / Buff 共用型別（PLAN-001）────────────────────────────────────────
 
 import type { DescriptionRefs } from './common'
+import type { BuffGameRef } from './gameRef'
 
 /**
  * 武器技能的武器需求。
@@ -100,6 +101,8 @@ export interface BuffLevel {
   effects?:     SkillEffect[]
   /** 該級專屬圖示（選填；不填沿用 buff.icon） */
   icon?:        string
+  /** 這一級對應的官方 BUFF 記錄 ID（選填、後台可編輯；見 types/gameRef.ts 的 BuffGameRef） */
+  gameRef?:     BuffGameRef
 }
 
 /**
@@ -150,4 +153,9 @@ export interface GameBuff {
    * 目前無計算意義，純為顯示/技能資料庫鋪路。
    */
   termRef?:    string
+  /**
+   * 官方 BUFF 記錄 ID（選填、後台可編輯；見 types/gameRef.ts 的 BuffGameRef）。
+   * 分級 BUFF 的各級 ID 放在 levels[].gameRef，這裡只放關鍵字記錄。未設定＝未連結。
+   */
+  gameRef?:    BuffGameRef
 }

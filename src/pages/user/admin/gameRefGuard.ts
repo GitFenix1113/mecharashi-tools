@@ -19,7 +19,11 @@
 import { doc, getDocFromServer } from 'firebase/firestore'
 import { db } from '../../../lib/firebase'
 
-/** 有 gameRef 欄位的八個集合（types/gameRef.ts）。 */
+/**
+ * 有 gameRef 欄位、後台唯讀的八個集合（types/gameRef.ts）。
+ * **刻意不含 buffs**：BUFF 的官方 ID（BuffGameRef）後台可以編輯，存檔就該寫表單上的值；
+ * 回填腳本那一側則是只補空欄、不覆寫，兩邊各自不會蓋掉對方。
+ */
 export type GameRefCollection =
   | 'pilots' | 'mechs' | 'weapons' | 'modules' | 'components' | 'backpacks' | 'pilotSkills' | 'forms'
 

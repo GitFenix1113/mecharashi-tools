@@ -106,6 +106,16 @@
   </div>
 
   <div class="changed-block">
+    <strong>🆕 2026-11-21：官方 BUFF ID（<code>gameRef.bufIds</code>）</strong>
+    <code>gameRef: { bufIds: number[] }</code> 掛在兩處：無等級 BUFF 放頂層，分級 BUFF 每一級放 <code>levels[].gameRef</code>（頂層只放 900000 起的關鍵字記錄）。
+    文件 ID 不變、仍用名稱；官方 ID 是選填屬性，未填＝傷害模擬視為未連結。<br>
+    <strong>寫入者有兩個：</strong>後台 BuffAdmin（可編輯，唯一一種後台能改的 gameRef）與
+    <code>scripts/backfill-game-join-keys.mjs</code>（只補空欄、不覆寫；分級槽位是以讀到的那份 <code>levels</code> 為底、只換目標那幾級，
+    加 updateTime precondition 寫回整個陣列）。報告與 accept 檔以 <code>buffs/文件 ID@等級</code> 表示分級槽位。
+    完整說明見 <a href="../../02_資料模型/skills_buffs.html" style="color:var(--accent-cyan);">資料模型 · GameBuff</a>。
+  </div>
+
+  <div class="changed-block">
     <strong>🆕 PLAN-024 / PLAN-034：階梯 buff 與 level 粒度的引用</strong>
     PLAN-024 起 buff 可為<strong>階梯型</strong>（<code>levels: BuffLevel[]</code>），能力資料一律由各級提供、頂層
     <code>maxStack</code> / <code>duration</code> / <code>maxTriggers</code> / <code>effects</code> 停用且應為空（flat XOR leveled）。

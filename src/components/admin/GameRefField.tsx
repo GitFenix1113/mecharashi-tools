@@ -3,6 +3,7 @@
 //
 // gameRef 的唯一寫入者是回填腳本 scripts/backfill-game-join-keys.mjs，後台**只看不改**；
 // 存檔時怎麼保證不被洗掉見 pages/user/admin/gameRefGuard.ts。
+// BUFF 例外：它的官方 ID 後台可以編輯，用的是 BuffGameRefField.tsx，不是這裡。
 // 未設定＝未連結：傷害模擬不會把這筆算進去，所以「未連結」要看得見（總綱決策三）。
 //
 // 刻意吃「任意物件」而不是八種 gameRef 型別各寫一份：欄位名直接照型別顯示

@@ -3,6 +3,8 @@ import type { ChangelogMonth } from './types'
 const nov2026: ChangelogMonth = {
   month: '2026-11',
   entries: [
+    { date: '2026-11-21', type: 'feat', summary: '後台 BUFF 管理新增「<b>官方 BUFF ID</b>」欄位（管理員限定）：分級 BUFF 每一級各填一份，列表可以篩出還沒填的；'
+      + '已依遊戲資料替 230 份 BUFF 補上 ID，給日後的傷害模擬辨認 BUFF 用。' },
     { date: '2026-11-21', type: 'feat', summary: '模組圖鑑新增「<b>浮游刃模組Ⅰ</b>」（A 級通用模組，商店），配裝模擬器可以選用；'
       + '浮游刃類武器的增傷目前還沒有計入配裝數值（Ⅱ 型相同）。' },
     { date: '2026-11-21', type: 'fix', summary: '配裝模擬器的分享碼補上 11 顆模組：凜騎士、日蝕、耶夢加得等機甲的特性／8 級模組，以及浮游刃模組Ⅱ、威障、乘勢、猛禽單元、游襲模組；'

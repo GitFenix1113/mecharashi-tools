@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import {
   decideAction, planBackfill, buildDiff, summarize, totals, compareDeclaredSummary, planRollback,
   validateGameRef, itemProblems, canonicalGameRef, sameGameRef, parseAcceptFile, checkProposalsFile,
-  nextSteps, headlineOf, renderReport,
+  nextSteps, headlineOf, renderReport, buildUpdatePayload, slotOfDocData, siteSlot, itemKey,
   GAME_REF_FIELDS, GAME_REF_TYPE_NAMES, COLLECTIONS, PROPOSALS_SCHEMA,
 } from './backfill-game-join-keys.mjs'
 
@@ -137,7 +137,8 @@ test('parseAcceptFile：格式與集合名稱都要對', () => {
   assert.deepEqual([...parseAcceptFile({ accept: ['pilots/pilot_049_海莉絲', 'weapons/w_1'] })], ['pilots/pilot_049_海莉絲', 'weapons/w_1'])
   assert.throws(() => parseAcceptFile(['pilots/x']))
   assert.throws(() => parseAcceptFile({ accept: ['pilot_049'] }))
-  assert.throws(() => parseAcceptFile({ accept: ['buffs/x'] }))
+  assert.throws(() => parseAcceptFile({ accept: ['glossaryTerms/x'] }))
+  assert.deepEqual([...parseAcceptFile({ accept: ['buffs/buff_甲@2'] })], ['buffs/buff_甲@2'])   // BUFF 分級槽位
   assert.throws(() => parseAcceptFile({ accept: ['pilots/'] }))
 })
 
@@ -360,9 +361,132 @@ test('GAME_REF_FIELDS 與 src/types/gameRef.ts 的型別一致', () => {
 })
 
 test('每個集合的實體型別都掛著對應的 gameRef 型別', () => {
-  const files = { pilots: 'pilot', mechs: 'mech', weapons: 'weapon', modules: 'module', components: 'component', backpacks: 'backpack', pilotSkills: 'pilot', forms: 'form' }
+  const files = { pilots: 'pilot', mechs: 'mech', weapons: 'weapon', modules: 'module', components: 'component', backpacks: 'backpack', pilotSkills: 'pilot', forms: 'form', buffs: 'buff' }
   for (const c of COLLECTIONS) {
     const src = fs.readFileSync(path.join(ROOT, `src/types/${files[c]}.ts`), 'utf8')
-    assert.ok(src.includes(`gameRef?: ${GAME_REF_TYPE_NAMES[c]}`), `src/types/${files[c]}.ts 應有 gameRef?: ${GAME_REF_TYPE_NAMES[c]}`)
+    assert.match(src, new RegExp(`gameRef\\?:\\s+${GAME_REF_TYPE_NAMES[c]}\\b`), `src/types/${files[c]}.ts 應有 gameRef?: ${GAME_REF_TYPE_NAMES[c]}`)
   }
+  // BUFF 分級：每一級也要有自己的 gameRef（BuffLevel.gameRef）
+  const buffSrc = fs.readFileSync(path.join(ROOT, 'src/types/buff.ts'), 'utf8')
+  const level = /export interface BuffLevel \{([\s\S]*?)\n\}/.exec(buffSrc)
+  assert.ok(level && /gameRef\?:\s+BuffGameRef\b/.test(level[1]), 'BuffLevel 應有 gameRef?: BuffGameRef')
+})
+
+// ─── BUFF：分級槽位（頂層＋每一級各一個 gameRef）─────────────────────────────────
+
+const buffItem = (over = {}) => item({ collection: 'buffs', docId: 'buff_傷害提升', siteName: '傷害提升', gameRef: { bufIds: [7100303, 7100304] }, ...over })
+const buffDoc = (gameRef, levels, name = '傷害提升') => ({ name, gameRef, levels })
+
+test('BUFF：itemKey 用「@等級」表示分級槽位；level 只在分級集合有效', () => {
+  assert.equal(itemKey('buffs', 'buff_甲', 2), 'buffs/buff_甲@2')
+  assert.equal(itemKey('buffs', 'buff_甲'), 'buffs/buff_甲')
+  assert.equal(itemKey('buffs', 'buff_甲', null), 'buffs/buff_甲')
+  assert.deepEqual(itemProblems(buffItem({ level: 2 })), [])
+  assert.deepEqual(itemProblems(buffItem()), [])
+  assert.ok(itemProblems(buffItem({ level: 0 })).some((x) => /level/.test(x)))
+  assert.ok(itemProblems(buffItem({ level: '2' })).some((x) => /level/.test(x)))
+  assert.ok(itemProblems(item({ level: 1 })).some((x) => /不應帶 level/.test(x)))
+  assert.ok(validateGameRef('buffs', { bufIds: [] }).length, '空陣列不算')
+  assert.ok(validateGameRef('buffs', {}).length, 'bufIds 必填')
+})
+
+test('BUFF：siteSlot／slotOfDocData 找得到頂層與指定等級；沒有那一級回 null', () => {
+  const docs = new Map([['buff_傷害提升', buffDoc({ bufIds: [900001] }, [{ level: 1 }, { level: 2, gameRef: { bufIds: [5] } }])]])
+  assert.deepEqual(siteSlot(docs, { docId: 'buff_傷害提升' }).gameRef, { bufIds: [900001] })
+  assert.deepEqual(siteSlot(docs, { docId: 'buff_傷害提升', level: 2 }).gameRef, { bufIds: [5] })
+  assert.equal(siteSlot(docs, { docId: 'buff_傷害提升', level: 1 }).gameRef, undefined)
+  assert.equal(siteSlot(docs, { docId: 'buff_傷害提升', level: 9 }), null)
+  assert.equal(siteSlot(docs, { docId: 'buff_沒有' }), undefined)
+  const data = { gameRef: { bufIds: [1] }, levels: [{ level: 3, gameRef: { bufIds: [3] } }] }
+  assert.deepEqual(slotOfDocData(data), { gameRef: { bufIds: [1] } })
+  assert.deepEqual(slotOfDocData(data, 3), { gameRef: { bufIds: [3] } })
+  assert.equal(slotOfDocData(data, 4), null)
+})
+
+test('BUFF：planBackfill 逐槽位決定——空的寫、相同略過、人填的不同值列衝突、沒有那一級列站上找不到', () => {
+  const proposals = {
+    schema: PROPOSALS_SCHEMA,
+    items: [
+      buffItem({ level: 2 }),                                                        // 寫入
+      buffItem({ level: 3, gameRef: { bufIds: [7100305] } }),                        // 已相同（順序不同也算）
+      buffItem({ level: 4, gameRef: { bufIds: [7100307] } }),                        // 衝突：站上是人填的另一個值
+      buffItem({ level: 9, gameRef: { bufIds: [1] } }),                              // 站上沒有 Lv9
+      buffItem({ gameRef: { bufIds: [900045] } }),                                   // 頂層（關鍵字記錄）寫入
+      buffItem({ docId: 'buff_流刃', siteName: '流刃', status: 'notApplicable', gameRef: undefined }),
+      buffItem({ level: 2 }),                                                        // 同一槽位重複
+    ],
+  }
+  const s = site({
+    'buffs/buff_傷害提升': buffDoc(undefined, [{ level: 1 }, { level: 2 }, { level: 3, gameRef: { bufIds: [7100305] } }, { level: 4, gameRef: { bufIds: [7100308] } }, { level: 5 }]),
+    'buffs/buff_流刃': buffDoc(undefined, undefined, '流刃'),
+    'buffs/buff_未列': buffDoc(undefined, undefined, '未列'),
+  })
+  const p = planBackfill({ proposals, site: s })
+  assert.deepEqual(p.rows.map((r) => [r.key, r.action]), [
+    ['buffs/buff_傷害提升@2', 'invalid'],      // 與第 7 筆重複 → 兩筆都不寫
+    ['buffs/buff_傷害提升@3', 'same'],
+    ['buffs/buff_傷害提升@4', 'conflict'],
+    ['buffs/buff_傷害提升@9', 'missingDoc'],
+    ['buffs/buff_傷害提升', 'write'],
+    ['buffs/buff_流刃', 'notApplicable'],
+    ['buffs/buff_傷害提升@2', 'invalid'],
+  ])
+  assert.match(p.rows[3].reason, /沒有 Lv9/)
+  assert.deepEqual(p.rows[2].before, { bufIds: [7100308] })
+  // 分級 BUFF 看每一級；頂層不列（只放關鍵字記錄，本來就可以沒有）
+  assert.deepEqual(p.uncovered.buffs, [
+    { docId: 'buff_傷害提升@1', name: '傷害提升 Lv1', hasGameRef: false },
+    { docId: 'buff_傷害提升@5', name: '傷害提升 Lv5', hasGameRef: false },
+    { docId: 'buff_未列', name: '未列', hasGameRef: false },
+  ])
+  const diff = buildDiff(p.rows)
+  assert.deepEqual(diff.entries.map((e) => [e.docId, e.level]), [['buff_傷害提升', undefined]])
+})
+
+test('BUFF：accept 檔以「buffs/文件 ID@等級」接受待確認的分級槽位', () => {
+  const proposals = { schema: PROPOSALS_SCHEMA, items: [buffItem({ level: 1, status: 'needsConfirm' }), buffItem({ level: 2, status: 'needsConfirm' })] }
+  const s = site({ 'buffs/buff_傷害提升': buffDoc(undefined, [{ level: 1 }, { level: 2 }]) })
+  const p = planBackfill({ proposals, site: s, accepted: new Set(['buffs/buff_傷害提升@2']) })
+  assert.deepEqual(p.rows.map((r) => r.action), ['holdConfirm', 'write'])
+  assert.deepEqual(p.unusedAccept, [])
+})
+
+test('BUFF：buildUpdatePayload 只換目標那幾級的 gameRef，其他欄位與其他級原封不動', () => {
+  const DEL = Symbol('delete')
+  const levels = [
+    { level: 1, description: '一', descriptionRefs: { x: { refType: 'buff', refId: 'buff_乙' } } },
+    { level: 2, description: '二', gameRef: { bufIds: [2] } },
+    { level: 3, description: '三', gameRef: { bufIds: [3] } },
+  ]
+  const p = buildUpdatePayload(levels, [{ level: 1, after: { bufIds: [10] } }, { level: 3, after: null }], DEL)
+  assert.deepEqual(Object.keys(p), ['levels'])
+  assert.deepEqual(p.levels, [
+    { level: 1, description: '一', descriptionRefs: { x: { refType: 'buff', refId: 'buff_乙' } }, gameRef: { bufIds: [10] } },
+    { level: 2, description: '二', gameRef: { bufIds: [2] } },
+    { level: 3, description: '三' },
+  ])
+  assert.equal(levels[2].gameRef.bufIds[0], 3, '不改傳入的陣列')
+  assert.deepEqual(buildUpdatePayload(undefined, [{ after: { bufIds: [1] } }], DEL), { gameRef: { bufIds: [1] } })
+  assert.deepEqual(buildUpdatePayload(undefined, [{ after: null }], DEL), { gameRef: DEL })
+  const both = buildUpdatePayload([{ level: 1 }], [{ after: { bufIds: [900001] } }, { level: 1, after: { bufIds: [7] } }], DEL)
+  assert.deepEqual(both, { gameRef: { bufIds: [900001] }, levels: [{ level: 1, gameRef: { bufIds: [7] } }] })
+  // 一般集合（沒有 level）只動 gameRef
+  assert.deepEqual(buildUpdatePayload(undefined, [{ after: { pilotInfoId: 1 } }], DEL), { gameRef: { pilotInfoId: 1 } })
+})
+
+test('BUFF：planRollback 逐槽位比對（key 帶 @等級）', () => {
+  const writes = [
+    { collection: 'buffs', docId: 'buff_甲', level: 1, before: null, after: { bufIds: [1] } },
+    { collection: 'buffs', docId: 'buff_甲', level: 2, before: null, after: { bufIds: [2] } },
+    { collection: 'buffs', docId: 'buff_甲', before: null, after: { bufIds: [900001] } },
+  ]
+  const current = new Map([
+    ['buffs/buff_甲@1', { gameRef: { bufIds: [1] } }],   // 還原
+    ['buffs/buff_甲@2', null],                           // 那一級被刪了
+    ['buffs/buff_甲', { gameRef: { bufIds: [900002] } }], // 寫入後被人改過
+  ])
+  const r = planRollback(writes, current)
+  assert.deepEqual(r.map((x) => [x.key, x.action, x.level]), [['buffs/buff_甲@1', 'restore', 1], ['buffs/buff_甲@2', 'skip', 2], ['buffs/buff_甲', 'skip', undefined]])
+  assert.match(r[1].reason, /這一級/)
+  assert.match(r[2].reason, /改過/)
 })
