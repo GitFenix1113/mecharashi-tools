@@ -30,7 +30,7 @@
   <div class="section-label">基本資訊</div>
   <div class="section-title">頁面規格</div>
   <table class="spec-table">
-    <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/mechs</code>（機甲廳館首頁，PLAN-042-B）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute lore</code>：管理者＋故事館協作編輯）</td></tr>
+    <tr><th>路由</th><td><code>/lore</code>（館首頁）｜<code>/lore/mechs</code>（機甲廳館首頁，PLAN-042-B）｜<code>/lore/story</code>、<code>/lore/story/:id</code>（劇情故事館，2026-11-22，見下方設計備註）｜<code>/lore/pilots/:id</code>（扉頁）｜<code>/lore/pilots/:id/:part</code>（章節頁／閱讀模式）｜外觀放查詢字串 <code>?skin=&lt;立繪鍵&gt;</code>（PLAN-042-D）｜<code>/lore/*</code> 兜底轉址回 <code>/lore</code>｜<code>/admin/lore</code>（編輯台，<code>AdminRoute lore</code>：管理者＋故事館協作編輯）</td></tr>
     <tr><th>開發階段</th><td>PLAN-042-A Phase C–F（2026-09-09 ～ 09-10）；氛圍層與顯影修正另立 <a href="../../05_階段性開發計畫/執行中/PLAN-042-C_故事館氛圍層/計畫書.html">PLAN-042-C</a>；2026-10-13 改版成「舞台＋卷宗」、加機師名冊與外觀切換：<a href="../../05_階段性開發計畫/執行中/PLAN-042-D_故事館改版_舞台與卷宗/計畫書.html">PLAN-042-D</a>；同日機師資料分家、編輯台改版：<a href="../../05_階段性開發計畫/執行中/PLAN-042-E_機師資料分家與故事館編輯台/計畫書.html">PLAN-042-E</a>；2026-10-14 回圖鑑的出口與出館過場：<a href="../../05_階段性開發計畫/執行中/PLAN-042-G_故事館回圖鑑路線與出館過場/計畫書.html">PLAN-042-G</a></td></tr>
     <tr><th>登入需求</th><td>前台不需要登入；編輯台 ADMIN／OWNER 即可（寫 <code>pilotLore</code>／<code>mechLore</code>／<code>factionEmblems</code>／<code>mechMakers</code>）。PLAN-042-E 決策八當時「EDITOR 角色先不做」，<strong>2026-10-17 由 PLAN-042-H 補上故事館協作編輯 <code>LORE_EDITOR</code></strong>：只能進編輯台、只能寫這四個集合、不能刪除</td></tr>
     <tr><th>資料來源</th><td><strong>PLAN-042-E 起依 id 合併兩個集合</strong>（判準：與數值、機制有關的留 <code>pilots</code>，其餘歸 <code>pilotLore</code>）：<br>
@@ -38,7 +38,7 @@
       · <code>pilotLore</code>：扉頁簡介 <code>intro</code>＋署名 <code>frontSource</code>、英文名 <code>nameEn</code>、人物檔案 <code>dossier</code>、陣營徽章、外觀設定 <code>skins</code>、章節與旁白<br>
       一律走 <code>useFirestore</code> 的 <code>usePilots</code> / <code>usePilotLore</code>。<strong>整頁只等 <code>pilots</code></strong>（舞台、名冊、換人只要身分欄位）；<code>pilotLore</code> 的 loading／error 交給卷宗：載入中顯示「檔案<em>調閱中</em>」，讀不到顯示「故事資料載入失敗……不是這份檔案沒有內容」＋「重新整理」鈕——簡介與人物檔案也住 pilotLore 之後，不能再降級成看起來像空白資料的扉頁。<br>
       外觀分兩層（PLAN-042-E 決策六）：<strong>靜態層</strong>＝圖檔（<code>public/images/game/pilots/&lt;gameId&gt;/skins/</code>）與 build 產生的 <code>GAME_PILOT_SKINS</code>；<strong>動態層</strong>＝ <code>pilotLore.skins</code> 的名稱／隱藏／順序，執行期由 <code>pilotSkins(pilot, loreDoc)</code> 合併（沒設定的照原索引接在後面、顯示「外觀 N」）。<code>scripts/lib/pilotSkinMeta.json</code> 只剩匯入用的歸屬 <code>owner</code></td></tr>
-    <tr><th>導覽入口</th><td><strong>✅ 2026-10-13 對外開放、常駐</strong>：桌機導覽列與手機 More 面板的「故事館」對所有人顯示；機師詳情頁名字旁有「故事館 ▸」連結（PLAN-042-E，<strong>不帶任何故事內容、不載入 pilotLore</strong>——圖鑑不跨進故事館）。入口旗標 <code>useLoreEntry.ts</code>（<code>LORE_INTERNAL_ONLY</code>）已於 PLAN-042-E 刪除：圖鑑已沒有簡介可退回顯示，旗標的退路也就不存在了。<br><span style="color:var(--text-dim)">（歷史：2026-10-03 ～ 10-13 入口收起期間，導覽列、手機 More 面板與機師詳情頁的「讀完整故事 ▸」只對 ADMIN／OWNER 顯示；<code>/lore/*</code> 路由不動，知道網址的人照樣進得去；一般訪客的機師詳情頁退回簡介<strong>全文</strong>顯示。）</span><br>入口設計：<strong>2026-10-17 起比照資料圖鑑分成兩館</strong>——桌機導覽列「故事館 ▾」展開條列出「機師故事館」（<code>/lore</code>）與「機甲故事館」（<code>/lore/mechs</code>），手機 More 面板也是兩個入口。
+    <tr><th>導覽入口</th><td><strong>✅ 2026-10-13 對外開放、常駐</strong>：桌機導覽列與手機 More 面板的「故事館」對所有人顯示；機師詳情頁名字旁有「故事館 ▸」連結（PLAN-042-E，<strong>不帶任何故事內容、不載入 pilotLore</strong>——圖鑑不跨進故事館）。入口旗標 <code>useLoreEntry.ts</code>（<code>LORE_INTERNAL_ONLY</code>）已於 PLAN-042-E 刪除：圖鑑已沒有簡介可退回顯示，旗標的退路也就不存在了。<br><span style="color:var(--text-dim)">（歷史：2026-10-03 ～ 10-13 入口收起期間，導覽列、手機 More 面板與機師詳情頁的「讀完整故事 ▸」只對 ADMIN／OWNER 顯示；<code>/lore/*</code> 路由不動，知道網址的人照樣進得去；一般訪客的機師詳情頁退回簡介<strong>全文</strong>顯示。）</span><br>入口設計：<strong>2026-10-17 起比照資料圖鑑分成兩館</strong>——桌機導覽列「故事館 ▾」展開條列出「機師故事館」（<code>/lore</code>）與「機甲故事館」（<code>/lore/mechs</code>），手機 More 面板也是兩個入口。<strong>2026-11-22 加入第三館「劇情故事館」</strong>（<code>/lore/story</code>），展開條、More 面板與館內的換館鈕都多一格。
       故事館自成一群 <code>loreGroup</code>，只進 <code>NAV_GROUPS</code>、<strong>不進 <code>SUB_NAV_GROUPS</code></strong>（避免 <code>SubNavTabs</code> 在館內命中、沉浸破功）。館內換館改在紙色細帶館名旁的「機師｜機甲」（見下方 header）。</td></tr>
     <tr><th>外殼形態</th><td><code>chromeMode = 'immersive'</code>：header 換成紙色細帶（館名／離館／字級三顆），footer、分頁列、手機 Tab Bar 全收；<code>html.lore-mode</code> 只設 <code>color-scheme</code> 與 body 背景，色票覆寫只在 <code>.lore-shell</code> / <code>.lore-chrome</code>（portal 浮層保持深色可讀）</td></tr>
     <tr><th>出口與出館過場</th><td><strong>PLAN-042-G</strong>：回圖鑑有三個出口——header「離館 ↗」跟著網址走（<code>/lore/pilots/:id</code> 含章節頁 → <code>/pilots/:id</code>，館首頁 → <code>/pilots</code>）、卷宗名字旁的「機師圖鑑」朱印、切換列尾端紅色「圖鑑 ↗」（閱讀模式也在）。
@@ -138,6 +138,23 @@
   <div class="section-label">設計備註</div>
   <div class="section-title">開發注意事項</div>
   <div class="info-block">
+    <strong>✅ 劇情故事館（2026-11-22，分支 feat/story-dialogue）</strong><br>
+    · <strong>路由</strong>：<code>/lore/story</code>（館首頁：主線／活動劇情／機師回憶三區）、<code>/lore/story/:id</code>（一本＝主線一章、一個活動或一位機師的回憶；ID 為 <code>main-3</code>／<code>event-8</code>／<code>memory-14</code>，數字是遊戲設定表 ID，改版重跑不變）。
+      掛在 <code>/lore</code> 底下＝<strong>不必動 Cloudflare 白名單</strong>；不存在的 ID 轉回館首頁。進 sitemap 的只有館首頁，頁鍵 <code>lore_story</code>／<code>lore_story_detail</code>，不進 <code>ENTITY_ROUTES</code>（Worker 沒有這個類別）<br>
+    · <strong>資料是靜態檔、不進 Firestore</strong>（站長指示：固定內容做成靜態資料）：<code>scripts/import-story.mjs</code> 讀台版遊戲參數 SQLite（<code>E:\Mecharashi_data_TW*\遊戲參數\遊戲資料.sqlite</code>，texts 是台版官方繁中）→
+      <code>src/data/story/{main,event,memory}/&lt;設定ID&gt;.json</code>＋目錄 <code>index.json</code>。館首頁只讀目錄（幾 KB）；書頁以 <code>import.meta.glob</code> lazy 載入（<code>storyData.ts</code>），一本一個 chunk，最大約 275 KB。0 read<br>
+    · <strong>對白怎麼串</strong>：主線 <code>WorldMapChapter</code> → <code>WorldMapWayPoint</code> 的 <code>Start／EndDialogID</code>；活動 <code>PlotActivityInfo</code> → <code>PlotActivityLevelGroup</code> → <code>PlotActivityLevel</code>；機師回憶 <code>PilotMemoryPiecesGroup</code> → <code>PilotMemoryPieceLevel</code>；
+      <strong>戰中對白</strong>在戰場 JSON 的事件觸發 <code>"m_type":1,"m_param1":&lt;對白 ID&gt;</code>。每關三段（開場／戰鬥中／結尾），戰中各觸發之間以虛線分隔<br>
+    · <strong>去重</strong>（逐關比對過場開頭 ID，收錄順序 主線 → 機師回憶 → 活動）：復刻只收第一次；首發是活動、後來併進主線的章節收在主線（書頭註「曾以活動〇〇推出」）；
+      機師回憶活動收在該機師的回憶；只部分重複的活動（啟示錄活動版多 1 關）只留多出的關，兩本互相連結；少於 20 行的視為玩法活動不收<br>
+    · <strong>文字</strong>：遊戲富文字在匯入時收斂成 <code>&lt;y&gt;</code>／<code>&lt;c=#…&gt;</code> 兩種，前台 <code>parseStoryText()</code> 切段渲染（不走 innerHTML），兩種都畫成同一種紅色強調（遊戲色配深底，紙上看不見）。說話者空白或「旁白」＝旁白，不列名、淡墨色<br>
+    · <strong>版面</strong>：關卡目錄是一排小籤，點了展開該關並跳過去（<strong>不用 smooth</strong>：關卡掛 <code>content-visibility:auto</code>，平滑捲動途中高度變化會讓終點偏 ~100px）；「全部收合／展開」控制所有 <code>&lt;details&gt;</code>。
+      不開內捲框（全館唯一 scrollport 規則），長度靠收合。手機改說話者在上、台詞在下<br>
+    · <strong>館內 header</strong>：第三館讓 375px 時「離館」被 BGM 鈕蓋住 ⇒ &lt;sm 收窄外距、間距與換館鈕內距、離館拿掉箭頭；360px 實測只剩 2px，<strong>再加館前先量</strong>。劇情館沒有對應圖鑑，離館回首頁<br>
+    · <strong>沒做</strong>：說話者頭像（對話立繪是另一套編號，10010＝凱登，對不上站上圖庫）、武裝討伐與肉鴿的對白（約 3 萬行）、CG 動畫字幕（<code>ConfigDataSubtitleInfo</code>）。
+      改版後：拿到新的台版解包 → 跑 <code>node scripts/import-story.mjs</code> 看摘要 → <code>--write</code> → <code>npm test</code>（<code>storyData.test.ts</code> 核對目錄與書檔）
+  </div>
+  <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 資料分家與故事館編輯台（PLAN-042-E，2026-10-13）</strong><br>
     · <strong>單向依賴</strong>：圖鑑只讀 <code>pilots</code>，故事館讀 <code>pilotLore</code> ＋ pilots 的身分欄位。<code>pilots.lore</code>／<code>profile</code>／<code>nameEn</code> 已搬到 <code>pilotLore.intro</code>／<code>dossier</code>／<code>nameEn</code>（DB 舊欄位 G-1 刪除），前台不寫「新欄位讀不到就退回舊欄位」的雙讀退路（決策七）<br>
     · <strong>編輯台列表</strong>：列 <code>pilots</code> 全員（每位都要能點進去建檔），每列是從資料推導的進度標籤——簡介有無、檔案 N 欄、N 章（含草稿數）、外觀 已命名/總數（隱藏的也算處理過）、徽章有無。

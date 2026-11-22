@@ -1,0 +1,1 @@
+var e={v:1,prefab:`PilotGachaLornaMahalimItemPrefab`,canvas:[2600,1080],unit:100,systems:[],flows:[]};export{e as default};

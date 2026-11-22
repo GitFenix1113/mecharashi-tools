@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-068 武器與技能射程範圍 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-068 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-068</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">武器與技能射程範圍</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-11-23</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label green">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">0</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">23</div>
+      <div class="summary-lbl">待開始</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">20</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-green);">0 / 23</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    武器詳情與技能卡直接顯示遊戲同款的範圍小格圖與官方文字（「方向・直線5*1」「扇形4」），射程不再靠人工判斷；
+    電磁炮、千星、火箭爆炸等原本記不下的形狀全部正確，改版新武器／新技能跑一次腳本就有範圍。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label green">Phase A</div>
+  <div class="section-title">格型對照表</div>
+  <div class="section-desc">把 160 種官方格型變成站上可用的對照表與形狀函式。這一層先做完、測試過，後面所有顯示與匯入都依賴它。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 擷取腳本與格型對照表</div>
+      <div class="task-group-meta">scripts/extract-attack-forms.py · src/data/gridForms.json</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">讀兩份 SQLite，產生格型表與匯入用中間檔</div>
+        <div class="task-desc">
+          陸版取格型、最小／最大、射程 ±N 轉換鏈；台版取 <code>SkillSelectRangeStrKey</code>／<code>SkillEffectRangeStrKey</code> 的繁中文字，台版沒有的用 <code>s2t</code> 並標 <code>labelSource</code>。
+          同一支腳本另輸出武器（weaponInfoId → 普攻選取／作用）與技能（activeSkill／mainSkill → 各武器種類的變體）中間檔到 repo 外快取，供 C 段使用。
+          資料包落點沿用 <code>raid_db.py</code> 的規則（兩種落點都認、取日期最新）。<code>gridForms.json</code> 進版控、其餘不進。
+        </div>
+        <div class="task-file">scripts/extract-attack-forms.py · src/data/gridForms.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 形狀解析與單元測試</div>
+      <div class="task-group-meta">src/utils/gridForms.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">由格型鍵算出面朝上的格子，支援四方向旋轉</div>
+        <div class="task-desc">
+          比照遊戲的產生函式分族：Rhombus、RingRhombus、Square、SquareEmpty、Cross、DoubleCross、Line、Line A×B、Sector、…InFront、Dir／EightDir／All。
+          只有 <code>VERIFIED</code> 清單裡的格型回傳格子，其餘回 <code>null</code>（決策二）。
+          測試至少涵蓋：各族一例、<code>Sector4</code>＝3／5／7／9（2026-11-23 截圖）、旋轉後格數不變、160 個鍵都解析得到族別。
+        </div>
+        <div class="task-file">src/utils/gridForms.ts · src/utils/gridForms.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 複雜格型實機驗證</div>
+      <div class="task-group-meta">遊戲內技能說明截圖</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">提供 7 種格型的遊戲內「當前技能」截圖</div>
+        <div class="task-desc">
+          站上用到、名稱看不出精確形狀的：<code>Sector3by5</code>、<code>Line1by3</code>、<code>Line2by3</code>、<code>Line3by3</code>、<code>Line4by3</code>、<code>Line5by3</code>、<code>BoundingSquare1</code>
+          （<code>Sector4</code> 已驗證）。開發者會附「哪個技能可以截到哪個格型」的清單；每驗一種就加進 <code>VERIFIED</code>。
+          若改走 A-4 反組譯，本項可改為抽查。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-4 &nbsp; （選配）反組譯 BattleMapUtility</div>
+      <div class="task-group-meta">dump.cs 1072560 起 · GameAssembly.dll</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">取得 160 種格型的精確形狀</div>
+        <div class="task-desc">
+          反組譯 <code>GetGridOffsetListByFormTypeInternal</code>、靜態建構子與 14 個 <code>Generate*</code>（RVA 已知），工具鏈沿用資料包 <code>傷害公式/原生反組譯</code>。
+          成果用來把 <code>VERIFIED</code> 擴到全部格型，並回頭核對 A-2 的實作。依 A-3 進度決定要不要做。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label green">Phase B</div>
+  <div class="section-title">型別與文件</div>
+  <div class="section-desc">新欄位全部選填，不影響既有資料；同步資料模型文件（CLAUDE.md 規則 2）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 新增型別</div>
+      <div class="task-group-meta">src/types/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">GridFormKey、Weapon.attackForm、技能 forms</div>
+        <div class="task-desc">
+          <code>GridFormKey</code> 由 <code>gridForms.json</code> 的鍵推出；<code>Weapon.attackForm?: { select, effect }</code>；
+          <code>PilotSkill.forms?</code> 與背包技能型別的 <code>forms?</code>：<code>{ kinds?, select, effect, fixed? }[]</code>（<code>fixed</code> 記 SelectFormFix／EffectFormFix，名稱實作時定）。
+        </div>
+        <div class="task-file">src/types/weapon.ts · src/types/pilot.ts · 背包技能型別</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 資料模型文件</div>
+      <div class="task-group-meta">docs/02_技術文件/02_資料模型/</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">weapons／skills_buffs／backpacks 三頁補新欄位</div>
+        <div class="task-desc">寫明欄位意義、來源（資料包哪張表）、與舊三欄的關係，以及隕星反擊／協力的例外。</div>
+        <div class="task-file">weapons.html · skills_buffs.html · backpacks.html</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 更新 RangeType 註解</div>
+      <div class="task-group-meta">src/types/enums.ts</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">把 PLAN-040 決策十的懸案指向本計畫</div>
+        <div class="task-desc">
+          註明扇形與電磁炮的正確來源是 <code>attackForm</code>；<code>orthogonal</code>「十字直線（電磁炮）」改寫為實際情形（電磁炮是選方向＋直線 AoE），避免下一個人照舊註解去改資料。
+        </div>
+        <div class="task-file">src/types/enums.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label green">Phase C</div>
+  <div class="section-title">匯入與對帳</div>
+  <div class="section-desc">用 gameRef 對到資料包、回填正式庫。先 dry-run，站長看過報告再寫入。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 武器匯入</div>
+      <div class="task-group-meta">scripts/import-attack-forms.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">200 把武器的 attackForm（預期 198 把有值）</div>
+        <div class="task-desc">
+          依 <code>gameRef.weaponInfoId</code> 對中間檔；嵐質儲能艙、多功能彈倉沒有攻擊技能，報告列為「無」不寫。
+          報告同時列出：與舊三欄不一致者（預期即那 16 把）、反擊／協力與普攻不同者（預期只有隕星）。
+          擷取過期自動呼叫 A-1 腳本；<code>--write</code> 只補空欄、輸出還原檔。
+        </div>
+        <div class="task-file">scripts/import-attack-forms.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 機師技能匯入</div>
+      <div class="task-group-meta">scripts/import-attack-forms.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">指令／主動／額外打擊的 forms，唯一解才寫</div>
+        <div class="task-desc">
+          可推導的約 378 份（指令 206、主動 171、額外打擊 1）。武器種類遮罩轉站上 <code>WeaponKind</code> 的對照表寫在腳本、與 <code>EquipmentTypeInfo</code> 25 筆逐一對過。
+          候選清單推出多種不相容形狀的（例：萬序擬合、聚類映射）列 ⬜ 交人工，不寫入。
+        </div>
+        <div class="task-file">scripts/import-attack-forms.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 背包技能對照路徑</div>
+      <div class="task-group-meta">backpackSkills · officialId</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">查 52 份背包技能能不能對到資料包</div>
+        <div class="task-desc">
+          背包技能目前完全沒有 gameRef；<code>BackpackInfo</code> 只帶被動，主動技能在 <code>MainSkillInfo.BackpackActiveSkillList</code>。
+          先確認既有 <code>officialId</code> 的意義，能穩定對上就併入 C-2 的流程；對不上的交 E-3 人工。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-4 &nbsp; 漂移檢查</div>
+      <div class="task-group-meta">scripts/check-range-drift.mjs</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">attackForm 與舊三欄不一致就報</div>
+        <div class="task-desc">
+          比照 <code>check-description-drift.mjs</code>；已知裝不下的 16 把放白名單並註明原因。後台存檔時也做同一個比對、顯示警告（E-1）。
+        </div>
+        <div class="task-file">scripts/check-range-drift.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-5 &nbsp; 正式寫入</div>
+      <div class="task-group-meta">weapons · pilotSkills · backpackSkills</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">站長看過 dry-run 報告後寫入並 bump</div>
+        <div class="task-desc">
+          先備份（<code>backup-firestore.mjs</code>），<code>--write</code> 後 bump <code>weapons</code>、<code>pilotSkills</code>（有寫才 bump <code>backpackSkills</code>），再跑 C-4 與 <code>check:share-ids</code>。
+          前台 D 段上線前寫入也無妨：新欄位選填、舊畫面不讀。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label green">Phase D</div>
+  <div class="section-title">前台顯示</div>
+  <div class="section-desc">一個共用格圖元件，接到武器、技能、模擬器。沒有新欄位的資料一律退回舊顯示，不留白。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; GridFormPreview 元件</div>
+      <div class="task-group-meta">src/components/common/GridFormPreview.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">仿遊戲「當前技能」的小格圖</div>
+        <div class="task-desc">
+          自身灰格、可選取淺色、命中紅格；方向型畫面朝上一個方向、其餘方向淡色。格型未驗證時只顯示官方文字。
+          尺寸要能塞進浮窗（小）與詳情頁（中）；手機寬度不水平捲動。
+        </div>
+        <div class="task-file">src/components/common/GridFormPreview.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; 武器頁</div>
+      <div class="task-group-meta">WeaponDetailPage · WeaponsPage</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">射程欄改官方文字＋格圖</div>
+        <div class="task-desc">
+          詳情頁射程格顯示「選取／作用」兩行官方文字與格圖；列表射程欄改官方選取文字，排序與篩選暫用舊三欄。
+          千星的「此值已知不精確」說明與相關 variableStats 註記一併檢查。
+        </div>
+        <div class="task-file">src/pages/weapons/WeaponDetailPage.tsx · src/pages/weapons/WeaponsPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 技能顯示</div>
+      <div class="task-group-meta">PilotDetailPage · RefWeaponSkills · EntityRef 浮窗</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">技能卡與浮窗加範圍</div>
+        <div class="task-desc">
+          有多個武器種類變體時，以「刀劍：方形1／機槍：菱形4」分列；機師詳情頁若能知道該機師常用武器種類，預設展開那一列。背包技能比照。
+        </div>
+        <div class="task-file">src/pages/pilots/PilotDetailPage.tsx · src/components/refs/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-4 &nbsp; 配裝模擬器</div>
+      <div class="task-group-meta">EquippedStats · LoadoutSummary</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">已裝備武器的射程文字改用格型</div>
+        <div class="task-desc">
+          舊寫法 ring 顯示「N+」等格式改為官方文字；有 attackForm 才換，沒有就維持原樣。<code>loadoutSummaryText.test.ts</code> 等快照測試要一起更新。
+        </div>
+        <div class="task-file">src/components/loadout/EquippedStats.tsx · src/components/loadout/LoadoutSummary.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label green">Phase E</div>
+  <div class="section-title">後台編輯</div>
+  <div class="section-desc">沒解包的管理者也能補範圍：從 160 種格型下拉挑選，即時預覽。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 武器管理</div>
+      <div class="task-group-meta">src/pages/user/admin/WeaponAdmin.tsx</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">選取／作用格型下拉＋預覽＋漂移警告</div>
+        <div class="task-desc">下拉依族別分組、顯示官方文字；與舊三欄不一致時存檔前提示（同 C-4 的比對）。</div>
+        <div class="task-file">src/pages/user/admin/WeaponAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 技能管理</div>
+      <div class="task-group-meta">SkillAdmin · BackpackSkillAdmin</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">forms 多列編輯</div>
+        <div class="task-desc">每列可選武器種類（多選，留空＝不分種類）＋選取／作用格型；沿用 E-1 的下拉元件。</div>
+        <div class="task-file">src/pages/user/admin/SkillAdmin.tsx · src/pages/user/admin/BackpackSkillAdmin.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 補建沒有 gameRef 的技能範圍</div>
+      <div class="task-group-meta">後台 · 可分批</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">EX 版等手建技能、C-2 的 ⬜ 清單、對不上的背包技能</div>
+        <div class="task-desc">
+          約指令 69、主動 33 份沒有 gameRef，加上 C-2 多解與 C-3 對不上的。開發者先產一份清單（附建議格型，如 EX 版沿用本體），站長在後台確認或修改。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label green">Phase F</div>
+  <div class="section-title">射程加成、例行流程與上線</div>
+  <div class="section-desc">把官方的「射程 +N 換格型」接進模擬器，寫好改版照抄流程，部署驗收。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 射程加成改走官方轉換鏈</div>
+      <div class="task-group-meta">src/utils/gridForms.ts · 天賦裝備修正</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">天賦 maxRange 加成改查 plus 鏈</div>
+        <div class="task-desc">
+          模擬器顯示「加成後」射程時，用 <code>gridForms.json</code> 的 <code>plus</code>／<code>minus</code> 換格型（菱形 3 +1 → 菱形 4、環狀 2–4 +1 → 2–5、直線依鏈），標記 fixed 的技能不套。
+          與 PLAN-052-N 天賦裝備修正的現行數字相加結果對照，菱形類應完全一致。
+        </div>
+        <div class="task-file">src/utils/gridForms.ts · src/utils/talentLoadoutMods.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 改版例行流程</div>
+      <div class="task-group-meta">.claude/skills/data-patch · 匯入報告</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新版本跑一次就有範圍的照抄清單</div>
+        <div class="task-desc">
+          匯入報告的「下一步」標 ✅／⬜；<code>data-patch</code> skill 補「新武器／新技能建檔後跑 <code>import-attack-forms.mjs</code>」一節；
+          新格型出現時（<code>gridForms.json</code> 多出鍵）報告要明講「要截圖驗證」。
+        </div>
+        <div class="task-file">.claude/skills/data-patch/SKILL.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; 部署與上線驗收</div>
+      <div class="task-group-meta">npm run build · npm test · 本機吃正式資料</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">本機驗收後推送</div>
+        <div class="task-desc">
+          本機 <code>npx vite --port 5173</code> 吃正式 Worker 資料，逐頁看電磁炮、千星、火箭、虛粒子程式與手機寬度；更新網站履歷後推送。
+          沒有新頂層路由，不必動 CF 白名單。
+        </div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-4 &nbsp; 舊三欄去留</div>
+      <div class="task-group-meta">rangeType · minRange · maxRange</div>
+      <span class="status pending">待開始</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">穩定一段時間後決定：改為推導或刪除</div>
+        <div class="task-desc">
+          開發者先列出仍在讀舊三欄的地方與遷移成本；站長拍板後另開工項。期間舊三欄由 C-4／E-1 守著不漂移。
+        </div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status pending">待開始</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-068 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
