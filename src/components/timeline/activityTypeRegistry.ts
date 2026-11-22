@@ -98,7 +98,9 @@ const REGISTRY: Record<string, ActivityTone> = {
   loginEvent:          { ...LOGIN,  shape: 'circle',   label: '簽到' },
 
   // 賽季族（灰）—— 幾乎橫跨整版，用長條端點暗示「延續性」；戰令與擂台賽季靠形狀分
-  battlePass:          { ...PASS,   shape: 'bar',      label: '戰令' },
+  // 戰令的顯示名用遊戲內系統名「環島密令」：活動名稱是賽季名（謀海魅影、逆止之引…），
+  // 配上通稱「戰令」時新手對不上遊戲裡的入口（站長 2026-11-22 回報）。型別 id 不動。
+  battlePass:          { ...PASS,   shape: 'bar',      label: '環島密令' },
   peakArena:           { ...PASS,   shape: 'diamond',  label: '巔峰擂台' },
 }
 

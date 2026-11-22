@@ -196,7 +196,7 @@ function ThumbnailList({ items, isPredicted, lookup }: {
   items: string[]; isPredicted: boolean; lookup?: EntityLookup
 }) {
   if (!items.length) return <span className="text-text-dim/30 text-sm">—</span>
-  // 機甲一律走寬幅：這裡判斷 refType 而不是由呼叫端各自傳，否則「機甲戰令」那種
+  // 機甲一律走寬幅：這裡判斷 refType 而不是由呼叫端各自傳，否則「環島密令／機甲」那種
   // 走 Cell 的列遲早會漏掉一處，變成同一張表裡機甲有兩種形狀
   const variant: ThumbVariant = lookup?.refType === 'mech' ? 'wide' : 'default'
   return (
@@ -354,8 +354,28 @@ function WeaponPilotBadge({ pair, isPredicted, weaponLookup, pilotLookup }: {
 
 // ── Row definitions ───────────────────────────────────────────────────────────
 
+/**
+ * 列標籤的「所屬系統」眉標：label 只寫這一列是什麼（角色／機甲），系統名另外印在上方一行。
+ *
+ * 為什麼不直接叫「角色戰令」：「戰令」是玩家圈的通稱，遊戲裡這個系統叫**環島密令**
+ * ——新手在遊戲裡找不到「戰令」兩個字，看到「角色戰令」
+ * 會以為是另一種卡池或活動（站長 2026-11-22 回報）。改用遊戲內名稱，且兩列都印出來：
+ * 只在第一列寫的話，單看第二列的「機甲」會跟表頭的「機甲」欄撞名。
+ * 兩行疊放而不是寫成「環島密令・角色」一行：一行要 7 個字，會把 sticky 標籤欄撐寬 26px。
+ */
+interface RowGroup {
+  name: string
+  /** 滑鼠停留的說明（給知道「戰令」這個通稱、但沒對上遊戲名稱的人） */
+  hint: string
+}
+
+const BATTLE_PASS_GROUP: RowGroup = {
+  name: '環島密令',
+  hint: '環島密令＝遊戲內的戰令（Battle Pass）。這兩列是該版本環島密令獎勵裡的角色與機甲',
+}
+
 type SplitRow = {
-  key: string; label: string; split: true; raid?: never;
+  key: string; label: string; group?: RowGroup; split: true; raid?: never;
   fnLeft: (v: PatchVersion) => string[];
   fnRight: (v: PatchVersion) => string[];
   lookupLeft?: LookupKey;
@@ -367,12 +387,12 @@ type SplitRow = {
   appliesTo?: (v: PatchVersion) => boolean;
 }
 type NormalRow = {
-  key: string; label: string; split?: never; raid?: never;
+  key: string; label: string; group?: RowGroup; split?: never; raid?: never;
   fn: (v: PatchVersion) => string[];
   lookup?: LookupKey;
 }
 type RaidRow = {
-  key: string; label: string; raid: true; split?: never;
+  key: string; label: string; group?: RowGroup; raid: true; split?: never;
   fn: (v: PatchVersion) => WeaponPilotPair[];
 }
 type RowDef = SplitRow | NormalRow | RaidRow
@@ -383,8 +403,8 @@ const ROW_DEFS: RowDef[] = [
   { key: 'lower',    label: '下半更新', split: true, fnLeft: v => v.lower.pilots ?? [], fnRight: v => v.lower.mechs ?? [], lookupLeft: 'pilots', lookupRight: 'mechs' },
   { key: 'weapons',  label: '武裝生產', raid: true,  fn: getArmamentWeaponPairs },
   { key: 'backpack', label: '背包製作', fn: getArmamentBackpacks, lookup: 'backpacks' },
-  { key: 'bpPilot',  label: '角色戰令', fn: getBattlePassPilots,  lookup: 'pilots' },
-  { key: 'bpMech',   label: '機甲戰令', fn: getBattlePassMechs,   lookup: 'mechs' },
+  { key: 'bpPilot',  label: '角色',     group: BATTLE_PASS_GROUP, fn: getBattlePassPilots, lookup: 'pilots' },
+  { key: 'bpMech',   label: '機甲',     group: BATTLE_PASS_GROUP, fn: getBattlePassMechs,  lookup: 'mechs' },
   { key: 'crisis',   label: '危境商店', fn: v => v.crisisShop ?? [], lookup: 'pilots' },
   { key: 'border',   label: '邊境商店', fn: v => v.borderShop ? [v.borderShop] : [] },
   { key: 'arena',    label: '鬥技場',   fn: v => v.arenaShop  ? [v.arenaShop]  : [] },
@@ -563,8 +583,20 @@ export default function VersionQuickTable({ versions, loading, error }: Props) {
           <tbody>
             {rowDefs.map((row, rowIdx) => (
               <tr key={row.key} className={rowIdx % 2 === 1 ? 'bg-bg-card/30' : ''}>
-                <td className="sticky left-0 z-10 bg-bg-dark px-3 py-1.5 text-[14px] text-text-dim font-medium border-r border-r-border-accent border-b border-b-border whitespace-nowrap align-middle">
-                  {row.label}
+                <td
+                  title={row.group?.hint}
+                  // 同系統的列在左緣共用一條色條，看得出這幾列是一組。用 inset 陰影而不是 border-l：
+                  // border-collapse 下只有部分列加左框，整個標籤欄的欄界會跟著位移。
+                  className={`sticky left-0 z-10 bg-bg-dark px-3 py-1.5 text-[14px] text-text-dim font-medium border-r border-r-border-accent border-b border-b-border whitespace-nowrap align-middle ${
+                    row.group ? 'shadow-[inset_2px_0_0_var(--color-accent-purple)]' : ''
+                  }`}
+                >
+                  {row.group ? (
+                    <span className="flex flex-col leading-tight">
+                      <span className="text-[12px] font-normal tracking-wide text-accent-purple">{row.group.name}</span>
+                      <span>{row.label}</span>
+                    </span>
+                  ) : row.label}
                 </td>
                 {displayVersions.map(v => {
                   const isCurrent = v.isTwCurrent ?? false

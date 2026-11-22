@@ -118,6 +118,6 @@ test('復刻只影響標籤，不影響型別的顏色與形狀', () => {
 
 test('非卡池型別不受 rerun 影響（誤傳也不會改標籤）', () => {
   assert.equal(bannerIsRerun({ type: 'battlePass', pilots: ['佐伊'] }, { pilots: ['哈達威'] }), false)
-  assert.equal(activityTone('battlePass', undefined, { rerun: true }).label, '戰令')
+  assert.equal(activityTone('battlePass', undefined, { rerun: true }).label, '環島密令')
   assert.equal(activityTone('crossShipping', undefined, { rerun: true }).label, '海運')
 })

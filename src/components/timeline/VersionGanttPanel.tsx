@@ -118,7 +118,7 @@ const LABEL = 'border border-[#2a3040] px-3 py-1 text-left text-[13px] text-text
 // ── 分段（上半／中半／下半）────────────────────────────────────────────────────
 //
 // 一般版本兩段、週年版本三段（halves.ts）。甘特把每一段當成週軸上連續的一截，
-// 顏色依段別固定：上半橘、中半粉、下半青 —— 中半不用紫，紫色是整版戰令列的顏色。
+// 顏色依段別固定：上半橘、中半粉、下半青 —— 中半不用紫，紫色是整版環島密令（戰令）列的顏色。
 
 interface SegmentTone {
   /** 表頭（「上半版本 11/12～」） */
@@ -187,13 +187,20 @@ function VersionInfoRows({
       .map(r => pick(r)!.join('/'))
       .join('　')
 
-  // 戰令橫跨整版：取第一個有填的段（與舊版「上半 ?? 下半」同語意，空陣列也算有填）
+  // 環島密令（戰令）橫跨整版：取第一個有填的段（與舊版「上半 ?? 下半」同語意，空陣列也算有填）
   const bpPilots = (segments.map(s => s.half.battlePass?.pilots).find(x => x !== undefined) ?? []).join('、')
   const bpMechs  = (segments.map(s => s.half.battlePass?.mechs).find(x => x !== undefined) ?? []).join('、')
+  // 角色與機甲併成**一列**、列名用遊戲內的系統名。舊版是「角色戰令」「機甲戰令」兩列：
+  // 新手在遊戲裡找不到「戰令」兩個字，會以為是另一種卡池（站長 2026-11-22 回報）。
+  // 標籤欄只有 110px，寫成「環島密令・角色」兩列會溢出；併成一列順便省回一列高度。
+  const bpParts = [
+    { label: '角色', value: bpPilots },
+    { label: '機甲', value: bpMechs },
+  ].filter(p => p.value)
 
   // 自選池的可選名單。與上面的「機師／機甲」（本期新登場）是兩回事：
   // 這裡是角雕特遣／跨域海運「這一期可以換誰」，多半是舊角色。
-  // 走 halfRows 而不是像戰令那樣橫跨整版 —— 名單是每半期各自不同的。
+  // 走 halfRows 而不是像環島密令那樣橫跨整版 —— 名單是每半期各自不同的。
   const halfRowDefs: { label: string; small?: boolean; of: (h: PatchHalf, seg: GanttSegment) => ReactNode }[] = [
     { label: '機師',     of: h => (h.pilots ?? []).join('、') },
     { label: '機甲',     of: h => (h.mechs ?? []).join('、') },
@@ -226,19 +233,18 @@ function VersionInfoRows({
           ))}
         </tr>
       ))}
-      {bpPilots && (
+      {bpParts.length > 0 && (
         <tr>
-          <td className={LABEL}>角色戰令</td>
-          <td colSpan={totalWeeks} className={`${TD} bg-[rgba(168,85,247,0.05)] text-accent-purple`}>
-            {bpPilots}
-          </td>
-        </tr>
-      )}
-      {bpMechs && (
-        <tr>
-          <td className={LABEL}>機甲戰令</td>
-          <td colSpan={totalWeeks} className={`${TD} bg-[rgba(168,85,247,0.05)] text-accent-purple`}>
-            {bpMechs}
+          <td className={LABEL} title="環島密令＝遊戲內的戰令（Battle Pass）">環島密令</td>
+          <td colSpan={totalWeeks} className={`${TD} bg-[rgba(168,85,247,0.05)]`}>
+            <span className="inline-flex flex-wrap justify-center gap-x-5 gap-y-0.5">
+              {bpParts.map(p => (
+                <span key={p.label} className="whitespace-nowrap">
+                  <span className="mr-1.5 text-[12px] text-text-dim">{p.label}</span>
+                  <span className="text-accent-purple">{p.value}</span>
+                </span>
+              ))}
+            </span>
           </td>
         </tr>
       )}
