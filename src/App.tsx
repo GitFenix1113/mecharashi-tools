@@ -40,6 +40,9 @@ const VersionTimelinePage      = lazy(() => import('./pages/versions/VersionTime
 const LoreHomePage             = lazy(() => import('./pages/lore/LoreHomePage'))
 const PilotLorePage            = lazy(() => import('./pages/lore/PilotLorePage'))
 const MechLorePage             = lazy(() => import('./pages/lore/MechLorePage'))
+// 劇情故事館（2026-11-22 試作）：館首頁只讀靜態目錄，書頁的全文再各自 lazy（src/data/story/）
+const StoryHomePage            = lazy(() => import('./pages/lore/StoryHomePage'))
+const StoryBookPage            = lazy(() => import('./pages/lore/StoryBookPage'))
 const AdminLorePage            = lazy(() => import('./pages/admin/AdminLorePage'))
 const AdminVersionListPage     = lazy(() => import('./pages/admin/AdminVersionListPage'))
 const AdminVersionEditorPage   = lazy(() => import('./pages/admin/AdminVersionEditorPage'))
@@ -108,6 +111,10 @@ function App() {
               <Route path="mechs" element={<Suspense fallback={null}><LoreHomePage hall="mechs" /></Suspense>} />
               <Route path="mechs/:id" element={<Suspense fallback={null}><MechLorePage /></Suspense>} />
               <Route path="mechs/:id/:part" element={<Suspense fallback={null}><MechLorePage /></Suspense>} />
+              {/* 劇情故事館：同樣掛在 /lore 底下，不必動 CF 白名單。:id 是 main-3／event-8／memory-14 這種書 ID
+                  （遊戲設定表 ID，改版不變）；不進 analyticsEntity（ENTITY_ROUTES 沒登記），只計頁面熱度 */}
+              <Route path="story" element={<Suspense fallback={null}><StoryHomePage /></Suspense>} />
+              <Route path="story/:id" element={<Suspense fallback={null}><StoryBookPage /></Suspense>} />
               {/* 館內的兜底轉址是**必要的**（地雷 M-28）：Layout 的 chromeMode 是純路徑推導，
                   /lore/xyz 一律判成 immersive，但 React Router 不做部分匹配、會落到全站的
                   path="*" NotFoundPage ⇒ 一頁深色 404 配紙色館頭，footer／subnav／手機 Tab Bar

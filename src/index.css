@@ -1457,3 +1457,112 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
   .gacha-banner > img, .kav-zoom { transition: none; }
   .gacha-banner__live { animation: none; }
 }
+
+/* ── 劇情故事館（/lore/story，2026-11-22 試作）────────────────────────────────
+ *
+ * 館首頁與書頁共用 .lore-story 這個作用域：色票與字型照抄 .lore-page（那份掛在機師／機甲頁的舞台上，這裡搆不到）。
+ * 紙色 token（text-text-primary 等）由 .lore-shell 覆寫，Tailwind 類名可以直接用。
+ * ⚠ 不開任何 overflow-y（全館唯一的 scrollport 是 .lore-scroll）；長對白靠 <details> 收合控制長度。
+ */
+.lore-story {
+  --lore-serif: 'Lore Serif', 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif;
+  --lore-kai: 'Lore Kai', 'LXGW WenKai TC', 'Kaiti TC', 'BiauKai', 'DFKai-SB', serif;
+  --lore-red: #b10000;
+  --lore-ink: #2b2621;
+  --lore-ink-2: #6b6259;
+  --lore-ink-3: #948a7e;
+  --lore-line: #d3c7b2;
+  --lore-line-2: #e3dac8;
+}
+.lore-story a { color: var(--lore-red); }
+
+/* 館首頁卡片：與 .lore-toc 同一套 hover（紅框、微浮） */
+.lore-story-card {
+  display: flex; flex-direction: column; min-width: 0; padding: 14px 16px; border: 1px solid var(--lore-line); border-radius: 10px;
+  background: rgb(255 252 245 / 0.72); color: var(--lore-ink); text-decoration: none;
+  transition: border-color 0.2s, transform 0.2s, background-color 0.2s;
+}
+.lore-story-card:hover { border-color: var(--lore-red); background: rgb(255 253 248 / 0.92); transform: translateY(-2px); }
+.lore-story .lore-story-card { color: var(--lore-ink); }
+.lore-story-card__k { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.18em; color: var(--lore-ink-3); }
+.lore-story-card__t { margin-top: 2px; font-family: var(--lore-serif); font-weight: 700; font-size: 1.05rem; letter-spacing: 0.06em; color: var(--lore-ink); }
+.lore-story-card__d {
+  margin-top: 6px; font-family: var(--lore-serif); font-size: 0.78rem; line-height: 1.75; color: var(--lore-ink-2); white-space: pre-line;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.lore-story-card__m { margin-top: auto; padding-top: 10px; font-size: 0.68rem; color: var(--lore-ink-3); }
+.lore-story-card--pilot { align-items: center; text-align: center; padding: 12px 10px; }
+/* 機師卡 Icon_item 自帶卡框與透明底，直接放在紙上 */
+.lore-story-card__img { width: 72px; height: 72px; object-fit: contain; margin-bottom: 8px; }
+.lore-story-card--pilot .lore-story-card__m { padding-top: 4px; }
+
+/* 書頁：書頭 */
+.lore-story-eyebrow { font-family: 'Orbitron', 'JetBrains Mono', sans-serif; font-weight: 700; font-size: 0.66rem; letter-spacing: 0.32em; color: var(--lore-red); }
+.lore-story-h1 { margin: 8px 0 0; font-family: var(--lore-kai); font-weight: 400; font-size: 2.1rem; letter-spacing: 0.12em; line-height: 1.25; color: var(--lore-ink); }
+.lore-story-desc {
+  margin: 14px 0 0; font-family: var(--lore-serif); font-size: 0.9rem; line-height: 2; letter-spacing: 0.03em; color: var(--lore-ink-2); white-space: pre-line;
+}
+.lore-story-btn {
+  border: 1px solid var(--lore-line); border-radius: 8px; padding: 4px 12px; font-size: 0.72rem; color: var(--lore-ink-2);
+  background: rgb(255 252 245 / 0.72); cursor: pointer; transition: border-color 0.2s, color 0.2s;
+}
+.lore-story-btn:hover { border-color: var(--lore-red); color: var(--lore-ink); }
+
+/* 書頁：關卡目錄（換行排列的小籤） */
+.lore-story-toc { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.lore-story-toc button {
+  display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border: 1px solid var(--lore-line-2); border-radius: 999px;
+  background: rgb(255 252 245 / 0.6); font-family: var(--lore-serif); font-size: 0.75rem; color: var(--lore-ink); cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.lore-story-toc button:hover { border-color: var(--lore-red); background: rgb(177 0 0 / 0.04); }
+.lore-story-toc__code { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: var(--lore-red); }
+.lore-story-tag {
+  display: inline-block; padding: 0 6px; border: 1px solid var(--lore-line); border-radius: 4px;
+  font-size: 0.6rem; line-height: 1.6; letter-spacing: 0.1em; color: var(--lore-ink-3); vertical-align: middle;
+}
+
+/* 書頁：關卡。content-visibility 讓近三千行的活動頁只排版看得到的那幾關（頁內搜尋照樣找得到） */
+.lore-story-group {
+  margin: 40px 0 0; padding-bottom: 6px; border-bottom: 2px solid var(--lore-red);
+  font-family: var(--lore-kai); font-weight: 400; font-size: 1.3rem; letter-spacing: 0.14em; color: var(--lore-ink);
+}
+.lore-story-stage {
+  padding: 28px 0; border-top: 1px solid var(--lore-line-2); scroll-margin-top: 12px;
+  content-visibility: auto; contain-intrinsic-size: auto 900px;
+}
+.lore-story-group + .lore-story-stage, .lore-story-stage:first-child { border-top: 0; }
+.lore-story-stage__code { font-family: 'Orbitron', 'JetBrains Mono', sans-serif; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.24em; color: var(--lore-red); }
+.lore-story-stage__name { margin: 0; font-family: var(--lore-serif); font-weight: 700; font-size: 1.3rem; letter-spacing: 0.08em; color: var(--lore-ink); }
+.lore-story-brief {
+  margin: 10px 0 0; padding: 10px 14px; border-left: 3px solid var(--lore-line); background: rgb(255 252 245 / 0.55);
+  font-family: var(--lore-serif); font-size: 0.84rem; line-height: 1.9; color: var(--lore-ink-2); white-space: pre-line;
+}
+.lore-story-part { margin-top: 16px; }
+.lore-story-part > summary {
+  display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; user-select: none;
+  padding: 4px 0; border-bottom: 1px dashed var(--lore-line);
+}
+.lore-story-part > summary::-webkit-details-marker { display: none; }
+.lore-story-part > summary::before { content: '▸'; font-size: 0.7rem; color: var(--lore-ink-3); transition: transform 0.15s; }
+.lore-story-part[open] > summary::before { transform: rotate(90deg); }
+.lore-story-part__label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; color: var(--lore-ink-2); }
+
+/* 對白：桌機左欄說話者、右欄台詞；旁白不列名、跨兩欄、淡墨。手機改上下排 */
+.lore-story-lines { list-style: none; margin: 10px 0 0; padding: 0; font-family: var(--lore-serif); font-size: 0.92rem; line-height: 1.95; letter-spacing: 0.03em; }
+.lore-story-line { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); column-gap: 1em; padding: 2px 0; }
+.lore-story-line__who { font-weight: 700; color: var(--lore-ink); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lore-story-line__say { color: var(--lore-ink); white-space: pre-line; overflow-wrap: anywhere; }
+.lore-story-line.is-narr .lore-story-line__say { grid-column: 2; color: var(--lore-ink-2); }
+.lore-story-em { font-style: normal; font-weight: 700; color: var(--lore-red); }
+.lore-story-sep { height: 1px; margin: 12px 0 12px 7.5em; background: repeating-linear-gradient(90deg, var(--lore-line) 0 6px, transparent 6px 12px); }
+.lore-story-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; white-space: normal; }
+.lore-story-choice { padding: 0 10px; border: 1px solid var(--lore-line); border-radius: 999px; font-size: 0.8rem; color: var(--lore-ink-2); background: rgb(255 252 245 / 0.7); }
+.lore-story-choice::before { content: '▸ '; color: var(--lore-red); }
+@media (max-width: 639px) {
+  .lore-story-h1 { font-size: 1.7rem; }
+  .lore-story-line { grid-template-columns: minmax(0, 1fr); padding: 4px 0; }
+  .lore-story-line__who { text-align: left; font-size: 0.8rem; line-height: 1.6; }
+  .lore-story-line.is-narr .lore-story-line__say { grid-column: 1; }
+  .lore-story-sep { margin-left: 0; }
+}

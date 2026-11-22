@@ -95,6 +95,8 @@ const guidesGroup: NavGroup = {
 const loreNavItems: ContentNavItem[] = [
   { to: '/lore', label: '機師故事館', icon: 'pilot', desc: '人物檔案、逸聞章節與外觀' },
   { to: '/lore/mechs', label: '機甲故事館', icon: 'mech', desc: '技術檔案、系譜、塗裝與卡池' },
+  // 劇情故事館（2026-11-22 試作）：主線／活動／機師回憶的關卡對白，靜態資料（src/data/story/）
+  { to: '/lore/story', label: '劇情故事館', icon: 'lore', desc: '主線、活動與機師回憶的關卡對白' },
 ]
 const loreGroup: NavGroup = {
   key: 'lore', label: '故事館',
@@ -197,13 +199,18 @@ export default function Layout() {
   // 機甲廳的館首頁（E-1）：館名與落點同展廳，只是落到機甲圖鑑的列表
   const loreMechHome = useMatch('/lore/mechs')
   const inMechHall = !!(loreMechMatch || loreMechHome)
+  // 劇情故事館（2026-11-22）：館首頁與書頁都算；它沒有對應的圖鑑，離館回首頁
+  const inStoryHall = !!useMatch('/lore/story/*')
+  /** 目前在哪一館：決定館名、換館鈕亮哪一格（loreNavItems 的 to） */
+  const loreHallTo = inStoryHall ? '/lore/story' : inMechHall ? '/lore/mechs' : '/lore'
+  const loreHallName = loreNavItems.find((i) => i.to === loreHallTo)?.label ?? '機師故事館'
   const lorePilotId = lorePilotMatch?.params.id
   const loreMechId = loreMechMatch?.params.id
   const loreExitTo = lorePilotId ? `/pilots/${encodeURIComponent(lorePilotId)}`
     : loreMechId ? `/mechs/${encodeURIComponent(loreMechId)}`
-    : inMechHall ? '/mechs' : '/pilots'
+    : inStoryHall ? '/' : inMechHall ? '/mechs' : '/pilots'
   const loreExitTitle = lorePilotId ? '離館，回到這位機師的圖鑑' : loreMechId ? '離館，回到這台機甲的圖鑑'
-    : inMechHall ? '離館，回到機甲圖鑑' : '離館，回到機師圖鑑'
+    : inStoryHall ? '離館，回到首頁' : inMechHall ? '離館，回到機甲圖鑑' : '離館，回到機師圖鑑'
   const showPageChrome = chromeMode === 'default'
   // 比對用 `=== to` 或 `to + '/'`：直接 startsWith(to) 會讓 /modules 誤配到未來的
   // /modulesomething，也讓詳情頁（/pilots/xxx）正確落在圖鑑那一群。
@@ -296,23 +303,25 @@ export default function Layout() {
              登入／頭像／EN Wiki 都不是閱讀動作，一鍵離館即可（決策 G）。
              換館（機師｜機甲）是故事館版的常駐分頁列（站長 2026-10-17：比照資料圖鑑把兩館分開）：
              在館內任何一頁都能換到另一館的館首頁。手機寬度收掉館名文字，由換館鈕亮起的那一格表示身在哪一館。
+             ⚠ 手機寬度很擠：2026-11-22 加入第三館（劇情）後，375px 時「離館」被右側 BGM 鈕蓋住（實測重疊 28px）。
+               所以 <sm 收窄外距、間距與換館鈕的左右內距、離館拿掉箭頭（360px 實測只剩 2px 餘裕）；再加第四館之前要先在 360px 量一次。
              這段與下方預設 header 的字級區塊是**刻意的重複**——為此把預設 header
              抽成元件只會把回歸面擴大到全站。 */
-          <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <Link to={inMechHall ? '/lore/mechs' : '/lore'} className="hidden sm:inline no-underline text-text-primary font-bold tracking-wider whitespace-nowrap">
-                {inMechHall ? '機甲故事館' : '機師故事館'}
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 h-full flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Link to={loreHallTo} className="hidden sm:inline no-underline text-text-primary font-bold tracking-wider whitespace-nowrap">
+                {loreHallName}
               </Link>
               <nav aria-label="切換館別" className="flex items-center bg-bg-card border border-border rounded-lg overflow-hidden shrink-0">
                 {loreNavItems.map((item) => {
-                  const current = (item.to === '/lore/mechs') === inMechHall
+                  const current = item.to === loreHallTo
                   return (
                     <Link
                       key={item.to}
                       to={item.to}
                       aria-current={current ? 'true' : undefined}
                       title={item.label}
-                      className={`px-2.5 py-1 text-xs no-underline transition-colors whitespace-nowrap ${
+                      className={`px-2 sm:px-2.5 py-1 text-xs no-underline transition-colors whitespace-nowrap ${
                         current ? 'bg-accent-orange/20 text-accent-orange font-bold' : 'text-text-dim hover:text-text-secondary'
                       }`}
                     >
@@ -326,7 +335,7 @@ export default function Layout() {
                 title={loreExitTitle}
                 className="no-underline text-xs text-text-secondary hover:text-text-primary whitespace-nowrap"
               >
-                離館 ↗
+                離館<span className="hidden sm:inline"> ↗</span>
               </LoreExitLink>
             </div>
             <div className="flex items-center gap-2 shrink-0">

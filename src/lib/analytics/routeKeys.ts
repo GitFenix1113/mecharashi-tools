@@ -52,6 +52,9 @@ export const ROUTE_PATTERNS: readonly string[] = [
   '/lore/mechs',
   '/lore/mechs/:id',
   '/lore/mechs/:id/:part',
+  // 劇情故事館（2026-11-22）。書頁 :id 是書 ID（main-3），不進 ENTITY_ROUTES——要排行得先在 Worker 登記新類別
+  '/lore/story',
+  '/lore/story/:id',
   '/simulator',
   '/research',
   '/news',
@@ -153,6 +156,8 @@ export const ROUTE_LABELS: Record<string, string> = {
   lore_mechs:                '機甲故事館',
   lore_mechs_detail:         '機甲故事（扉頁）',
   lore_mechs_detail_detail:  '機甲故事（章節）',
+  lore_story:                '劇情故事館',
+  lore_story_detail:         '劇情（單篇）',
   simulator:             '配裝模擬器',
   research:              '研究所',
   news:                  '最新消息',
