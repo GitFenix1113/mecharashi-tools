@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-068 武器與技能射程範圍 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-068 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,197,94,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge green">◆ PLAN-068</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-green) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    武器與技能射程範圍<span style="-webkit-text-fill-color:var(--text-secondary);"> · 官方格型 GridFormType · 選取／作用範圍</span>
+  </h1>
+  <p class="hero-sub">武器的射程與技能的範圍改用遊戲本身的「格型」描述：資料庫只存官方格型鍵，格子形狀與台版官方文字放在版控的對照表，前台畫出跟遊戲「當前技能」一樣的小格圖。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label green">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value green">PLAN-068</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-11-23</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">weapons／pilotSkills／backpackSkills · 武器與技能頁 · 後台 · 模擬器</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value green">規劃中</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-065-A gameRef（已完成）· 陸版 11-20 資料包 · 台版 10-19 資料包</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>編號說明：</strong>PLAN-066（科研資料上站）與 PLAN-067（共鳴接口／嵐潮適性）已在 2026-11-20 的改版盤點裡預約、尚未立案，本計畫跳過兩者取 068。
+    立案前的盤點在 <code>_local-notes/2026-11/2026-11-23_武器技能射程範圍_盤點與導入建議.md</code>（附分析腳本，本機限定）。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>一、站上的射程只有三種寫法，遊戲有 160 種</strong><br>
+    武器現在用 <code>rangeType</code>（manhattan／orthogonal／ring）＋<code>minRange</code>／<code>maxRange</code> 三欄、由管理者手選。
+    遊戲本身不用「最小／最大」描述攻擊，而是用 160 種<strong>格型</strong>（<code>GridFormType</code>：菱形、環狀菱形、方形、十字、直線、扇形、只有前方、選方向、全場…），
+    每次攻擊都有兩個：<strong>選取範圍</strong>（能瞄準哪裡）與<strong>作用範圍</strong>（實際打到哪些格）。
+  </div>
+
+  <div class="problem-block">
+    <strong>二、站上 200 把武器：184 把對、16 把是「寫法裝不下」</strong><br>
+    與陸版 11-20 資料包逐把比對（以 <code>gameRef.weaponInfoId</code> 對照）：
+    <table class="impact-table">
+      <tr><th>武器</th><th>站上</th><th>官方</th></tr>
+      <tr><td>12 把電磁炮</td><td>菱形 1–5</td><td>選方向 → <strong>直線 5 格</strong>全部命中</td></tr>
+      <tr><td>千星</td><td>菱形 1–4</td><td>選方向 → <strong>扇形 4</strong>（遊戲截圖：由近到遠 3／5／7／9 格）</td></tr>
+      <tr><td>衝擊炮</td><td>菱形 1–3</td><td>選方向 → 直線 3 格</td></tr>
+      <tr><td>13 把火箭</td><td>菱形 3–6</td><td>選取對，但<strong>作用範圍是方形 1（3×3）</strong>，站上沒記</td></tr>
+      <tr><td>嵐質儲能艙、多功能彈倉</td><td>0–0（naStats）</td><td>沒有攻擊技能，與現況一致</td></tr>
+    </table>
+    PLAN-040 決策十當時就判定「扇形」塞不進純量欄位，千星沿用 manhattan 並註明「此值已知不精確」；<code>orthogonal</code> 宣告了但 0 把使用。本計畫是那兩個懸案的正式處理。
+  </div>
+
+  <div class="problem-block">
+    <strong>三、技能完全沒有範圍資料</strong><br>
+    pilotSkills 926 份只有描述文字（例「對面前扇形4格範圍內所有目標」），使用者看不到格子圖，模擬器也無從判斷。
+    而且<strong>同一個指令技能，換裝不同種類的武器範圍就不同</strong>（例：虛粒子程式＝刀劍方形 1／機槍菱形 4／粒子莢艙扇形 4），描述文字無法表達。
+  </div>
+
+  <div class="problem-block">
+    <strong>四、射程加成對非菱形格型算不對</strong><br>
+    天賦的射程加成（<code>EquipStat</code> 的 maxRange）現在是直接加到數字上。官方是查表換格型：
+    <code>SkillRangeInfo.GridFormTypeTransformByAdditionalRange</code> 規定「射程 +1 之後變成哪個格型」，方形、直線、扇形各有自己的鏈。
+  </div>
+
+  <div class="info-block">
+    <strong>資料包裡有什麼（盤點結論）</strong>
+    <table class="impact-table">
+      <tr><th>來源</th><th>內容</th></tr>
+      <tr><td><code>GridFormType</code>（enums.json）</td><td>160 種格型名稱</td></tr>
+      <tr><td><code>ConfigDataSkillRangeInfo</code>（160 筆，ID＝格型）</td><td>最小／最大選取距離、<strong>台版官方顯示文字</strong>（「3-6格」「環狀菱形3-6格」「直線5*1」「扇形4」）、射程 ±N 的格型轉換鏈</td></tr>
+      <tr><td><code>ConfigDataActiveSkillInfo</code>（3,628 筆）</td><td><code>GridSelectFormType</code>＋<code>GridEffectFormType</code>；<code>SkillFlag2_SelectFormFix／EffectFormFix</code>＝不吃射程加成</td></tr>
+      <tr><td><code>ConfigDataWeaponInfo</code>＋<code>ConfigDataEquipmentTypeInfo</code></td><td>武器普攻＝<code>DefaultActiveSkill</code>（502 筆覆寫），否則用武器種類的 <code>DefaultAttackSkill</code></td></tr>
+      <tr><td><code>ConfigDataMainSkillInfo</code></td><td>指令技能 → <code>WeaponActiveSkillList[{type: 武器種類遮罩, Id}]</code>，依武器種類對到不同主動技能</td></tr>
+      <tr><td>程式碼 <code>BattleMapUtility</code></td><td><strong>格子實際形狀只在這裡</strong>（<code>GetGridOffsetListByFormType</code>＋14 個 <code>Generate*</code>＋靜態建構子），資料表沒有</td></tr>
+    </table>
+    台陸比對：站上相關的 495 個主動技能中，台版也有的 458 個格型<strong>差異 0</strong>。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label green">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：資料庫只存官方格型鍵，形狀與文字放版控對照表</strong><br>
+    延續 PLAN-055／056「DB 只存官方 key」。鍵用格型英文名去掉前綴（<code>'RingRhombus3to6'</code>），後台與 Firestore 主控台看得懂；數字 ID 只留在對照表。
+    不擴充 <code>rangeType</code>（160 種開不完，PLAN-040 決策十的理由仍成立），也不把格子座標存進每份文件（格型是遊戲常數，存 DB 只會重複）。
+  </div>
+
+  <div class="code-block"><span class="cm">// src/data/gridForms.json —— 腳本從資料包產生、進版控（A-1）</span>
+{ <span class="st">"RingRhombus3to6"</span>: { <span class="st">"id"</span>: <span class="nm">22</span>, <span class="st">"min"</span>: <span class="nm">3</span>, <span class="st">"max"</span>: <span class="nm">6</span>,
+    <span class="st">"selectLabel"</span>: <span class="st">"3-6格"</span>, <span class="st">"effectLabel"</span>: <span class="st">"環狀菱形3-6格"</span>,
+    <span class="st">"plus"</span>: [<span class="st">"RingRhombus3to7"</span>, <span class="st">"RingRhombus3to8"</span>], <span class="st">"minus"</span>: [...], <span class="st">"labelSource"</span>: <span class="st">"tw"</span> } }
+
+<span class="cm">// src/utils/gridForms.ts —— 由鍵名解析出形狀（A-2）</span>
+<span class="kw">export function</span> <span class="fn">gridFormCells</span>(key: <span class="ty">GridFormKey</span>, dir?: <span class="ty">Dir</span>): <span class="ty">[number, number][]</span> | <span class="ty">null</span>   <span class="cm">// 未驗證的格型回 null</span>
+
+<span class="cm">// src/types/weapon.ts（B-1）</span>
+attackForm?: { select: <span class="ty">GridFormKey</span>; effect: <span class="ty">GridFormKey</span> }          <span class="cm">// 普攻</span>
+
+<span class="cm">// src/types/pilot.ts PilotSkill、backpackSkills（B-1）</span>
+forms?: { kinds?: <span class="ty">string</span>[]; select: <span class="ty">GridFormKey</span>; effect: <span class="ty">GridFormKey</span> }[]   <span class="cm">// kinds 省略＝不分武器種類</span></div>
+
+  <div class="decision-block">
+    <strong>決策二：形狀「名稱推導＋實機截圖驗證」，未驗證的不畫格子</strong><br>
+    站上實際會用到 31 種格型：23 種照名稱就能確定（菱形、環狀菱形、方形、十字、直線 N、全場、方向）；
+    8 種要驗證：<code>Sector4</code>（已由 2026-11-23 遊戲截圖驗證：3／5／7／9）、<code>Sector3by5</code>、<code>Line1by3</code>～<code>Line5by3</code>、<code>BoundingSquare1</code>。
+    <strong>還沒驗證的格型，前台只顯示官方文字、不畫格子</strong>——畫錯的圖比沒有圖更糟（同 PLAN-040 對 formatter fallback 的判斷）。
+    反組譯 <code>BattleMapUtility</code> 取得全部 160 種的精確形狀列為選配（A-4），工具鏈在資料包 <code>傷害公式/原生反組譯</code> 已有。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策三：武器只存普攻一組</strong><br>
+    站上 200 把武器中，反擊／協力的格型與普攻相同（反擊 150、協力 170）或根本沒有（戰術類不能反擊），
+    唯一例外是<strong>隕星</strong>（普攻菱形 4、反擊與協力菱形 3）。不為一把開欄位，例外寫進 description，匯入報告會再列一次。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策四：技能依武器種類分列，自動回填只收唯一解</strong><br>
+    指令技能經 <code>WeaponActiveSkillList</code> 依武器種類（位元遮罩）展開；同格型的種類併成一列。
+    ⚠ 部分技能的 <code>gameRef.mainSkillIds</code> 是候選清單，會混進不相干的變體（萬序擬合推出 17 種形狀）——
+    這類只列進報告的 ⬜ 清單交人工，<strong>不自動寫入</strong>。武器種類遮罩對站上 <code>WeaponKind</code> 的對照表放在匯入腳本，與 <code>EquipmentTypeInfo</code> 的 25 筆逐一對過。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策五：舊三欄先保留，加漂移檢查</strong><br>
+    <code>rangeType／minRange／maxRange</code> 被篩選、模擬器、多支測試使用（18 個檔案、74 處），本計畫不拆。
+    新增 <code>check-range-drift.mjs</code> 比對 <code>attackForm</code> 與舊三欄，已知裝不下的 16 把列白名單；
+    前台全面改讀新欄位、穩定一段時間後，再決定舊三欄改由 <code>attackForm</code> 推導或刪除（F-4，記取 PLAN-058 的雙正本教訓）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策六：文字用台版官方繁中，形狀用陸版最新資料包</strong><br>
+    顯示文字取台版 <code>SkillRangeInfo</code> 的 StrKey；台版還沒有的新格型（陸版領先約 5 個月）用簡轉繁 <code>s2t</code>（不用 s2twp），對照表標 <code>labelSource: "cn-s2t"</code>，台版更新後覆蓋。
+    資料包落點沿用武裝討伐腳本的規則（兩種落點都認、取日期最新）。
+  </div>
+
+  <div class="decision-block">
+    <strong>決策七：例行流程不靠 AI</strong><br>
+    比照 PLAN-064：<code>import-attack-forms.mjs</code> 擷取過期會自己呼叫 <code>extract-attack-forms.py</code>，dry-run 報告附 ✅／⬜ 照抄清單；
+    <code>--write</code> 只補空欄、附還原檔、寫完提示 bump。改版後的步驟補進 <code>data-patch</code> skill。
+  </div>
+
+  <div class="warning-block">
+    <strong>邊界情況</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>方向型（Dir／EightDir）</strong>：選取是「選一個方向」，作用才是實際格子；前台以面朝上畫一個方向，其餘方向淡色。EightDir 的斜向直線會少 1 格（<code>lineDiagRangeMinusOne</code>，<code>SkillFlag_IgnoreDiagRangeMinusOne</code> 可關掉），驗證時要特別看。</li>
+      <li><strong>只有前方（…InFront）</strong>：站上目前沒有武器用到，技能有；按面朝上畫。</li>
+      <li><strong>不吃射程加成</strong>：<code>SelectFormFix</code>／<code>EffectFormFix</code> 的技能，F-1 套加成時要跳過；匯入時一併記在 forms 列上（欄位名 B-1 定）。</li>
+      <li><strong>沒有 gameRef 的技能</strong>：指令 69、主動 33、背包技能 52 份全部沒有——前兩者多是 EX 版等手建技能，交後台人工（E-3）；背包技能先查對照路徑（C-3）。</li>
+      <li><strong>形態武裝幽弧／夜燼</strong>的 <code>type</code>／<code>kind</code> 是空字串（gameRef 有值），匯入照常；種類空白是否刻意不在本計畫處理。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 影響檔案 -->
+<section class="section">
+  <div class="section-label green">Impact</div>
+  <div class="section-title">影響檔案</div>
+  <table class="impact-table">
+    <tr><th>檔案</th><th>變動</th><th>風險</th></tr>
+    <tr><td><code>scripts/extract-attack-forms.py</code>（新）</td><td>讀兩份 SQLite → 格型表＋武器／技能對照中間檔（放 repo 外快取）</td><td><span class="badge-low">LOW</span></td></tr>
+    <tr><td><code>src/data/gridForms.json</code>、<code>src/utils/gridForms.ts</code>（新）</td><td>對照表與形狀解析；附單元測試</td><td><span class="badge-med">MED</span> 形狀錯會誤導使用者，靠決策二擋</td></tr>
+    <tr><td><code>src/types/weapon.ts</code>、<code>pilot.ts</code>、背包技能型別</td><td>新增選填欄位</td><td><span class="badge-low">LOW</span></td></tr>
+    <tr><td><code>scripts/import-attack-forms.mjs</code>、<code>check-range-drift.mjs</code>（新）</td><td>回填與漂移檢查</td><td><span class="badge-med">MED</span> 寫正式庫，只補空欄＋還原檔</td></tr>
+    <tr><td><code>src/components/common/GridFormPreview.tsx</code>（新）</td><td>仿遊戲「當前技能」小格圖</td><td><span class="badge-low">LOW</span></td></tr>
+    <tr><td><code>WeaponDetailPage</code>、<code>WeaponsPage</code>、<code>PilotDetailPage</code>、<code>RefWeaponSkills</code>、<code>EquippedStats</code>、<code>LoadoutSummary</code></td><td>射程／範圍改顯示官方文字＋格圖，舊欄位當後備</td><td><span class="badge-med">MED</span> 模擬器摘要文字有測試保護</td></tr>
+    <tr><td><code>WeaponAdmin</code>、<code>SkillAdmin</code>、<code>BackpackSkillAdmin</code></td><td>格型下拉＋預覽</td><td><span class="badge-low">LOW</span></td></tr>
+    <tr><td><code>docs/02_技術文件/02_資料模型/weapons.html</code>、<code>skills_buffs.html</code>、<code>backpacks.html</code></td><td>CLAUDE.md 規則 2 同步</td><td><span class="badge-low">LOW</span></td></tr>
+  </table>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label green">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>160 種格型的對照表（台版官方文字＋射程加成轉換鏈）與站上用到 31 種的形狀</li>
+      <li>武器普攻的選取／作用格型：200 把回填（預期 198 把有值）</li>
+      <li>機師技能（指令、主動、額外打擊）與背包技能的範圍，依武器種類分列</li>
+      <li>前台格圖元件與武器、技能、模擬器的顯示</li>
+      <li>後台三個管理頁的格型選單</li>
+      <li>天賦射程加成改走官方轉換鏈（模擬器顯示）</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>戰場地圖上的實際判定（地形、高低差、飛行目標的 <code>RaycastType</code>）——那是傷害模擬（PLAN-065）的範疇</li>
+      <li>被動技能、BUFF 本身的範圍（光環範圍 <code>AdditionalAuraRangeAdd</code> 等）；有需要另立案</li>
+      <li>反擊／協力格型的獨立欄位（決策三）</li>
+      <li>刪除舊三欄（F-4 只做決定，執行另議）</li>
+      <li>敵人／首領技能範圍（武裝討伐頁之後若需要，沿用本計畫的元件即可）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label green">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-068 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../../../02_技術文件/02_資料模型/weapons.html">
+      <div class="doc-tag">Data Model</div>
+      <h4>◆ 武器資料模型</h4>
+      <p>rangeType／minRange／maxRange 與本計畫新增的 attackForm</p>
+    </a>
+    <a class="doc-item" href="../PLAN-065_傷害模擬_總綱/計畫書.html">
+      <div class="doc-tag">Related</div>
+      <h4>◆ PLAN-065 傷害模擬</h4>
+      <p>gameRef 來源；範圍判定的戰場面在那邊</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-068 — <a href="../index.html" style="color:var(--accent-green);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
