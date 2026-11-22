@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-11-21
+## [Unreleased] - 2026-11-22
 
 ### ⚠ 重大變更
 
@@ -463,6 +463,7 @@
 
 ### 🎨 樣式
 
+- **versions**: 戰令改用遊戲內名稱「環島密令」 (`2c6171a`)
 - **pilots**: 機師詳情頁手機版拿掉一層框，算力列不再顯示 α／β (`402dea6`)
 - **gacha**: 卡池橫條拿掉「結束日是推估」的補充說明 (`8df4e69`)
 - **lore**: 機師館首頁 hero 改成隨機招募插畫——兩館 hero 共用同一套（PLAN-042-A） (`3719984`)
