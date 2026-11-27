@@ -14,6 +14,8 @@
 //           Start／EndDialogID ＝ 開場／結尾過場；FuncTypeParam ＝ 戰場 ID
 //   活動  PlotActivityInfo.PlotLevelGroupList → PlotActivityLevelGroup.LevelList → PlotActivityLevel
 //           Start／EndDialogID；LevelBattleIdList → PlotActivityLevelBattle.BattleMapInfoList[].BattleMapID ＝ 戰場 ID
+//         另外 ChallengeLevelGroupList／DailyLevelGroupList 也要看：「只有挑戰關」版型的活動（金沙遺夢、瑞歲百角戲）
+//           劇情關卡組是空的、劇情整段寫在挑戰關上（2026-11-28 發現漏收）
 //   機師回憶  PilotMemoryPiecesGroup.Levels → PilotMemoryPieceLevel（Start／EndDialogID、BattleMapId）
 //   戰中對白  戰場 JSON 裡的事件觸發 `"m_type":1,"m_param1":<對白 ID>`（依出現順序）
 //   對白本身  ConfigDataDialogueInfo，NextID 串成一段；文字一律查 texts（台版繁中，ConfigDataST_TW）
@@ -271,6 +273,8 @@ const LEVEL_GROUPS = table('ConfigDataPlotActivityLevelGroupInfo')
 const LEVELS = table('ConfigDataPlotActivityLevelInfo')
 const LEVEL_BATTLES = table('ConfigDataPlotActivityLevelBattleInfo')
 const skipped = []
+/** 挑戰／每日關卡組裡只有零星戰中台詞、沒收的（列進摘要，不算漏收） */
+const thinExtras = []
 const bookName = (id) => { const b = books.find((x) => x.id === id); return b ? `${b.title}「${b.name}」` : id }
 
 for (const a of [...ACTIVITIES.values()].sort((x, y) => x.ID - y.ID)) {
@@ -279,10 +283,19 @@ for (const a of [...ACTIVITIES.values()].sort((x, y) => x.ID - y.ID)) {
   const groupNames = new Set()
   /** 重複的關卡：收在哪本 → 幾關 */
   const dupOwners = new Map()
-  for (const gid of a.PlotLevelGroupList ?? []) {
+  // 劇情關卡組一律收；挑戰／每日關卡組（extra）多半只有一兩句戰中台詞（掠食特訓、迎擊戰…），
+  // 整組新收的行數要到 MIN_EVENT_LINES 才收。否則「尋鄉奇旅」這種全數重複的活動會多出一關 4 行的台詞，
+  // 被判成玩法活動，連帶弄丟機師回憶上「曾以活動〇〇推出」的註記
+  const groupIds = [
+    ...(a.PlotLevelGroupList ?? []).map((gid) => ({ gid, extra: false })),
+    ...(a.ChallengeLevelGroupList ?? []).map((gid) => ({ gid, extra: true })),
+    ...(a.DailyLevelGroupList ?? []).map((gid) => ({ gid, extra: true })),
+  ]
+  for (const { gid, extra } of groupIds) {
     const g = LEVEL_GROUPS.get(gid)
     if (!g) continue
     const group = cleanText(tx(g.NameStrKey))
+    const groupStages = []
     for (const lid of g.LevelList ?? []) {
       const l = LEVELS.get(lid)
       if (!l) continue
@@ -300,8 +313,7 @@ for (const a of [...ACTIVITIES.values()].sort((x, y) => x.ID - y.ID)) {
       const title = cleanText(tx(l.TitleStrKey))
       const name = cleanText(tx(l.NameStrKey))
       const internal = !title || /劇情關\s*\d+$/.test(title)
-      groupNames.add(group)
-      stages.push({
+      groupStages.push({
         heads,
         key: `l${lid}`,
         code: String(l.Number ?? ''),
@@ -312,6 +324,14 @@ for (const a of [...ACTIVITIES.values()].sort((x, y) => x.ID - y.ID)) {
         parts,
       })
     }
+    if (!groupStages.length) continue
+    const groupLines = groupStages.reduce((n, s) => n + lineCount(s.parts), 0)
+    if (extra && groupLines < MIN_EVENT_LINES) {
+      thinExtras.push(`活動 ${a.ID}「${actName}」${group || `組 ${gid}`}（${groupLines} 行）`)
+      continue
+    }
+    groupNames.add(group)
+    stages.push(...groupStages)
   }
   const dupNote = [...dupOwners].map(([id, n]) => `${n} 關見${bookName(id)}`).join('、')
   if (!stages.length) {
@@ -388,6 +408,7 @@ for (const [k, label] of [['main', '主線'], ['event', '活動'], ['memory', '�
 console.log('')
 console.log(`合計　${catalog.books.length} 本、${total.toLocaleString()} 行（對白表的 ${Math.round((total / DIALOG.size) * 100)}%；其餘多為肉鴿、武裝討伐、系統提示）`)
 if (skipped.length) { console.log('\n略過：'); for (const s of skipped) console.log(`  · ${s}`) }
+if (thinExtras.length) console.log(`\n挑戰／每日關卡只有零星戰中台詞、未收（不足 ${MIN_EVENT_LINES} 行）：\n  ${thinExtras.join('、')}`)
 if (stats.unknownTags.size) console.log(`\n已拿掉的未知標記：${[...stats.unknownTags].map(([t, n]) => `<${t}>×${n}`).join('、')}`)
 if (stats.loops) console.log(`⚠ 對白串出現迴圈 ${stats.loops} 次（已截斷）`)
 if (stats.missingText) console.log(`⚠ 查不到文字的行 ${stats.missingText}（texts 表缺字）`)

@@ -143,7 +143,8 @@
       掛在 <code>/lore</code> 底下＝<strong>不必動 Cloudflare 白名單</strong>；不存在的 ID 轉回館首頁。進 sitemap 的只有館首頁，頁鍵 <code>lore_story</code>／<code>lore_story_detail</code>，不進 <code>ENTITY_ROUTES</code>（Worker 沒有這個類別）<br>
     · <strong>資料是靜態檔、不進 Firestore</strong>（站長指示：固定內容做成靜態資料）：<code>scripts/import-story.mjs</code> 讀台版遊戲參數 SQLite（<code>E:\Mecharashi_data_TW*\遊戲參數\遊戲資料.sqlite</code>，texts 是台版官方繁中）→
       <code>src/data/story/{main,event,memory}/&lt;設定ID&gt;.json</code>＋目錄 <code>index.json</code>。館首頁只讀目錄（幾 KB）；書頁以 <code>import.meta.glob</code> lazy 載入（<code>storyData.ts</code>），一本一個 chunk，最大約 275 KB。0 read<br>
-    · <strong>對白怎麼串</strong>：主線 <code>WorldMapChapter</code> → <code>WorldMapWayPoint</code> 的 <code>Start／EndDialogID</code>；活動 <code>PlotActivityInfo</code> → <code>PlotActivityLevelGroup</code> → <code>PlotActivityLevel</code>；機師回憶 <code>PilotMemoryPiecesGroup</code> → <code>PilotMemoryPieceLevel</code>；
+    · <strong>對白怎麼串</strong>：主線 <code>WorldMapChapter</code> → <code>WorldMapWayPoint</code> 的 <code>Start／EndDialogID</code>；活動 <code>PlotActivityInfo</code> → <code>PlotActivityLevelGroup</code> → <code>PlotActivityLevel</code>
+      （劇情關卡組一律收；挑戰／每日關卡組整組滿 20 行才收——<strong>2026-11-28 補</strong>：「金沙遺夢」「瑞歲百角戲」是只有挑戰關的版型，劇情關卡組是空的，先前整個漏收；其餘挑戰關多只有零星戰中台詞）；機師回憶 <code>PilotMemoryPiecesGroup</code> → <code>PilotMemoryPieceLevel</code>；
       <strong>戰中對白</strong>在戰場 JSON 的事件觸發 <code>"m_type":1,"m_param1":&lt;對白 ID&gt;</code>。每關三段（開場／戰鬥中／結尾），戰中各觸發之間以虛線分隔<br>
     · <strong>去重</strong>（逐關比對過場開頭 ID，收錄順序 主線 → 機師回憶 → 活動）：復刻只收第一次；首發是活動、後來併進主線的章節收在主線（書頭註「曾以活動〇〇推出」）；
       機師回憶活動收在該機師的回憶；只部分重複的活動（啟示錄活動版多 1 關）只留多出的關，兩本互相連結；少於 20 行的視為玩法活動不收<br>

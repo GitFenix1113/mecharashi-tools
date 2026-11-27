@@ -214,6 +214,14 @@
    "lines": 2964
   },
   {
+   "id": "event-10",
+   "kind": "event",
+   "title": "活動劇情",
+   "name": "金沙遺夢",
+   "stages": 5,
+   "lines": 1372
+  },
+  {
    "id": "event-11",
    "kind": "event",
    "title": "活動劇情",
@@ -244,6 +252,14 @@
    "name": "忤逆行於今",
    "stages": 23,
    "lines": 2556
+  },
+  {
+   "id": "event-23",
+   "kind": "event",
+   "title": "活動劇情",
+   "name": "瑞歲百角戲",
+   "stages": 5,
+   "lines": 834
   },
   {
    "id": "event-25",
