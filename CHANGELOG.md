@@ -4,7 +4,7 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，版本號遵循 [Semantic Versioning](https://semver.org/lang/zh-TW/)。
 
-## [Unreleased] - 2026-11-22
+## [Unreleased] - 2026-11-27
 
 ### ⚠ 重大變更
 
@@ -12,6 +12,7 @@
 
 ### ✨ 新功能
 
+- **lore**: 劇情故事館補上「金沙遺夢」「瑞歲百角戲」兩個活動 (`00d1970`)
 - **lore**: 劇情故事館（/lore/story），台版劇情對白靜態化 (`472f42d`)
 - **versions**: 版本支援上／中／下半三段（選填 middle） (`98d2a14`)
 - **buffs**: BUFF 官方 ID（gameRef.bufIds），後台可編輯、回填腳本支援分級槽位 (`5880135`)
