@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-I 劇情故事館分關閱讀 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-I 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge yellow">◆ PLAN-042-I</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    劇情故事館分關閱讀<span style="-webkit-text-fill-color:var(--text-secondary);"> 一關一頁 · 常駐關卡列 · 下一關 · 閱讀進度</span>
+  </h1>
+  <p class="hero-sub">劇情書頁從「一章一條長捲軸」改成「一次一關」：網址帶關卡、桌機常駐關卡列、關末接下一關、手機底部換關列，並記住讀到哪一關。資料與匯入腳本一行不動。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label yellow">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value yellow">PLAN-042-I</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-11-28</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">StoryBookPage · StoryLines · StoryHomePage（已讀數）· 新增 storyNav／storyProgress · App.tsx 路由 · seo.ts · routeKeys.ts · index.css 劇情館段</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">HIGH</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value yellow">開發完成 12／14（2026-11-28 已 commit、未推送）· 剩 iPhone 實機驗收＋D-1 待決定</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">無（劇情故事館 472f42d1 已上線）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>來源：</strong>站長 2026-11-28 回饋「閱讀到 1-3 想跳 1-5 簡直疲勞」。評估報告與可操作模擬頁在
+    <code>_local-notes/2026-11/2026-11-28_劇情故事館閱覽體驗提案/</code>（本機、不進版控；<code>reader.html</code> 就是本案的視覺參考）。
+    報告提了三個方案，站長選定先做<strong>方案 A（分關閱讀）</strong>；方案 C（場景條＋頭像）與方案 B（選章舞台）不在本案，見「不在範圍內」。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>一章一條長捲軸，目錄只在頁頂</strong><br>
+    現行 <code>StoryBookPage</code> 把整章所有關卡一次畫出、三段預設全展開（最長的兩章是 1,850 行與 1,917 行）。
+    關卡目錄是頁頂的一排膠囊，<strong>不會黏住</strong>：讀完 Chapter-I 的 1-3 想跳 1-5，要先往上捲約 4 個螢幕回到目錄再點。
+    捲動時看不出目前在哪一關；讀完一關沒有「下一關」；離開再回來要重找。
+  </div>
+  <div class="problem-block">
+    <strong>目錄雜訊：「22 關」裡有 15 場是遭遇戰</strong><br>
+    主線的關卡數包含沒有編號的遭遇戰／突襲戰（WayPointType 3）。Chapter-Ⅳ 標「22 關」，其中正關只有 7 個、遭遇戰 15 場，膠囊目錄全部平鋪。
+  </div>
+  <div class="problem-block">
+    <strong>正文底下壓著館內底圖</strong><br>
+    <code>.lore-shell</code> 的 <code>bg-paper.webp</code>（官網切版：MECHARA 浮水印與建築線稿）直接墊在對白底下，長時間閱讀的對比偏低。
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="impact-table">
+      <tr><th>主線關卡長度（260 關）</th><th>中位數</th><th>九成以內</th><th>最長</th></tr>
+      <tr><td>每關對白行數</td><td>40</td><td>159</td><td>393</td></tr>
+    </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary);">一關約 1–4 個螢幕，天然適合當「一頁」；最長的一關也不需要再分頁或收合。</p>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label yellow">Design</div>
+  <div class="section-title">設計決策</div>
+
+  <div class="decision-block">
+    <strong>決策一：一次一關，關卡寫在網址路徑上 <code>/lore/story/:id/:part</code></strong><br>
+    <span style="color:var(--accent-cyan);">（實作註：原稿寫 <code>:stage</code>。<code>App.tsx</code> 明訂故事館路由參數一律 <code>:id</code>／<code>:part</code>——<code>entityHits</code> 依參數名讀值——所以沿用 <code>:part</code>，網址形狀不變。）</span><br>
+    沿用機師館與機甲館章節 <code>/lore/pilots/:id/:part</code> 的慣例。<code>:stage</code> 是關卡 key（<code>w108</code>／<code>l…</code>／<code>m…</code>），取自遊戲設定 ID，改版重跑匯入也不會變。
+    用路徑而不用錨點，是為了直接套用 <code>LoreLayout</code> 現成的「換 pathname 就捲回頂端、按返回就還原捲動位置」（決策 (I)），本頁不必自己 <code>scrollIntoView</code>。
+    目前在哪一關由網址推導（純衍生值），元件不持有 activeIndex state，這是 PLAN-050 與 <code>LoreChapterPager</code> 共用的規則。
+    路徑仍在 <code>/lore</code> 前綴下，<strong>不必動 Cloudflare 白名單</strong>；但 <code>seo.ts</code> 要登記頁名，並決定進不進 sitemap（測試會擋）。
+  </div>
+  <div class="decision-block">
+    <strong>決策二：書根 <code>/lore/story/:id</code> 就是第一關，不做扉頁；有進度只提示、不自動跳</strong><br>
+    完整書頭（章名、簡介、互相參照）只放在第一關上方，其餘關只留精簡書頭（書名＋關卡碼）。從館首頁點進來不會多一步。
+    讀過的書在書根頂端出現提示列「上次讀到 3-5 機修師的尊嚴 → 繼續」，但<strong>不自動跳轉</strong>，免得想從頭讀的人被帶走。
+  </div>
+  <div class="decision-block">
+    <strong>決策三：關卡列用手風琴收納，不開第二層垂直捲動（地雷 M-08）</strong><br>
+    全部攤開的話，最長的一本要 28 列（event-20：5 幕＋23 關），768px 高的桌機放不下。收納規則：
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>遭遇戰／突襲戰縮排掛在前一個正關底下，<strong>只展開目前所在的那一組</strong>，其餘正關後面標「＋2」這類數字。</li>
+      <li>支線另外歸成一組，加上「支線」標題。</li>
+      <li>活動分幕（<code>stage.group</code>）只展開目前那一幕。</li>
+    </ul>
+    收納後主線最多約 13 列，桌機視窗放得下，關卡列不必自己捲動。關卡列只在 ≥ 1024px 出現，用 <code>position: sticky</code> 黏在館內唯一的 scrollport <code>.lore-scroll</code> 裡。
+    <br><span style="color:var(--accent-cyan);">（實作追加：沒有分幕的長串也會超出——event-8 有 22 個正關，攤開 808px，大於 1366×768 的 scrollport 722px。
+    因此不分幕、超過 14 列的段切成「1～10」「11～20」一截一截，只展開目前那一截。<code>storyNav.test.ts</code> 對全部書、每一關斷言 ≤ 20 列，實際最多 15 列。）</span>
+  </div>
+  <div class="decision-block">
+    <strong>決策四：換關只接「明確意圖」的輸入：按鈕、← →、水平滑動；不接滾輪</strong><br>
+    照 <code>LoreChapterPager</code> 的規則，絕不劫持滾輪：館內只有一個 scrollport，吃掉滾輪會讓人在正文中段捲著捲著突然跳關。
+    ← → 沿用 <code>PilotLorePage</code> 全域鍵盤的分流方式，並排除輸入框。水平滑動的門檻是位移 48px、水平分量要比垂直大 1.5 倍以上，而且不 <code>preventDefault</code>。
+    <br><span style="color:var(--accent-cyan);">（實作註：同一本書內換關用 <code>replace</code>、跨到隔壁那一本用 push——照 <code>LoreChapterPager</code>「章節之間用 replace」的慣例；一本二十幾關，用 push 的話上一頁要一關一關退回去。）</span>
+  </div>
+  <div class="decision-block">
+    <strong>決策五：閱讀進度只存在本機 <code>localStorage</code></strong><br>
+    記錄「上次讀到哪一關」與「哪幾關讀完」，關末出現在畫面上就算讀完。這是個人便利功能：不花 Firestore read、不必登入；
+    讀不到時（無痕視窗、資料被清除）就當沒讀過，頁面照常運作。鍵名沿用站內 <code>mecharashi_*</code> 前綴，所有讀寫都包 try/catch。跨裝置同步不在本案。
+  </div>
+  <div class="decision-block">
+    <strong>決策六：三段（開場／戰鬥中／結尾）改成段落小標，不再用 <code>&lt;details&gt;</code> 收合</strong><br>
+    單關最長 393 行，不需要收合，「全部收合／展開」按鈕一起拿掉。
+    <code>.lore-story-stage</code> 的 <code>content-visibility</code>，以及目錄跳轉時「多等兩個 frame 再補捲一次」的補丁，都是為了整章長頁才加的，單關模式下一併移除（若決策八保留整章模式，就只留在整章模式裡）。
+  </div>
+  <div class="decision-block">
+    <strong>決策七：閱讀欄改實心紙面，順手做兩個排版小修</strong><br>
+    閱讀欄沿用 <code>.lore-sheet</code> 的做法（紙紋上蓋 0.86 不透明的紙色），浮水印與建築線稿不再壓在字底下；行寬 ≤ 760px。
+    <code>StoryLines</code> 的兩項小修：同一人連續發言時省略名字（遇到戰中分隔就重新顯示），手機上能省下大量垂直空間；戰中觸發之間的虛線分隔改成淡點線。
+  </div>
+  <div class="warning-block">
+    <strong>決策八（待定）：要不要保留「整章連續」檢視</strong><br>
+    單關模式的代價是沒辦法在整章裡 Ctrl+F，也不能一口氣捲完整章。模擬頁有「單關／整章連續」切換可以比較。
+    本案把它列為<strong>選配 D-1</strong>，等 B 段驗收後由站長決定。要做的話路徑用 <code>/lore/story/:id/all</code>（<code>all</code> 不會跟 <code>w</code>／<code>l</code>／<code>m</code> 開頭的關卡 key 撞名），關卡列改成跟著捲動位置高亮。
+  </div>
+  <div class="warning-block">
+    <strong>舊連結相容</strong><br>
+    現行書頁用的是 <code>#w108</code> 這種頁內錨點，可能已經被分享出去。書根收到錨點時，以 <code>replace</code> 導向 <code>/lore/story/:id/w108</code>；不認得的 <code>:stage</code> 一律以 <code>replace</code> 回到書根。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label yellow">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>關卡路由、舊錨點相容、頁名與 sitemap 登記；分頁標題改成「1-3 全頻道阻塞｜日沉谷日沉 劇情」</li>
+      <li>純函式 <code>storyNav.ts</code>（關卡列結構、上一關／下一關，含跨書）與 <code>storyProgress.ts</code>（本機進度），各附 <code>node:test</code></li>
+      <li>單關閱讀畫面、桌機常駐關卡列、關末導覽、← → 與水平滑動、手機底部換關列＋共用 <code>BottomSheet</code> 關卡清單</li>
+      <li>閱讀進度：繼續閱讀提示列、關卡列已讀標記、館首頁卡片顯示「已讀 N／M」</li>
+      <li>閱讀欄紙面、連續發言省略名字、戰中分隔改淡點線</li>
+      <li>文件：故事館頁面規劃、更新履歷、PLAN-042 總綱子計畫表</li>
+    </ul>
+  </div>
+
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>方案 C 場景條＋說話者頭像</strong>：要改 <code>import-story.mjs</code>，並匯入約 140 張劇情 CG。評估報告建議接在本案之後，另開子計畫。</li>
+      <li><strong>方案 B 選章舞台</strong>（音遊選曲式換章）：建議放在方案 C 之後，因為它的底圖沿用方案 C 匯入的 CG。</li>
+      <li><code>src/data/story/</code> 書檔與 <code>scripts/import-story.mjs</code>：本案一行不動。</li>
+      <li>閱讀進度跨裝置同步（要進 Firestore 並綁帳號）。</li>
+      <li>整章連續檢視：見決策八，列為選配 D-1，等站長決定。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label yellow">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-042-I 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042_故事館_總綱/計畫書.html">
+      <div class="doc-tag">Parent</div>
+      <h4>◆ PLAN-042 故事館總綱</h4>
+      <p>共用架構決策與子計畫拆分</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-A_機師故事館/計畫書.html">
+      <div class="doc-tag">Precedent</div>
+      <h4>◆ PLAN-042-A 機師故事館</h4>
+      <p>章節軸 LoreChapterPager 與 :part 路由的出處</p>
+    </a>
+    <a class="doc-item" href="../../../03_頁面規劃/13_故事館/index.html">
+      <div class="doc-tag">Page</div>
+      <h4>◆ 故事館頁面規劃</h4>
+      <p>劇情故事館段落在本案收尾時更新</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-I — <a href="../index.html" style="color:var(--accent-yellow);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

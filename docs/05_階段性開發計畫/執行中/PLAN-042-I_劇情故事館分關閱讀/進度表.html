@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-I 劇情故事館分關閱讀 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-I 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(234,179,8,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge yellow">◆ PLAN-042-I</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-yellow) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">劇情故事館分關閱讀</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-11-28</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label yellow">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">1</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">1</div>
+      <div class="summary-lbl">待決定</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">14</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-yellow);">12 / 14</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 86%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.25);">
+    <strong style="color:var(--accent-cyan);">2026-11-28 開發完成（已 commit、尚未推送）：</strong>
+    A、B、C、E-1、E-3 全部完成。<code>npm test</code> 1838／1838 通過（新增 <code>storyNav</code> 11 條、<code>storyProgress</code> 7 條），<code>npm run build</code> 通過，改到的檔案 eslint 0 錯
+    （全站 <code>npm run lint</code> 另有 93 個錯誤，都在本案沒碰的檔案：emulator 測試、workers 型別、時間線元件）。
+    剩下兩項：<strong>E-2 的 iPhone 實機</strong>（桌機 1366×768 與 Chromium 375×812 模擬已驗）與 <strong>D-1 選配</strong>（等站長決定）。
+    <br><strong style="color:var(--accent-cyan);">實作時與原計畫不同的三處：</strong>
+    ① 路由參數叫 <code>:part</code> 而不是 <code>:stage</code>：<code>App.tsx</code> 明訂故事館參數一律 <code>:id</code>／<code>:part</code>（<code>entityHits</code> 依名讀參數），網址形狀不變。
+    ② 同書換關用 <strong>replace</strong> 而不是 push：照 <code>LoreChapterPager</code>「章節之間用 replace」的慣例，一本二十幾關時上一頁不必一關一關退；跨到隔壁那一本才用 push。
+    ③ 關卡列多一條收納規則：實測 event-8（22 個正關、沒有分幕）攤開要 808px，超過 1366×768 的館內 scrollport（722px），黏著的關卡列底部會永遠看不到；
+    因此不分幕、超過 14 列的長串切成「1～10」「11～20」一截一截、只展開目前那一截。量過全部 43 本，停在任何一關最多 15 列。
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    讀劇情時一次只面對一關：跳到任一關只要點一下，讀完一關直接接下一關，離開再回來會提示上次讀到哪裡。
+    「1-3 跳 1-5」從「往上捲約 4 個螢幕再點」變成點一下。
+  </div>
+  <div class="impact-note" style="background:rgba(234,179,8,0.06);border-color:rgba(234,179,8,0.25);">
+    <strong style="color:var(--accent-yellow);">D-1 為選配：</strong>整章連續檢視等 B 段驗收後由站長決定做不做。決定不做就把它標成「不做」並從分母扣掉。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label yellow">Phase A</div>
+  <div class="section-title">路由與導覽骨架</div>
+  <div class="section-desc">先把「目前在哪一關、上一關／下一關是誰、讀到哪」做成可測試的純函式與路由，畫面還不動。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 關卡網址 <code>/lore/story/:id/:part</code></div>
+      <div class="task-group-meta">App.tsx · seo.ts · routeKeys.ts</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新增路由、舊錨點相容、頁名與 sitemap 登記</div>
+        <div class="task-desc">
+          <code>story/:id/:part</code> 掛在 <code>LoreLayout</code> 底下（<code>/lore</code> 前綴，CF 白名單不必動）。<code>:part</code> 是關卡 key（遊戲設定 ID；參數名照 <code>App.tsx</code> 的故事館慣例，計畫書原寫 <code>:stage</code>）。
+          頁鍵 <code>lore_story_detail_detail</code> 已在 <code>ROUTE_LABELS</code> 登記「劇情（單關）」。
+          書根收到 <code>#w108</code> 時以 replace 導向 <code>/:id/w108</code>；不認得的 key 以 replace 回書根。
+          <code>seo.ts</code> 加 <code>PAGE_TITLES['/lore/story/:id/:stage']</code>，並放進 <code>SITEMAP_EXCLUDED</code>（理由：一關劇情，由書頁關卡列被爬到；照 <code>:part</code> 的寫法）；<code>routeKeys.ts</code> 也要登記。
+          <code>usePageTitle</code> 改成「1-3 全頻道阻塞｜日沉谷日沉 劇情」。
+        </div>
+        <div class="task-file">src/App.tsx · src/lib/seo.ts · src/lib/analytics/routeKeys.ts · src/pages/lore/StoryBookPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; <code>storyNav.ts</code>：關卡列結構與鄰關</div>
+      <div class="task-group-meta">src/components/lore/story/storyNav.ts</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">純函式＋ node:test</div>
+        <div class="task-desc">
+          <code>stageOutline(book)</code>：正關、掛在正關底下的遭遇戰（沒有 code 且不是支線）、支線組、活動分幕，供關卡列與手機清單共用。
+          <code>stageNeighbors(bookId, stages, key)</code>：上一關／下一關；末關接同種類下一本的書根，首關接上一本（沿用 <code>storyNeighbors</code> 的順序）。
+          <code>resolveStage(book, key)</code>：key 不存在時回 null，由頁面決定 replace。
+          測試用真實書檔：main-4 的 12 場遭遇戰全掛在正關底下、4 個支線歸成一組、event-20 分成 5 幕、每本首關沒有上一關、末關接下一本。
+        </div>
+        <div class="task-file">src/components/lore/story/storyNav.ts · storyNav.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; <code>storyProgress.ts</code>：本機閱讀進度</div>
+      <div class="task-group-meta">src/components/lore/story/storyProgress.ts</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">localStorage 讀寫＋ node:test</div>
+        <div class="task-desc">
+          整份資料存在一個鍵 <code>mecharashi_story_progress</code>，內容是 <code>{ [bookId]: { last, read[] } }</code>。
+          <code>visit(bookId, key)</code>、<code>markRead(bookId, key)</code>、<code>progressOf(bookId)</code> 的讀寫一律包 try/catch：讀不到就回空進度，寫不進去就靜默略過。
+          書檔改版後，已不存在的 key 在讀取時過濾掉。測試注入假的 storage，涵蓋「讀到壞 JSON」「storage 會丟例外」兩種情況。
+        </div>
+        <div class="task-file">src/components/lore/story/storyProgress.ts · storyProgress.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label yellow">Phase B</div>
+  <div class="section-title">單關閱讀器</div>
+  <div class="section-desc">畫面改成一次一關。視覺參考：<code>_local-notes/2026-11/2026-11-28_劇情故事館閱覽體驗提案/reader.html</code>（場景條與頭像屬於方案 C，本案不做）。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 一次一關的書頁</div>
+      <div class="task-group-meta">StoryBookPage.tsx · index.css</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">只渲染目前的關；書頭依關卡切換完整版／精簡版</div>
+        <div class="task-desc">
+          完整書頭（eyebrow、書名、簡介、互相參照）只放在第一關；其餘關改用精簡書頭（書名＋關卡碼）。
+          三段改成段落小標＋行數，不再用 <code>&lt;details&gt;</code>，並拿掉「全部收合」。
+          換關只改 pathname；捲回頂端與返回時還原位置交給 <code>LoreLayout</code>（決策 (I)），本頁不自己 <code>scrollIntoView</code>。
+          移除單關用不到的 <code>content-visibility</code> 與 Toc 的「多等兩個 frame」補丁（若 D-1 要做，這兩樣留給整章模式）。
+        </div>
+        <div class="task-file">src/pages/lore/StoryBookPage.tsx · src/index.css（.lore-story-*）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 桌機常駐關卡列</div>
+      <div class="task-group-meta">components/lore/story/StoryStageRail.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">sticky＋手風琴收納（≥ 1024px）</div>
+        <div class="task-desc">
+          吃 A-2 的 <code>stageOutline</code>：正關一律列出；遭遇戰只在「目前所在正關」底下展開，其餘正關後面標「＋N」；支線另成一組；活動分幕只展開目前那一幕。
+          列頂顯示章名與「已讀 N／M」進度條，目前關高亮、已讀關打 ✓，列底放上一章／下一章。
+          <code>position: sticky</code> 黏在 <code>.lore-scroll</code> 裡，<strong>不開第二層 overflow-y</strong>（地雷 M-08）。
+          驗收標準：event-20 與 main-4 在 1366×768 的視窗內整列放得下。
+          <strong>實作追加：</strong>不分幕、超過 14 列的長串切成「1～10」一截一截（event-8 攤開 808px 會超出）；<code>storyNav.test.ts</code> 對全部書、每一關斷言 ≤ 20 列（實際最多 15）。
+          實測 1366×768 黏著時關卡列底緣：event-8 613px、main-4 658px、event-1 668px（scrollport 底 768px）。
+        </div>
+        <div class="task-file">src/components/lore/story/StoryStageRail.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 關末導覽與換關輸入</div>
+      <div class="task-group-meta">StoryBookPage.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">上一關／下一關卡片、← →、水平滑動；不接滾輪</div>
+        <div class="task-desc">
+          關末放兩張卡：「‹ 上一關」與「下一關 ›」（下一關較寬、較醒目）；末關改成「本章完 · 下一章」。
+          ← → 換關沿用 <code>PilotLorePage</code> 全域鍵盤的寫法：排除輸入框與修飾鍵；BottomSheet 開著時不作用。
+          正文區的水平滑動照 <code>LoreChapterPager</code> 的門檻（48px、水平分量 &gt; 垂直 × 1.5、不 <code>preventDefault</code>）。
+          <strong>實作改為：同書換關用 replace、跨書用 push</strong>（照 <code>LoreChapterPager</code> 的慣例；原寫 push 會讓上一頁要一關一關退）。
+        </div>
+        <div class="task-file">src/pages/lore/StoryBookPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 手機底部換關列＋關卡清單</div>
+      <div class="task-group-meta">StoryBookPage.tsx · BottomSheet（共用）</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「‹ 3-5 機修師的尊嚴 13/24 ▾ ›」＋清單抽屜</div>
+        <div class="task-desc">
+          小於 1024px 時關卡列隱藏，底部改成固定的換關列。點中間開啟共用 <code>BottomSheet</code>，清單與 B-2 同一份結構（手機上可以全部展開，抽屜本身可捲動）。
+          <code>BottomSheet</code> 是共用元件，<strong>不分叉</strong>；如果需要改它，要獨立驗收。
+          正文底部要留出換關列的高度並處理 safe-area。不能破壞 <code>LoreLayout</code> 註解裡 iOS 觸控捲動的兩個前提（isolation、dvh）。
+        </div>
+        <div class="task-file">src/pages/lore/StoryBookPage.tsx · src/components/common/BottomSheet.tsx（只引用）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; 接上閱讀進度</div>
+      <div class="task-group-meta">StoryBookPage.tsx · StoryHomePage.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">記錄、提示、已讀數</div>
+        <div class="task-desc">
+          進入一關就記為 <code>last</code>；關末的哨兵元素出現在畫面上就記為已讀（用 IntersectionObserver，root 是 <code>.lore-scroll</code>，捲不到底的短關也要算得到）。
+          書根有進度、而且不是從關卡列點進來時，顯示提示列「上次讀到 3-5 機修師的尊嚴 → 繼續」（不自動跳轉）。
+          館首頁的書卡與機師回憶卡加上「已讀 N／M」。
+        </div>
+        <div class="task-file">src/pages/lore/StoryBookPage.tsx · src/pages/lore/StoryHomePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label yellow">Phase C</div>
+  <div class="section-title">閱讀排版小修</div>
+  <div class="section-desc">不論版面怎麼改都值得做的兩項。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 閱讀欄改實心紙面</div>
+      <div class="task-group-meta">src/index.css</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">浮水印與建築線稿不再壓在對白底下</div>
+        <div class="task-desc">
+          閱讀欄沿用 <code>.lore-sheet</code> 的紙面做法（<code>bg-paper.webp</code> 上蓋 0.86 紙色），只套在正文欄；館首頁與 hero 維持原樣。
+          行寬 ≤ 760px，字級評估從 0.92rem 調到 1rem（手機 15.5px）。
+        </div>
+        <div class="task-file">src/index.css（.lore-story-*）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; StoryLines：連續發言與戰中分隔</div>
+      <div class="task-group-meta">components/lore/story/StoryLines.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">同一人連續發言省略名字；分隔改淡點線</div>
+        <div class="task-desc">
+          同一段內，說話者與上一行相同時不重複名字（桌機留空欄、手機整列隱藏）；遇到 <code>null</code> 分隔就重置。
+          <code>.lore-story-sep</code> 從虛線改成淡點線，並縮小上下間距。<code>memo</code> 照舊保留。
+        </div>
+        <div class="task-file">src/components/lore/story/StoryLines.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label yellow">Phase D</div>
+  <div class="section-title">選配：整章連續檢視</div>
+  <div class="section-desc">計畫書決策八。等 B 段驗收後由站長決定做或不做。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; <code>/lore/story/:id/all</code> 整章檢視</div>
+      <div class="task-group-meta">StoryBookPage.tsx · StoryStageRail.tsx</div>
+      <span class="status pending">待決定</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">整章一頁＋關卡列跟著捲動高亮</div>
+        <div class="task-desc">
+          用途是整章 Ctrl+F，以及一口氣讀完整章。所有關一次渲染（保留 <code>content-visibility</code>），關卡列改用 IntersectionObserver 判斷目前在哪一關並高亮，點關卡列改成捲到該關。
+          關卡列與手機換關列多一個「整章／單關」切換。要做的話，<code>seo.ts</code> 與 sitemap 也要登記。
+        </div>
+        <div class="task-file">src/pages/lore/StoryBookPage.tsx · src/components/lore/story/StoryStageRail.tsx</div>
+      </div>
+      <div class="task-assignee">開發者（待站長決定）</div>
+      <span class="status pending">待決定</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label yellow">Phase E</div>
+  <div class="section-title">驗收與文件</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 測試與建置</div>
+      <div class="task-group-meta">npm test · npm run build</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">新舊測試全綠、型別與打包通過</div>
+        <div class="task-desc">
+          <code>storyNav</code>／<code>storyProgress</code> 新測試，加上既有的 <code>storyData</code>、<code>storyText</code> 與 <code>seo</code> 路由測試（新路由的頁名與 sitemap 去留）。
+          <code>npm run build</code>（測試檔也會經過 <code>tsconfig.test.json</code> 的型別檢查）。
+        </div>
+        <div class="task-file">src/**/*.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-2 &nbsp; 實機驗收</div>
+      <div class="task-group-meta">vite dev（劇情是靜態 JSON，不必連 emulator）</div>
+      <span class="status doing">進行中</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">桌機、手機與相容性</div>
+        <div class="task-desc">
+          1366×768：main-4 與 event-20 的關卡列整列放得下；1-3 → 1-5 點一下就到；← → 換關時不會吃掉輸入框的按鍵。
+          375×812：底部換關列、清單抽屜、safe-area。iPhone 實機確認觸控捲動能捲到底（桌機與 Chromium 手機模擬看不出這個問題）。
+          相容與網址：舊的 <code>#w108</code> 連結落點正確；返回鍵回到進書前的頁面（同書換關是 replace，見 B-3）；分享關卡網址可以直接開；不認得的關卡 key 會回到書根。
+          <br><strong>2026-11-28 已驗（vite dev，內建瀏覽器）：</strong>
+          1366×768——關卡列點 1-5 一步到位且捲回頂端、歷史長度不變（replace）；← → 換關（事件打在 window 或 body 都可，修掉一個對非元素 target 呼叫 <code>closest</code> 的例外）；末關出現「本篇完 · 下一篇」；
+          <code>/lore/story/main-2#w108</code> → <code>/main-2/w108</code>；<code>/main-2/w999999</code> → 書根；換書回來書根出現「上次讀到 1-3 全頻道阻塞」且沒有覆寫進度；關末進入畫面才記已讀（剛好在摺線下的短關不會誤記）；館首頁卡片顯示「已讀 1／8」。
+          375×812——關卡列隱藏、換關列黏在底部（捲到中段與末端都在 760–812px）、無橫向溢出；抽屜是紙色、24 關全部攤開、目前關高亮；抽屜開著時 → 鍵不換關；在抽屜點 3-5 會關抽屜並換關、捲回頂端。
+          <strong>還沒做：iPhone 實機</strong>（觸控捲動能否捲到底、左右滑動換關手感、safe-area），需要站長的手機。
+        </div>
+      </div>
+      <div class="task-assignee">開發者＋站長（iPhone）</div>
+      <span class="status doing">進行中</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-3 &nbsp; 文件與更新履歷</div>
+      <div class="task-group-meta">docs/03_頁面規劃/13_故事館 · siteChangelog · PLAN-042 總綱</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">頁面規劃、履歷、總綱狀態</div>
+        <div class="task-desc">
+          故事館頁面規劃的劇情館段落補上關卡路由、關卡列與閱讀進度（CLAUDE.md 規則 2：重大頁面重構）。
+          <code>src/data/siteChangelog/</code> 用使用者視角寫一筆，例如「劇情故事館改為一次一關閱讀，可直接跳關並記住讀到哪」。PLAN-042 總綱子計畫表的狀態一併更新。
+        </div>
+        <div class="task-file">docs/03_頁面規劃/13_故事館/index.html · src/data/siteChangelog/2026-11.ts（或當月檔）</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-I — <a href="../index.html" style="color:var(--accent-yellow);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
