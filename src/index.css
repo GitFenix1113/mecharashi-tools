@@ -1832,6 +1832,13 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
 .lore-story-line.is-cont .lore-story-line__who {
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
 }
+/* 換人說話：上方一條很淡的細線，兩端漸隱（2026-11-28 站長要求「不要太搶眼」）。
+   與戰中觸發之間的點線（.lore-story-sep）區分：那條是「另一段」，這條只是「換人」 */
+.lore-story-line.is-turn { margin-top: 5px; padding-top: 7px; }
+.lore-story-line.is-turn::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, rgb(43 38 33 / 0), rgb(43 38 33 / 0.11) 14%, rgb(43 38 33 / 0.11) 86%, rgb(43 38 33 / 0));
+}
 .lore-story-em { font-style: normal; font-weight: 700; color: var(--lore-red); }
 /* 戰中兩個觸發之間：淡點線（原本的虛線一行一條，視覺上太碎） */
 .lore-story-sep { height: 0; margin: 10px 0 10px 7.5em; border-top: 1px dotted var(--lore-line); }

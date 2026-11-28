@@ -11,6 +11,7 @@ import { assetUrl } from '../../../utils/assets'
  * 同一人連續發言時不再重複名字（劇本慣例，PLAN-042-I C-2）：桌機留著空的名字欄、手機整列收掉，
  * 手機上能省下大量垂直空間。遇到分隔線重新計算——那是另一個觸發，該再報一次名字。
  * 名字欄保留文字給螢幕閱讀器（.lore-story-line.is-cont 只在視覺上藏起來），聽的人仍知道是誰在說。
+ * 換人說話的那一行上方有一條淡分線（.is-turn，2026-11-28 站長要求；旁白與角色之間也算換人）。
  *
  * 場景條（PLAN-042-J）：shots 指定的那一行前插一張對白背景（StorySceneShot）。換了場景就重新報名字。
  * 規則（同一張不重插、黑幕沿用、戰鬥中回到戰場…）都在匯入腳本收斂好了，這裡照表插、不再判斷。
@@ -45,11 +46,14 @@ export const StoryLines = memo(function StoryLines({ lines, shots, showShots = t
         const [who, text, choices] = line
         const prev = lines[i - 1]
         const cont = !!who && !!prev && prev[0] === who && !shot
+        // 換人說話（旁白 ↔ 角色也算）：上方一條淡分線。段首、圖後、戰中分隔線後不畫——那裡本來就有區隔
+        const turn = !!prev && prev[0] !== who && !shot
         const faceKey = withFaces && who && !cont ? faces[(face[i] ?? 0) - 1] : undefined
+        const cls = `lore-story-line${!who ? ' is-narr' : cont ? ' is-cont' : ''}${turn ? ' is-turn' : ''}`
         return (
           <Fragment key={i}>
             {shotItem}
-            <li className={who ? (cont ? 'lore-story-line is-cont' : 'lore-story-line') : 'lore-story-line is-narr'}>
+            <li className={cls}>
               {who && (
                 <span className="lore-story-line__who">
                   {faceKey && <FaceImg key={faceKey} path={facePath(faceKey)} />}
