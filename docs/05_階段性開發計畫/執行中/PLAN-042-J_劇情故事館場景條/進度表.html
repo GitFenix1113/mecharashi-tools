@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-num" style="color:var(--accent-green)">13</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -175,7 +175,7 @@
       <div class="summary-lbl">進行中</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-dim)">1</div>
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
       <div class="summary-lbl">待處理</div>
     </div>
     <div class="summary-card">
@@ -187,19 +187,19 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">12 / 13</span>
+      <span style="color:var(--accent-cyan);">13 / 13</span>
     </div>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" style="width: 92%"></div>
+      <div class="progress-bar-fill" style="width: 100%"></div>
     </div>
   </div>
 
   <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.25);">
-    <strong style="color:var(--accent-cyan);">2026-11-28 開發完成並推送：</strong>
+    <strong style="color:var(--accent-cyan);">2026-11-28 全部完成、已上線（697c6551）：</strong>
     A～D 全部完成。<code>npm test</code> 1840／1840 通過（新增場景條 2 條），<code>npm run build</code> 通過，改到的檔案 eslint 0 錯。
     驗收用本機 5173＋Playwright headless（面板隱藏時 lazy 圖與轉場不會跑）：桌機 1366×768 橫幅 698×215、地圖 698×153，手機 375×812 貼齊紙緣 347×107；
     開關按下即全收、重新整理與換關都記得；main-2／main-4／event-8／event-20／memory-1 皆正常；攔掉一張圖（404）時只少那一格；主控台 0 錯誤。
-    剩 <strong>E-1 上線後複驗</strong>（要等推送、Pages 發布完成）。
+    <strong>E-1 上線複驗</strong>：等 <code>pages-build-deployment</code> 跑完才請求新圖；正式站 141 張全部 200（CF 快取到的是 200），<code>/lore/story/main-2</code> 以 headless 瀏覽器實開，5 格場景圖都載入、主控台 0 錯誤。
     <br><strong style="color:var(--accent-cyan);">實作時與原計畫不同的一處：</strong>
     C-1 原本要求「相鄰兩格不同張」，實際只在過場成立。戰鬥段落裡切回戰場（沒有背景的行）後再出現同一張 CG 是合理的重新定場，全館 5 處
     （3 處隔著戰中分隔、2 處隔了 37／145 行戰場對白），所以測試只對過場要求。另外「戰鬥段第一行本身有 CG 時不疊地圖」的判斷在現行主線裡沒有命中的關，留作防呆。
@@ -457,7 +457,7 @@
     <div class="task-group-header">
       <div class="task-group-title">E-1 &nbsp; 上線後複驗</div>
       <div class="task-group-meta">mecharashi.wiki</div>
-      <span class="status pending">待處理</span>
+      <span class="status done">完成</span>
     </div>
     <div class="task-row">
       <div>
@@ -466,7 +466,7 @@
         <div class="task-file">—</div>
       </div>
       <div class="task-assignee">開發者</div>
-      <span class="status pending">待處理</span>
+      <span class="status done">完成</span>
     </div>
   </div>
 </section>
