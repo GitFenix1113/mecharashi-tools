@@ -115,6 +115,8 @@ function App() {
                   （遊戲設定表 ID，改版不變）；不進 analyticsEntity（ENTITY_ROUTES 沒登記），只計頁面熱度 */}
               <Route path="story" element={<Suspense fallback={null}><StoryHomePage /></Suspense>} />
               <Route path="story/:id" element={<Suspense fallback={null}><StoryBookPage /></Suspense>} />
+              {/* 一關一頁（PLAN-042-I）：:part 是關卡 key（w108／l…／m…，遊戲設定 ID）。第一關就是書根，不會出現在這條路由上 */}
+              <Route path="story/:id/:part" element={<Suspense fallback={null}><StoryBookPage /></Suspense>} />
               {/* 館內的兜底轉址是**必要的**（地雷 M-28）：Layout 的 chromeMode 是純路徑推導，
                   /lore/xyz 一律判成 immersive，但 React Router 不做部分匹配、會落到全站的
                   path="*" NotFoundPage ⇒ 一頁深色 404 配紙色館頭，footer／subnav／手機 Tab Bar

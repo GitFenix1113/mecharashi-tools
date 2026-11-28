@@ -43,9 +43,15 @@ interface Props {
    * 「目前餘 X → 裝上後 Y」，超重轉紅。
    */
   footer?: React.ReactNode
+  /**
+   * 加在最外層（portal 根）的 class。sheet 經 portal 掛在 body 底下，吃不到所在頁面的色票覆寫——
+   * 故事館傳 `lore-portal`（index.css：只覆寫紙色 token、不鋪底色），sheet 才會是紙色而不是站內深色。
+   * 不給就和以前完全一樣（PLAN-042-I B-4）。
+   */
+  className?: string
 }
 
-export function BottomSheet({ open, onClose, children, title, label, footer }: Props) {
+export function BottomSheet({ open, onClose, children, title, label, footer, className }: Props) {
   const instanceId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
   const restoreTo = useRef<HTMLElement | null>(null)
@@ -115,7 +121,7 @@ export function BottomSheet({ open, onClose, children, title, label, footer }: P
 
   return createPortal(
     <div
-      className="fixed inset-0 flex flex-col justify-end"
+      className={className ? `fixed inset-0 flex flex-col justify-end ${className}` : 'fixed inset-0 flex flex-col justify-end'}
       style={{ zIndex: 50 + depth * 2 }}
       onKeyDown={onKeyDown}
     >

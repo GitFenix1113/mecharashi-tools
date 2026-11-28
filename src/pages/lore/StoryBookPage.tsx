@@ -1,36 +1,52 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { usePageTitle } from '../../contexts/PageTitleContext'
 import { usePilots } from '../../hooks/useFirestore'
 import { StoryLines } from '../../components/lore/story/StoryLines'
+import { StoryStageBar, StoryStageRail, type StepLink } from '../../components/lore/story/StoryStageNav'
 import {
   hasStoryBook, loadStoryBook, storyDisplayName, storyEntry, storyNeighbors, STORY_KIND_LABEL,
 } from '../../components/lore/story/storyData'
+import {
+  legacyHashStage, resolveStageIndex, stageLabel, stageNeighbors, stageOutline, stagePath, type StageTarget,
+} from '../../components/lore/story/storyNav'
+import { storyProgress } from '../../components/lore/story/storyProgress'
+import { useStoryProgress } from '../../components/lore/story/useStoryProgress'
 import type { StoryBook, StoryCrossRef, StoryPart, StoryStage } from '../../components/lore/story/storyTypes'
 
 /**
- * 劇情故事館的一本書（/lore/story/:id）：主線一章、一個活動、或一位機師的回憶。
+ * 劇情故事館的一本書：主線一章、一個活動、或一位機師的回憶。PLAN-042-I 起**一次只放一關**。
  *
- * 全文是 src/data/story/<種類>/<ID>.json，lazy 載入（一章約 50–300 KB、gzip 後約四分之一）。
- * 每關三段——開場過場／戰鬥中／結尾過場——各是一個 <details>，預設展開；
- * 「全部收合」可先看關卡清單。目錄點下去會展開那一關並捲過去。
+ *   /lore/story/:id          書根＝第一關（完整書頭）
+ *   /lore/story/:id/:part    其他關（:part 是關卡 key w108／l…／m…，遊戲設定 ID）
  *
+ * 目前在哪一關**由網址推導**（純衍生值），元件不持有 activeIndex——PLAN-050 與 LoreChapterPager 的同一條規則。
+ * 換關只改 pathname；捲回頂端、按上一頁還原位置都交給 LoreLayout（決策 (I)），這裡不自己捲。
+ *
+ * 全文是 src/data/story/<種類>/<ID>.json，lazy 載入（一本約 50–300 KB）。
  * ⚠ 本頁不得開 overflow-y：全館唯一的 scrollport 是 LoreLayout 的 .lore-scroll（見該檔）。
- *   所以長對白不做內捲框，靠收合控制長度。
  */
 export default function StoryBookPage() {
-  const { id } = useParams<{ id: string }>()
+  const { id, part } = useParams<{ id: string; part?: string }>()
   if (!hasStoryBook(id)) return <Navigate to="/lore/story" replace />
-  // key：換書時整頁重掛，載入狀態與展開狀態都從頭來
-  return <StoryBookView key={id} id={id} />
+  // key 只綁書：同一本換關時書檔、續讀提示的狀態都留著，換書才整頁重掛
+  return <StoryBookView key={id} id={id} part={part} />
 }
 
-function StoryBookView({ id }: { id: string }) {
+/** 水平滑動換關的門檻：照 LoreChapterPager（位移夠大、且明顯偏水平才算換關意圖） */
+const SWIPE_MIN_PX = 48
+const SWIPE_AXIS_RATIO = 1.5
+
+function StoryBookView({ id, part }: { id: string; part: string | undefined }) {
   const entry = storyEntry(id)
+  const navigate = useNavigate()
+  const { hash } = useLocation()
   const [book, setBook] = useState<StoryBook | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [openAll, setOpenAll] = useState(true)
-  usePageTitle(entry ? `${storyDisplayName(entry)} 劇情` : null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  // 續讀點在進書當下拍一張：之後的記錄（visit）不該讓提示列自己改來改去
+  const [resumeKey] = useState(() => (part ? null : storyProgress.progressOf(id).last))
+  const progress = useStoryProgress(id)
 
   useEffect(() => {
     let alive = true
@@ -41,47 +57,223 @@ function StoryBookView({ id }: { id: string }) {
     return () => { alive = false }
   }, [id])
 
-  const { prev, next } = storyNeighbors(id)
+  const stages = useMemo(() => book?.stages ?? [], [book])
+  const outline = useMemo(() => stageOutline(stages), [stages])
+  const index = book ? resolveStageIndex(stages, part) : -1
+  const stage: StoryStage | undefined = stages[index]
+  const readSet = useMemo(() => new Set(progress.read), [progress.read])
+  const readCount = stages.filter((s) => readSet.has(s.key)).length
+  const books = storyNeighbors(id)
+  const hrefOf = (i: number) => stagePath(id, stages, i)
+
+  // 網址修正：舊版錨點 #w108 → 新網址；不認得的關卡 key → 書根
+  useEffect(() => {
+    if (!book) return
+    if (!part && hash) {
+      const key = legacyHashStage(book.stages, hash)
+      navigate(key ? stagePath(id, book.stages, resolveStageIndex(book.stages, key)) : `/lore/story/${id}`, { replace: true })
+    } else if (part && index < 0) {
+      navigate(`/lore/story/${id}`, { replace: true })
+    }
+  }, [book, part, hash, index, id, navigate])
+
+  // 記下「上次讀到這一關」：明確選過的關才算。直接開書根時若已經有進度就不覆寫——
+  // 只是點進來看一眼，不該把「讀到 3-5」洗成「讀到 3-1」
+  useEffect(() => {
+    if (!stage) return
+    if (part || !storyProgress.progressOf(id).last) storyProgress.visit(id, stage.key)
+  }, [id, part, stage])
+
+  // 關末出現在畫面上＝這一關讀完（短關捲不動也算得到，所以看「出現」而不是「捲過」）
+  const tailRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = tailRef.current
+    if (!el || !stage) return
+    const io = new IntersectionObserver(
+      (ents) => { if (ents.some((e) => e.isIntersecting)) storyProgress.markRead(id, stage.key) },
+      { root: el.closest('.lore-scroll'), rootMargin: '0px 0px -8% 0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [id, stage])
+
+  // 上一關／下一關：同書換關 replace、跨到隔壁那一本 push（StepLink）。memo 住，← → 的監聽才不會每次重畫都重掛
+  const { prev, next, crossesBook } = useMemo(() => {
+    if (index < 0) return { prev: undefined, next: undefined, crossesBook: false }
+    const nb = stageNeighbors(stages, index, storyNeighbors(id))
+    const toLink = (t: StageTarget | undefined): StepLink | undefined =>
+      !t ? undefined
+        : t.kind === 'stage'
+          ? { href: stagePath(id, stages, t.index), replace: true, label: stageLabel(stages[t.index]) }
+          : { href: `/lore/story/${t.entry.id}`, replace: false, label: storyDisplayName(t.entry) }
+    return { prev: toLink(nb.prev), next: toLink(nb.next), crossesBook: nb.next?.kind === 'book' }
+  }, [id, stages, index])
+
+  // ← → 換關（照 useLoreHall：修飾鍵與輸入框排除；關卡清單抽屜開著時不作用）
+  useEffect(() => {
+    if (!stage) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || sheetOpen) return
+      // target 不一定是元素（直接對 window／document 發的事件），沒有 closest 就當不在輸入框裡
+      if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable="true"]')) return
+      const link = e.key === 'ArrowLeft' ? prev : e.key === 'ArrowRight' ? next : undefined
+      if (!link) return
+      e.preventDefault()
+      navigate(link.href, { replace: link.replace })
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [stage, prev, next, sheetOpen, navigate])
+
+  // 水平滑動換關：只掛在正文上、不 preventDefault（垂直捲動才是館內唯一的閱讀方式，門檻本身就是守門員）
+  const touch = useRef<{ x: number; y: number } | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    touch.current = t ? { x: t.clientX, y: t.clientY } : null
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touch.current
+    touch.current = null
+    const t = e.changedTouches[0]
+    if (!start || !t) return
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) <= Math.abs(dy) * SWIPE_AXIS_RATIO) return
+    const link = dx < 0 ? next : prev
+    if (link) navigate(link.href, { replace: link.replace })
+  }
+
+  const title = entry ? `${storyDisplayName(entry)} 劇情` : null
+  usePageTitle(stage && index > 0 && title ? `${stageLabel(stage)}｜${title}` : title)
+
+  const resumeIndex = resumeKey ? resolveStageIndex(stages, resumeKey) : -1
+  const showResume = !part && resumeIndex > 0
 
   return (
-    <div className="lore-story mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
+    <div className="lore-story mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 sm:pt-10">
       <nav className="mb-6 text-xs text-text-dim">
         <Link to="/lore/story" className="no-underline text-text-secondary hover:text-text-primary">劇情故事館</Link>
         <span className="mx-1.5">/</span>
         {entry && STORY_KIND_LABEL[entry.kind]}
       </nav>
 
-      {entry && (
-        <header className="mb-8">
-          <span className="lore-story-eyebrow">{entry.kind === 'main' ? entry.title : STORY_KIND_LABEL[entry.kind]}</span>
-          <h1 className="lore-story-h1">{entry.name}</h1>
-          {entry.desc && <p className="lore-story-desc">{entry.desc}</p>}
-          <p className="mt-3 text-xs text-text-dim">
-            {entry.stages} 關 · {entry.lines.toLocaleString()} 行
-            {entry.aka && <> · 曾以活動「{entry.aka.join('」「')}」推出</>}
-          </p>
-          {book && <CrossRefs book={book} />}
-        </header>
-      )}
+      <div className="lore-story-reader">
+        {entry && stage && (
+          <aside className="lore-story-reader__rail">
+            <StoryStageRail
+              book={entry} readCount={readCount} prevBook={books.prev} nextBook={books.next}
+              stages={stages} outline={outline} index={index} read={readSet} hrefOf={hrefOf}
+            />
+          </aside>
+        )}
 
-      {error && (
-        <div className="rounded-xl border border-accent-red/30 bg-accent-red/10 px-4 py-3 text-sm text-accent-red">
-          劇情載入失敗：{error}
+        <div className="lore-story-reader__main">
+          {showResume && (
+            <Link to={hrefOf(resumeIndex)} replace className="lore-story-resume">
+              <span className="lore-story-resume__k">上次讀到</span>
+              <span className="lore-story-resume__t">{stageLabel(stages[resumeIndex])}</span>
+              <span className="lore-story-resume__go">繼續 ›</span>
+            </Link>
+          )}
+
+          {entry && (part ? (
+            // 第二關起只留精簡書頭：書名回書根，關卡標題在下面的紙面裡
+            <header className="mb-5">
+              <span className="lore-story-eyebrow">{entry.kind === 'main' ? entry.title : STORY_KIND_LABEL[entry.kind]}</span>
+              <Link to={`/lore/story/${id}`} replace className="lore-story-h1--compact">{entry.name}</Link>
+            </header>
+          ) : (
+            <header className="mb-8">
+              <span className="lore-story-eyebrow">{entry.kind === 'main' ? entry.title : STORY_KIND_LABEL[entry.kind]}</span>
+              <h1 className="lore-story-h1">{entry.name}</h1>
+              {entry.desc && <p className="lore-story-desc">{entry.desc}</p>}
+              <p className="mt-3 text-xs text-text-dim">
+                {entry.stages} 關 · {entry.lines.toLocaleString()} 行
+                {entry.aka && <> · 曾以活動「{entry.aka.join('」「')}」推出</>}
+              </p>
+              {book && <CrossRefs book={book} />}
+            </header>
+          ))}
+
+          {error && (
+            <div className="rounded-xl border border-accent-red/30 bg-accent-red/10 px-4 py-3 text-sm text-accent-red">
+              劇情載入失敗：{error}
+            </div>
+          )}
+          {!book && !error && <BookSkeleton />}
+
+          {stage && (
+            <>
+              <article className="lore-story-sheet" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+                <StageView stage={stage} />
+                <div ref={tailRef} className="lore-story-tail" aria-hidden="true" />
+              </article>
+              <EndNav prev={prev} next={next} crossesBook={crossesBook} />
+            </>
+          )}
         </div>
-      )}
-      {!book && !error && <BookSkeleton />}
-      {book && (
-        <>
-          <Toc stages={book.stages} openAll={openAll} onToggleAll={() => setOpenAll((v) => !v)} />
-          <Stages stages={book.stages} openAll={openAll} />
-        </>
-      )}
+      </div>
 
-      <nav className="mt-12 grid grid-cols-2 gap-3 border-t border-border pt-6 text-sm">
-        <div>{prev && <NeighborLink to={prev.id} dir="prev" label={storyDisplayName(prev)} />}</div>
-        <div className="text-right">{next && <NeighborLink to={next.id} dir="next" label={storyDisplayName(next)} />}</div>
-      </nav>
+      {stage && (
+        <StoryStageBar
+          prev={prev} next={next} sheetOpen={sheetOpen} onSheetOpenChange={setSheetOpen}
+          stages={stages} outline={outline} index={index} read={readSet} hrefOf={hrefOf}
+        />
+      )}
     </div>
+  )
+}
+
+// ─── 一關 ────────────────────────────────────────────────────────────────────
+
+const PART_LABEL: Record<StoryPart['at'], string> = { start: '開場', battle: '戰鬥中', end: '結尾' }
+
+/** 三段改成段落小標，不再收合（一關最長 393 行，計畫書決策六） */
+function StageView({ stage: s }: { stage: StoryStage }) {
+  return (
+    <>
+      <header className="lore-story-stagehead">
+        {s.group && <span className="lore-story-stagehead__group">{s.group}</span>}
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          {s.code && <span className="lore-story-stage__code">{s.code}</span>}
+          <h2 className="lore-story-stage__name">{s.name}</h2>
+          {s.place && <span className="text-xs text-text-dim">{s.place}</span>}
+          {s.branch && <span className="lore-story-tag">支線</span>}
+        </div>
+      </header>
+      {s.desc && <p className="lore-story-brief">{s.desc}</p>}
+      {s.parts.map((p) => (
+        <section key={p.at} className="lore-story-part">
+          <h3 className="lore-story-part__h">
+            <span className="lore-story-part__label">{PART_LABEL[p.at]}</span>
+            <span className="lore-story-part__n">{p.lines.filter(Boolean).length} 行</span>
+          </h3>
+          <StoryLines lines={p.lines} />
+        </section>
+      ))}
+    </>
+  )
+}
+
+/** 關末：上一關／下一關（下一關較寬、較醒目）；末關接「本章完 · 下一本」 */
+function EndNav({ prev, next, crossesBook }: { prev?: StepLink; next?: StepLink; crossesBook: boolean }) {
+  if (!prev && !next) return null
+  return (
+    <nav className="lore-story-end" aria-label="上一關／下一關">
+      {prev ? (
+        <Link to={prev.href} replace={prev.replace} className="lore-story-end__card">
+          <small>‹ {prev.replace ? '上一關' : '上一篇'}</small>
+          <span>{prev.label}</span>
+        </Link>
+      ) : <span className="lore-story-end__card is-ghost" aria-hidden="true" />}
+      {next ? (
+        <Link to={next.href} replace={next.replace} className="lore-story-end__card is-next">
+          <small>{crossesBook ? '本篇完 · 下一篇 ›' : '下一關 ›'}</small>
+          <span>{next.label}</span>
+        </Link>
+      ) : <span className="lore-story-end__card is-ghost" aria-hidden="true" />}
+      <p className="lore-story-end__hint">也可以按 <kbd>←</kbd> <kbd>→</kbd> 換關</p>
+    </nav>
   )
 }
 
@@ -120,87 +312,7 @@ function usePilotLoreLink(gameId: string | undefined): { to: string; name: strin
   }, [pilots, gameId])
 }
 
-// ─── 目錄 ────────────────────────────────────────────────────────────────────
-
-function Toc({ stages, openAll, onToggleAll }: { stages: StoryStage[]; openAll: boolean; onToggleAll: () => void }) {
-  const jump = (key: string) => {
-    const el = document.getElementById(key)
-    if (!el) return
-    el.querySelectorAll('details').forEach((d) => { d.open = true })
-    // 不用 smooth：關卡掛著 content-visibility:auto，平滑捲動途經的關卡會從估計高度（900px）變成實際高度，
-    // 終點在出發時就算好了，抵達時會偏掉一截（實測 Chapter-II 跳 2-5 偏 98px）。
-    // 瞬間跳過去只有目標附近會排版；再等兩個 frame 補一次，吸收目標上一關展開後的高度變化。
-    el.scrollIntoView({ block: 'start' })
-    requestAnimationFrame(() => requestAnimationFrame(() => el.scrollIntoView({ block: 'start' })))
-  }
-  return (
-    <div className="mb-8">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <span className="text-xs font-bold tracking-widest text-text-secondary">關卡</span>
-        <button type="button" className="lore-story-btn" onClick={onToggleAll}>
-          {openAll ? '全部收合' : '全部展開'}
-        </button>
-      </div>
-      <ol className="lore-story-toc">
-        {stages.map((s) => (
-          <li key={s.key}>
-            <button type="button" onClick={() => jump(s.key)} title={s.place ? `${s.name}（${s.place}）` : s.name}>
-              {s.code && <span className="lore-story-toc__code">{s.code}</span>}
-              {s.name}
-              {s.branch && <span className="lore-story-tag">支線</span>}
-            </button>
-          </li>
-        ))}
-      </ol>
-    </div>
-  )
-}
-
-// ─── 關卡 ────────────────────────────────────────────────────────────────────
-
-const PART_LABEL: Record<StoryPart['at'], string> = { start: '開場', battle: '戰鬥中', end: '結尾' }
-
-function Stages({ stages, openAll }: { stages: StoryStage[]; openAll: boolean }) {
-  return (
-    <div>
-      {stages.map((s, i) => (
-        <div key={s.key}>
-          {/* 活動分幕：換幕時插一行幕名 */}
-          {s.group && s.group !== stages[i - 1]?.group && <h2 className="lore-story-group">{s.group}</h2>}
-          <section id={s.key} className="lore-story-stage">
-            <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              {s.code && <span className="lore-story-stage__code">{s.code}</span>}
-              <h3 className="lore-story-stage__name">{s.name}</h3>
-              {s.place && <span className="text-xs text-text-dim">{s.place}</span>}
-              {s.branch && <span className="lore-story-tag">支線</span>}
-            </header>
-            {s.desc && <p className="lore-story-brief">{s.desc}</p>}
-            {s.parts.map((p) => (
-              <details key={p.at} className="lore-story-part" open={openAll}>
-                <summary>
-                  <span className="lore-story-part__label">{PART_LABEL[p.at]}</span>
-                  <span className="text-[11px] text-text-dim">{p.lines.filter(Boolean).length} 行</span>
-                </summary>
-                <StoryLines lines={p.lines} />
-              </details>
-            ))}
-          </section>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 // ─── 雜項 ────────────────────────────────────────────────────────────────────
-
-function NeighborLink({ to, dir, label }: { to: string; dir: 'prev' | 'next'; label: string }) {
-  return (
-    <Link to={`/lore/story/${to}`} className="no-underline text-text-secondary hover:text-text-primary">
-      <span className="block text-[11px] text-text-dim">{dir === 'prev' ? '‹ 上一篇' : '下一篇 ›'}</span>
-      {label}
-    </Link>
-  )
-}
 
 function BookSkeleton() {
   return (

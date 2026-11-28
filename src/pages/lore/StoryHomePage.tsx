@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { LoreHallHero } from '../../components/lore/LoreHallHero'
 import { PILOT_HERO_POOL, pickHeroCard } from '../../components/lore/loreHeroCast'
 import { STORY_CATALOG, STORY_KIND_LABEL } from '../../components/lore/story/storyData'
+import { storyProgress } from '../../components/lore/story/storyProgress'
+import { useStoryProgressVersion } from '../../components/lore/story/useStoryProgress'
 import type { StoryCatalogEntry, StoryKind } from '../../components/lore/story/storyTypes'
 import { pilotCardArt, pilotGameArt } from '../../utils/gameArt'
 import { assetUrl } from '../../utils/assets'
@@ -21,6 +23,8 @@ export default function StoryHomePage() {
     return KINDS.map((k) => ({ kind: k, books: by.get(k) ?? [] })).filter((g) => g.books.length)
   }, [])
   const totalLines = STORY_CATALOG.books.reduce((n, b) => n + b.lines, 0)
+  // 閱讀進度只在本機（PLAN-042-I B-5）；訂閱是為了別的分頁讀完回來時數字跟著變
+  useStoryProgressVersion()
 
   return (
     <div className="lore-story mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
@@ -74,6 +78,7 @@ function BookCard({ book }: { book: StoryCatalogEntry }) {
       <span className="lore-story-card__m">
         {book.stages} 關 · {book.lines.toLocaleString()} 行
         {book.aka && <> · 曾以活動「{book.aka.join('」「')}」推出</>}
+        <ReadMark book={book} />
       </span>
     </Link>
   )
@@ -88,7 +93,15 @@ function MemoryCard({ book }: { book: StoryCatalogEntry }) {
       <span className="lore-story-card__t">{book.name}</span>
       <span className="lore-story-card__m">
         {book.stages} 關 · {book.lines.toLocaleString()} 行
+        <ReadMark book={book} />
       </span>
     </Link>
   )
+}
+
+/** 「已讀 3／24」：讀過才出現。數字以目錄的關數封頂（改版拿掉的關，key 還留在進度裡也不會超過） */
+function ReadMark({ book }: { book: StoryCatalogEntry }) {
+  const n = Math.min(storyProgress.readCount(book.id), book.stages)
+  if (!n) return null
+  return <span className="lore-story-card__read">已讀 {n}／{book.stages}</span>
 }

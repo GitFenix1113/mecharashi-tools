@@ -309,6 +309,8 @@ select option {
  *
  * 決策 (H)：header 與 SignedOutBanner 都住在 .lore-shell **外面**（Layout.tsx:205 / :355），
  * 所以色票宣告掛在 .lore-shell, .lore-chrome 兩個選擇器上。
+ * 第三個選擇器 .lore-portal（PLAN-042-I B-4）是**逐一選擇加入**的浮層：BottomSheet 傳 className="lore-portal"
+ * 才變紙色（劇情書頁的手機關卡清單）。決策 (B) 照舊——沒加的浮層一律留在深色，引用浮窗不受影響。
  *
  * ⚠ 紙色色票另有三處**硬寫的同款顏色**，改色時必須一起改（它們在 token 作用域之外，
  *   或必須是不透明值，換不成 var()）：
@@ -318,7 +320,8 @@ select option {
  *   （.lore-veil 的 #0a0c10 **不在此列**：那是「推門」前的站內深色，刻意不隨紙色改。）
  */
 .lore-shell,
-.lore-chrome {
+.lore-chrome,
+.lore-portal {
   --color-bg-dark:        #efe7d8;
   --color-bg-card:        rgb(255 252 245 / 0.72);  /* 保留 ~0.72 alpha，否則既有 bg-bg-card/NN 會重一階 */
   --color-bg-card-hover:  rgb(255 253 248 / 0.90);
@@ -332,6 +335,11 @@ select option {
   /* accent 八色刻意不覆寫：它們是語意色（稀有度／職業），換掉徽章就讀不出等級 */
   color-scheme: light;
   color: var(--color-text-primary);
+}
+/* 底色只鋪在外殼與館頭。.lore-portal（BottomSheet 的 portal 根，PLAN-042-I B-4）是 fixed inset-0 的透明層，
+   鋪了底色就會把整個畫面蓋成一片紙色 —— 它只要 token，背景由 sheet 自己的 bg-bg-tooltip 畫 */
+.lore-shell,
+.lore-chrome {
   background-color: var(--color-bg-dark);
 }
 
@@ -1491,6 +1499,7 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 .lore-story-card__m { margin-top: auto; padding-top: 10px; font-size: 0.68rem; color: var(--lore-ink-3); }
+.lore-story-card__read { display: block; margin-top: 2px; color: var(--lore-red); }
 .lore-story-card--pilot { align-items: center; text-align: center; padding: 12px 10px; }
 /* 機師卡 Icon_item 自帶卡框與透明底，直接放在紙上 */
 .lore-story-card__img { width: 72px; height: 72px; object-fit: contain; margin-bottom: 8px; }
@@ -1502,67 +1511,166 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
 .lore-story-desc {
   margin: 14px 0 0; font-family: var(--lore-serif); font-size: 0.9rem; line-height: 2; letter-spacing: 0.03em; color: var(--lore-ink-2); white-space: pre-line;
 }
-.lore-story-btn {
-  border: 1px solid var(--lore-line); border-radius: 8px; padding: 4px 12px; font-size: 0.72rem; color: var(--lore-ink-2);
-  background: rgb(255 252 245 / 0.72); cursor: pointer; transition: border-color 0.2s, color 0.2s;
+/* 書頁（PLAN-042-I 起一次一關）：桌機左欄常駐關卡列、右欄閱讀；手機關卡列收進底部換關列的抽屜。
+ * ⚠ 本頁的連結很多：.lore-story a 會把連結染紅，所以連結類樣式一律寫成 `.lore-story .x`（特異度 0,2,0 才蓋得過）。 */
+.lore-story .lore-story-h1--compact {
+  display: block; margin-top: 4px; font-family: var(--lore-kai); font-weight: 400; font-size: 1.35rem; letter-spacing: 0.12em; line-height: 1.3;
+  color: var(--lore-ink); text-decoration: none;
 }
-.lore-story-btn:hover { border-color: var(--lore-red); color: var(--lore-ink); }
-
-/* 書頁：關卡目錄（換行排列的小籤） */
-.lore-story-toc { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.lore-story-toc button {
-  display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border: 1px solid var(--lore-line-2); border-radius: 999px;
-  background: rgb(255 252 245 / 0.6); font-family: var(--lore-serif); font-size: 0.75rem; color: var(--lore-ink); cursor: pointer;
-  transition: border-color 0.2s, background-color 0.2s;
-}
-.lore-story-toc button:hover { border-color: var(--lore-red); background: rgb(177 0 0 / 0.04); }
-.lore-story-toc__code { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: var(--lore-red); }
+.lore-story .lore-story-h1--compact:hover { color: var(--lore-red); }
 .lore-story-tag {
   display: inline-block; padding: 0 6px; border: 1px solid var(--lore-line); border-radius: 4px;
   font-size: 0.6rem; line-height: 1.6; letter-spacing: 0.1em; color: var(--lore-ink-3); vertical-align: middle;
 }
 
-/* 書頁：關卡。content-visibility 讓近三千行的活動頁只排版看得到的那幾關（頁內搜尋照樣找得到） */
-.lore-story-group {
-  margin: 40px 0 0; padding-bottom: 6px; border-bottom: 2px solid var(--lore-red);
-  font-family: var(--lore-kai); font-weight: 400; font-size: 1.3rem; letter-spacing: 0.14em; color: var(--lore-ink);
+.lore-story-reader { padding-bottom: 64px; }
+.lore-story-reader__main { min-width: 0; max-width: 780px; }
+.lore-story-reader__rail { display: none; }
+@media (min-width: 1024px) {
+  .lore-story-reader { display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: 44px; align-items: start; }
+  /* sticky 相對館內唯一的 scrollport（.lore-scroll）。關卡列自己**不捲**（地雷 M-08）：
+     收納規則（storyNav.ts 的 stageOutline＋StoryStageList 的手風琴）保證它在桌機視窗內放得下 */
+  .lore-story-reader__rail { display: block; position: sticky; top: 16px; }
 }
-.lore-story-stage {
-  padding: 28px 0; border-top: 1px solid var(--lore-line-2); scroll-margin-top: 12px;
-  content-visibility: auto; contain-intrinsic-size: auto 900px;
+
+/* 關卡列（桌機）與關卡清單（手機抽屜）共用 */
+.lore-story-rail__head { padding: 0 8px 12px; margin-bottom: 6px; border-bottom: 1px solid var(--lore-line-2); }
+.lore-story .lore-story-rail__title {
+  display: block; margin-top: 4px; font-family: var(--lore-kai); font-size: 1.25rem; letter-spacing: 0.1em; line-height: 1.3;
+  color: var(--lore-ink); text-decoration: none;
 }
-.lore-story-group + .lore-story-stage, .lore-story-stage:first-child { border-top: 0; }
-.lore-story-stage__code { font-family: 'Orbitron', 'JetBrains Mono', sans-serif; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.24em; color: var(--lore-red); }
-.lore-story-stage__name { margin: 0; font-family: var(--lore-serif); font-weight: 700; font-size: 1.3rem; letter-spacing: 0.08em; color: var(--lore-ink); }
+.lore-story .lore-story-rail__title:hover { color: var(--lore-red); }
+.lore-story-rail__prog { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.66rem; color: var(--lore-ink-3); white-space: nowrap; }
+.lore-story-rail__bar { flex: 1; height: 3px; border-radius: 3px; background: var(--lore-line-2); overflow: hidden; }
+.lore-story-rail__bar i { display: block; height: 100%; background: var(--lore-red); transition: width 0.3s; }
+.lore-story-rail__foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 10px 8px 0; border-top: 1px solid var(--lore-line-2); font-size: 0.7rem; }
+.lore-story .lore-story-rail__foot a { color: var(--lore-ink-2); text-decoration: none; }
+.lore-story .lore-story-rail__foot a:hover { color: var(--lore-red); }
+
+.lore-story-nav__list { list-style: none; margin: 0; padding: 0; }
+.lore-story .lore-story-nav__row {
+  display: grid; grid-template-columns: minmax(2.6em, auto) minmax(0, 1fr) auto auto; align-items: baseline; gap: 6px;
+  padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; line-height: 1.45; color: var(--lore-ink-2); text-decoration: none;
+  transition: background-color 0.15s, color 0.15s;
+}
+.lore-story .lore-story-nav__row:hover { background: rgb(255 252 245 / 0.85); color: var(--lore-ink); }
+.lore-story .lore-story-nav__row.is-cur { background: rgb(177 0 0 / 0.07); color: var(--lore-ink); font-weight: 700; box-shadow: inset 2px 0 0 var(--lore-red); }
+.lore-story .lore-story-nav__row.is-sub { padding-top: 1px; padding-bottom: 1px; font-size: 0.72rem; color: var(--lore-ink-3); }
+.lore-story .lore-story-nav__row.is-sub.is-cur { color: var(--lore-ink); }
+.lore-story-nav__code { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: var(--lore-red); white-space: nowrap; }
+.lore-story-nav__row.is-sub .lore-story-nav__code { padding-left: 0.6em; color: var(--lore-line); }
+.lore-story-nav__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lore-story-nav__more { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; font-weight: 400; color: var(--lore-ink-3); white-space: nowrap; }
+.lore-story-nav__ck { min-width: 1em; text-align: right; font-size: 0.62rem; font-weight: 400; color: var(--lore-ink-3); }
+.lore-story-nav__row.is-read .lore-story-nav__ck::before { content: '✓'; }
+.lore-story-nav__sec { margin: 10px 8px 3px; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.2em; color: var(--lore-ink-3); }
+.lore-story .lore-story-nav__sec.is-folded {
+  display: flex; justify-content: space-between; gap: 8px; margin: 2px 0; padding: 4px 8px; border-radius: 6px;
+  letter-spacing: 0.1em; color: var(--lore-ink-2); text-decoration: none;
+}
+.lore-story .lore-story-nav__sec.is-folded:hover { background: rgb(255 252 245 / 0.85); color: var(--lore-ink); }
+/* 手機抽屜：手指要點得到，列放大 */
+.lore-story-nav--sheet .lore-story-nav__row { padding: 8px 10px; font-size: 0.95rem; }
+.lore-story-nav--sheet .lore-story-nav__row.is-sub { padding: 5px 10px; font-size: 0.82rem; }
+.lore-story-nav--sheet .lore-story-nav__code { font-size: 0.75rem; }
+
+/* 續讀提示列：只在書根、有進度時出現；不自動跳轉（計畫書決策二） */
+.lore-story .lore-story-resume {
+  display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; padding: 10px 14px;
+  border: 1px solid rgb(177 0 0 / 0.35); border-radius: 10px; background: rgb(255 252 245 / 0.88);
+  color: var(--lore-ink); text-decoration: none; font-size: 0.85rem; transition: border-color 0.15s, transform 0.15s;
+}
+.lore-story .lore-story-resume:hover { border-color: var(--lore-red); transform: translateY(-1px); }
+.lore-story-resume__k { font-size: 0.7rem; color: var(--lore-ink-3); white-space: nowrap; }
+.lore-story-resume__t { min-width: 0; font-family: var(--lore-serif); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lore-story-resume__go { margin-left: auto; color: var(--lore-red); white-space: nowrap; }
+
+/* 閱讀欄：實心紙面（PLAN-042-I C-1）。做法同 .lore-sheet（紙紋上蓋一層紙色），這裡蓋得更厚（0.9）——
+   館內底圖的 MECHARA 浮水印與建築線稿不該壓在對白底下 */
+.lore-story-sheet {
+  position: relative; padding: 32px 40px 28px;
+  background-color: #fbf7ef;
+  background-image: linear-gradient(rgb(251 247 239 / 0.9), rgb(251 247 239 / 0.9)), url('/images/lore/bg-paper.webp');
+  background-size: auto, 1600px auto;
+  border: 1px solid var(--lore-line); border-radius: 4px;
+  box-shadow: 0 24px 50px -34px rgba(43, 38, 33, 0.45), 0 2px 8px -3px rgba(43, 38, 33, 0.1);
+}
+.lore-story-tail { height: 1px; }
+.lore-story-stagehead__group { display: block; margin-bottom: 4px; font-family: var(--lore-kai); font-size: 0.95rem; letter-spacing: 0.14em; color: var(--lore-ink-2); }
+.lore-story-stage__code { font-family: 'Orbitron', 'JetBrains Mono', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.24em; color: var(--lore-red); }
+.lore-story-stage__name { margin: 0; font-family: var(--lore-kai); font-weight: 400; font-size: 1.7rem; letter-spacing: 0.1em; line-height: 1.3; color: var(--lore-ink); }
 .lore-story-brief {
-  margin: 10px 0 0; padding: 10px 14px; border-left: 3px solid var(--lore-line); background: rgb(255 252 245 / 0.55);
-  font-family: var(--lore-serif); font-size: 0.84rem; line-height: 1.9; color: var(--lore-ink-2); white-space: pre-line;
+  margin: 14px 0 0; padding: 10px 14px; border-left: 3px solid var(--lore-line); background: rgb(239 231 216 / 0.45);
+  font-family: var(--lore-serif); font-size: 0.86rem; line-height: 1.9; color: var(--lore-ink-2); white-space: pre-line;
 }
-.lore-story-part { margin-top: 16px; }
-.lore-story-part > summary {
-  display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; user-select: none;
-  padding: 4px 0; border-bottom: 1px dashed var(--lore-line);
+/* 三段改成段落小標（決策六），不再收合 */
+.lore-story-part { margin-top: 30px; }
+.lore-story-part__h { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: 0.72rem; font-weight: 700; }
+.lore-story-part__h::after { content: ''; flex: 1; height: 1px; background: var(--lore-line); }
+.lore-story-part__label { letter-spacing: 0.3em; color: var(--lore-ink-2); }
+.lore-story-part__n { font-weight: 400; letter-spacing: 0; color: var(--lore-ink-3); }
+
+/* 關末導覽：下一關比上一關寬、較醒目 */
+.lore-story-end { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 12px; margin-top: 24px; }
+.lore-story .lore-story-end__card {
+  display: block; min-width: 0; padding: 14px 18px; border: 1px solid var(--lore-line); border-radius: 10px;
+  background: rgb(255 252 245 / 0.85); color: var(--lore-ink); text-decoration: none; transition: border-color 0.15s, transform 0.15s;
 }
-.lore-story-part > summary::-webkit-details-marker { display: none; }
-.lore-story-part > summary::before { content: '▸'; font-size: 0.7rem; color: var(--lore-ink-3); transition: transform 0.15s; }
-.lore-story-part[open] > summary::before { transform: rotate(90deg); }
-.lore-story-part__label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; color: var(--lore-ink-2); }
+.lore-story .lore-story-end__card:hover { border-color: var(--lore-red); transform: translateY(-1px); }
+.lore-story-end__card small { display: block; font-size: 0.68rem; letter-spacing: 0.1em; color: var(--lore-ink-3); }
+.lore-story-end__card span { display: block; margin-top: 3px; font-family: var(--lore-serif); font-weight: 700; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lore-story .lore-story-end__card.is-next { text-align: right; border-color: rgb(177 0 0 / 0.45); background: linear-gradient(90deg, rgb(255 252 245 / 0.9), rgb(177 0 0 / 0.05)); }
+.lore-story-end__card.is-ghost { visibility: hidden; }
+.lore-story-end__hint { grid-column: 1 / -1; margin: 0; text-align: right; font-size: 0.66rem; color: var(--lore-ink-3); }
+.lore-story-end__hint kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; padding: 0 5px; border: 1px solid var(--lore-line); border-bottom-width: 2px; border-radius: 4px; background: #fbf7ef; }
+
+/* 手機換關列：sticky 在頁面容器最後面＝黏在 .lore-scroll 底部（不用 fixed，見 StoryStageBar 的註解） */
+.lore-story-bar { display: none; }
+@media (max-width: 1023px) {
+  .lore-story-bar {
+    position: sticky; bottom: 0; z-index: 5;
+    display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px; align-items: stretch;
+    margin: 0 -16px; min-height: 52px; padding-bottom: env(safe-area-inset-bottom);
+    background: rgb(251 247 239 / 0.96); backdrop-filter: blur(6px); border-top: 1px solid var(--lore-line);
+  }
+  .lore-story-reader { padding-bottom: 28px; }
+  .lore-story-end__hint { display: none; }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .lore-story-bar { margin: 0 -24px; }
+}
+.lore-story .lore-story-bar__step { display: flex; align-items: center; justify-content: center; font-size: 1.35rem; color: var(--lore-ink-2); text-decoration: none; }
+.lore-story-bar__step.is-off { opacity: 0.25; }
+.lore-story-bar__pick { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; border: 0; background: transparent; font-size: 0.9rem; color: var(--lore-ink); cursor: pointer; }
+.lore-story-bar__name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lore-story-bar__count { font-size: 0.7rem; color: var(--lore-ink-3); white-space: nowrap; }
 
 /* 對白：桌機左欄說話者、右欄台詞；旁白不列名、跨兩欄、淡墨。手機改上下排 */
-.lore-story-lines { list-style: none; margin: 10px 0 0; padding: 0; font-family: var(--lore-serif); font-size: 0.92rem; line-height: 1.95; letter-spacing: 0.03em; }
-.lore-story-line { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); column-gap: 1em; padding: 2px 0; }
+.lore-story-lines { list-style: none; margin: 10px 0 0; padding: 0; font-family: var(--lore-serif); font-size: 1rem; line-height: 1.95; letter-spacing: 0.03em; }
+.lore-story-line { position: relative; display: grid; grid-template-columns: 6.5em minmax(0, 1fr); column-gap: 1em; padding: 2px 0; }
 .lore-story-line__who { font-weight: 700; color: var(--lore-ink); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lore-story-line__say { color: var(--lore-ink); white-space: pre-line; overflow-wrap: anywhere; }
-.lore-story-line.is-narr .lore-story-line__say { grid-column: 2; color: var(--lore-ink-2); }
+.lore-story-line__say { grid-column: 2; color: var(--lore-ink); white-space: pre-line; overflow-wrap: anywhere; }
+.lore-story-line.is-narr .lore-story-line__say { color: var(--lore-ink-2); }
+/* 同一人連續發言（C-2）：名字只在視覺上藏起來，螢幕閱讀器照樣念得到 */
+.lore-story-line.is-cont .lore-story-line__who {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
 .lore-story-em { font-style: normal; font-weight: 700; color: var(--lore-red); }
-.lore-story-sep { height: 1px; margin: 12px 0 12px 7.5em; background: repeating-linear-gradient(90deg, var(--lore-line) 0 6px, transparent 6px 12px); }
+/* 戰中兩個觸發之間：淡點線（原本的虛線一行一條，視覺上太碎） */
+.lore-story-sep { height: 0; margin: 10px 0 10px 7.5em; border-top: 1px dotted var(--lore-line); }
 .lore-story-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; white-space: normal; }
 .lore-story-choice { padding: 0 10px; border: 1px solid var(--lore-line); border-radius: 999px; font-size: 0.8rem; color: var(--lore-ink-2); background: rgb(255 252 245 / 0.7); }
 .lore-story-choice::before { content: '▸ '; color: var(--lore-red); }
 @media (max-width: 639px) {
   .lore-story-h1 { font-size: 1.7rem; }
+  .lore-story-sheet { margin: 0 -6px; padding: 22px 16px 18px; }
+  .lore-story-stage__name { font-size: 1.45rem; }
+  .lore-story-lines { font-size: 0.97rem; }
   .lore-story-line { grid-template-columns: minmax(0, 1fr); padding: 4px 0; }
+  .lore-story-line.is-cont { padding-top: 0; }
   .lore-story-line__who { text-align: left; font-size: 0.8rem; line-height: 1.6; }
-  .lore-story-line.is-narr .lore-story-line__say { grid-column: 1; }
+  .lore-story-line__say { grid-column: 1; }
   .lore-story-sep { margin-left: 0; }
+  .lore-story-end { grid-template-columns: minmax(0, 1fr); }
+  .lore-story-end__card.is-ghost { display: none; }
 }
