@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-J 劇情故事館場景條 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-J 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge cyan">◆ PLAN-042-J</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">劇情故事館場景條</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-11-28</p>
+</header>
+
+<main class="container">
+
+<!-- 總進度 -->
+<section class="section">
+  <div class="section-label cyan">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">12</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">1</div>
+      <div class="summary-lbl">待處理</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">13</div>
+      <div class="summary-lbl">開發者任務</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-cyan);">12 / 13</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 92%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.25);">
+    <strong style="color:var(--accent-cyan);">2026-11-28 開發完成並推送：</strong>
+    A～D 全部完成。<code>npm test</code> 1840／1840 通過（新增場景條 2 條），<code>npm run build</code> 通過，改到的檔案 eslint 0 錯。
+    驗收用本機 5173＋Playwright headless（面板隱藏時 lazy 圖與轉場不會跑）：桌機 1366×768 橫幅 698×215、地圖 698×153，手機 375×812 貼齊紙緣 347×107；
+    開關按下即全收、重新整理與換關都記得；main-2／main-4／event-8／event-20／memory-1 皆正常；攔掉一張圖（404）時只少那一格；主控台 0 錯誤。
+    剩 <strong>E-1 上線後複驗</strong>（要等推送、Pages 發布完成）。
+    <br><strong style="color:var(--accent-cyan);">實作時與原計畫不同的一處：</strong>
+    C-1 原本要求「相鄰兩格不同張」，實際只在過場成立。戰鬥段落裡切回戰場（沒有背景的行）後再出現同一張 CG 是合理的重新定場，全館 5 處
+    （3 處隔著戰中分隔、2 處隔了 37／145 行戰場對白），所以測試只對過場要求。另外「戰鬥段第一行本身有 CG 時不疊地圖」的判斷在現行主線裡沒有命中的關，留作防呆。
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    讀劇情時知道「現在在哪裡」：換場景的地方出現遊戲本身的背景畫面，戰鬥段落有該章的戰場地圖；想專心讀字的人可以關掉。
+  </div>
+</section>
+
+<!-- Phase A -->
+<section class="section">
+  <div class="section-label cyan">Phase A</div>
+  <div class="section-title">資料與圖片</div>
+  <div class="section-desc">匯入腳本把每行的背景收斂成場景條，並把用到的圖轉檔上站。前台還不動。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 匯入腳本：場景條與主線地圖</div>
+      <div class="task-group-meta">scripts/import-story.mjs</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每行記背景 → 收斂成 <code>shots</code>；主線書加 <code>map</code>／<code>region</code></div>
+        <div class="task-desc">
+          <code>walk()</code> 多回傳一條與 lines 平行的 <code>bgs</code>；<code>part()</code> 依計畫書決策一的規則收斂（同一張不重插、過場黑幕沿用、戰鬥中無圖＝回到戰場、戰鬥段前後歸零）。
+          只收 1920×592 的 CG；圖集重名時中止。<code>--res</code> 可指定解包資料夾，預設找同一包的 <code>完整資源_*</code>；找不到時只用站上已經有的圖。
+          預覽模式多印一段「場景條」摘要（插圖處數、CG 張數、略過的背景、站上還沒有的圖）。
+        </div>
+        <div class="task-file">scripts/import-story.mjs</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 匯出圖片並重跑匯入</div>
+      <div class="task-group-meta">public/images/game/story/ · src/data/story/</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">CG 130 張（1920×592）＋地圖 11 張（裁成 1920×420 的 _strip），共 19 MB</div>
+        <div class="task-desc">
+          <code>--write</code> 只轉站上還沒有的圖（WebP q82）；報告列出沒人用的圖（不自動刪）與「推送後等 Pages 發布完成再看」的提醒。
+          重跑後 43 本書檔逐一比對：拿掉 <code>shots</code>／<code>map</code>／<code>region</code> 後與上一版 <strong>0 差異</strong>，對白一行都沒動。書檔 3.5 → 3.6 MB。
+        </div>
+        <div class="task-file">public/images/game/story/*.webp · src/data/story/**/*.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 選圖器排除＋圖庫說明</div>
+      <div class="task-group-meta">generate-image-manifest.mjs · public/images/game/README.md</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>game/story</code> 不列入後台選圖器；README 記資料夾結構與改版後的匯入步驟</div>
+        <div class="task-desc">劇情 CG 只給劇情館讀，後台選圖用不到（同 <code>game/icons</code>、<code>game/npc</code>）。README 的資料夾樹與「歸檔流程」補上劇情一行，維持「站長不靠 AI 也能跑」。</div>
+        <div class="task-file">scripts/generate-image-manifest.mjs · public/images/game/README.md</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase B -->
+<section class="section">
+  <div class="section-label cyan">Phase B</div>
+  <div class="section-title">前台</div>
+  <div class="section-desc">照書檔的 shots 插圖：定場鏡頭、戰場地圖、開關。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; 型別與 <code>storyScenes.ts</code></div>
+      <div class="task-group-meta">storyTypes.ts · storyScenes.ts</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>StoryPart.shots</code>、<code>StoryBook.map</code>／<code>region</code>；圖片網址與場景圖偏好</div>
+        <div class="task-desc">網址一律走 <code>assetUrl()</code>（帶 BASE_URL）。偏好鍵 <code>mecharashi_story_scenes</code>，讀寫包 try/catch，預設開。</div>
+        <div class="task-file">src/components/lore/story/storyTypes.ts · src/components/lore/story/storyScenes.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; <code>StoryLines</code> 插定場鏡頭</div>
+      <div class="task-group-meta">StoryLines.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">在 shots 指定的那一行前插一格橫幅；圖後重新報名字</div>
+        <div class="task-desc">插在同一個 <code>&lt;ol&gt;</code> 裡、<code>aria-hidden</code>（同戰中分隔線的做法）。<code>loading="lazy"</code>＋寬高屬性防跳動，<code>onError</code> 整格收掉。</div>
+        <div class="task-file">src/components/lore/story/StoryLines.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 戰場地圖</div>
+      <div class="task-group-meta">StoryBookPage.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">主線戰鬥段落開頭放「戰場 · 區域名」橫幅；第一行本身有 CG 時不疊</div>
+        <div class="task-desc">地圖記在書上，<code>StageView</code> 多收一個 <code>book</code>。</div>
+        <div class="task-file">src/pages/lore/StoryBookPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 場景圖開關</div>
+      <div class="task-group-meta">StoryBookPage.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">關卡標頭右側「場景圖」切換（<code>aria-pressed</code>），偏好存本機</div>
+        <div class="task-desc">這一關沒有任何場景圖時不顯示開關，免得按了沒反應。</div>
+        <div class="task-file">src/pages/lore/StoryBookPage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-5 &nbsp; 樣式</div>
+      <div class="task-group-meta">index.css 劇情館段</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">橫幅比例、圓角與陰影、地圖色調、淡入（reduced-motion 關閉）、手機貼齊紙面邊緣</div>
+        <div class="task-desc">比例 1920／592，地圖 1920／420；色彩只用館內 token。</div>
+        <div class="task-file">src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase C -->
+<section class="section">
+  <div class="section-label cyan">Phase C</div>
+  <div class="section-title">驗收</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 測試擋壞掉的場景條</div>
+      <div class="task-group-meta">storyData.test.ts</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">shots 索引在範圍內、指到真的對白行、嚴格遞增、相鄰不同；每張圖與地圖都在</div>
+        <div class="task-desc">「書檔指到不存在的圖」在 build 前就擋下（上線後才發現的話，Cloudflare 還會把 404 快取住）。</div>
+        <div class="task-file">src/components/lore/story/storyData.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 瀏覽器驗收</div>
+      <div class="task-group-meta">本機 5173</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">桌機 1366×768、手機 375×812：定場鏡頭位置、戰場地圖、開關與記憶、圖載入失敗收掉、沒有版面跳動</div>
+        <div class="task-desc">抽 main-2（夢境 P001）、main-4（長章節）、一本活動、一本機師回憶。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; <code>npm test</code>／<code>npm run build</code></div>
+      <div class="task-group-meta">—</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">全套測試與正式 build 通過；改到的檔案 eslint 0 錯</div>
+        <div class="task-desc">—</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase D -->
+<section class="section">
+  <div class="section-label cyan">Phase D</div>
+  <div class="section-title">文件</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 頁面規劃、更新履歷、總綱</div>
+      <div class="task-group-meta">docs · siteChangelog</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">故事館頁面規劃的劇情館段落、<code>src/data/siteChangelog/2026-11.ts</code>、PLAN-042 總綱子計畫表、執行中索引</div>
+        <div class="task-desc">—</div>
+        <div class="task-file">docs/03_頁面規劃/13_故事館/index.html · src/data/siteChangelog/2026-11.ts · docs/05_階段性開發計畫/執行中/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase E -->
+<section class="section">
+  <div class="section-label cyan">Phase E</div>
+  <div class="section-title">上線</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">E-1 &nbsp; 上線後複驗</div>
+      <div class="task-group-meta">mecharashi.wiki</div>
+      <span class="status pending">待處理</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">Pages 發布完成後，正式站抽看幾張場景圖回 200、劇情頁照常顯示</div>
+        <div class="task-desc">新圖要等 <code>pages-build-deployment</code> 跑完再請求（太早請求，Cloudflare 會把 404 快取住；萬一發生就到 CF 清快取）。之後歸檔。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status pending">待處理</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-J — <a href="../index.html" style="color:var(--accent-cyan);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>
