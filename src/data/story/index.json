@@ -9,6 +9,7 @@
    "kind": "main",
    "title": "Chapter-0",
    "name": "第七機動隊檔案",
+   "cover": "TEST-303_Raw",
    "stages": 5,
    "lines": 163
   },
@@ -17,6 +18,7 @@
    "kind": "main",
    "title": "Chapter-I",
    "name": "日沉谷日沉",
+   "cover": "P001_Raw",
    "stages": 8,
    "lines": 212
   },
@@ -26,6 +28,7 @@
    "title": "Chapter-II",
    "name": "獵豹式物流事故",
    "desc": "頗具奢華的內裝，徹夜不息的賭場，晃眼迷人的霓虹燈……常有人站在街上，用似笑非笑的眼神打量過往的行人，快速辨別他們的身份。\n潮濕的空氣中混雜著血液，機油和汗水的味道，這是不論員警或軍隊都不願進入的地方。\n這是西北叢林，「嵐礦」走私的天堂。",
+   "cover": "P020102_Raw",
    "stages": 23,
    "lines": 530
   },
@@ -35,6 +38,7 @@
    "title": "Chapter-III",
    "name": "靜寂法蘭河",
    "desc": "復仇的一戰結束了，但往日的真相才剛掀開一角……\n在現狀與回憶間留下線索的，是延伸向晨星同盟的車轍。",
+   "cover": "TEST-901_Raw",
    "stages": 24,
    "lines": 618
   },
@@ -44,6 +48,7 @@
    "title": "Chapter-Ⅳ",
    "name": "跨境業務",
    "desc": "有形的封鎖被突破了，但無形的阻遏仍橫亙在凱登心中。\n但願晨星同盟之旅，能解答這份牽念已久的疑惑。",
+   "cover": "TEST-502_Raw",
    "stages": 22,
    "lines": 621
   },
@@ -53,6 +58,7 @@
    "title": "Chapter-V",
    "name": "晨星熹微",
    "desc": "安全總署的協助無疑如一盞明燈，而這許微的光亮仍不足以驅散島嶼上空的疑雲。\n在與霧靄背後的龐然大物會面之前，獵豹物流必須救出同遭不測的盟友。",
+   "cover": "TEST-105_Raw",
    "stages": 20,
    "lines": 552
   },
@@ -62,6 +68,7 @@
    "title": "Chapter-Ⅵ",
    "name": "往日墨蹟",
    "desc": "聯合軍部的野心竟然是在這座島上重現戰爭。\n凱登必須返回西米赫瑪，去尋找一位破局的人證。",
+   "cover": "TEST-625_Raw",
    "stages": 22,
    "lines": 665
   },
@@ -71,6 +78,7 @@
    "title": "Chapter-Ⅶ",
    "name": "熄滅與複燃",
    "desc": "風雨將至，飄搖的米赫瑪成為了資訊洋流中的孤島。獵豹物流需要凝聚全島民眾的聲音，為和平喚來新的希望。",
+   "cover": "TEST-301_Raw",
    "stages": 20,
    "lines": 526
   },
@@ -80,6 +88,7 @@
    "title": "Chapter-Ⅷ",
    "name": "頑漬",
    "desc": "微弱的星火不會熄滅，米赫瑪的苔原之上，即將燎燃無路可退的逆焰。",
+   "cover": "TEST-506_Raw",
    "stages": 11,
    "lines": 534
   },
@@ -89,6 +98,7 @@
    "title": "Chapter-Ⅸ",
    "name": "洪流",
    "desc": "「如果有朝一日，你能理解我的愧疚，你也便能理解我與你共同背負的悲傷……而我不會祈求原諒，因為被誤解就是我的宿命……我只是期盼著你，期盼你們能替我看見——那屬於米赫瑪的，不會流淚的明天。」",
+   "cover": "TEST-302_Raw",
    "stages": 10,
    "lines": 570
   },
@@ -98,6 +108,7 @@
    "title": "Chapter-X",
    "name": "昏星破曉",
    "desc": "昨日，西米赫瑪內亂漸息；今天，紛爭火種四散燃燒；明朝，無形風暴悄然降臨……當晨星失去光輝，獵豹物流必須自己掌握前行的去路。",
+   "cover": "TEST-109_Raw",
    "stages": 10,
    "lines": 514
   },
@@ -107,6 +118,7 @@
    "title": "Chapter-Ⅺ",
    "name": "損害管制",
    "desc": "名為維斯珀爾的變革風暴吹滅了米赫瑪島脆弱飄搖的和平燭火。危機四伏的黑暗中，獵豹物流苦苦尋找著出路。",
+   "cover": "TEST-903_Raw",
    "stages": 10,
    "lines": 603
   },
@@ -116,6 +128,7 @@
    "title": "Chapter-Ⅻ",
    "name": "臨界線",
    "desc": "重重迷霧籠罩法丹，唯有戰鬥的火光能夠照亮前路。硝煙之中究竟誰能觸及「遺產」的真相……是維斯珀爾？晨星同盟？抑或是……？",
+   "cover": "TEST-902_Raw",
    "stages": 13,
    "lines": 670
   },
@@ -125,6 +138,7 @@
    "title": "Chapter-XIII",
    "name": "逆衰變",
    "desc": "米赫瑪、嵐礦、機甲……歷史的車輪咯吱作響，再次駛向了名為「戰爭」的深淵。所有人都必須做出自己的選擇，無論那最終會帶來什麼。",
+   "cover": "TEST-401_Raw",
    "stages": 10,
    "lines": 917
   },
@@ -134,6 +148,7 @@
    "title": "Chapter-XIV",
    "name": "暗火不熄",
    "desc": "昏星隕落，但反抗的星火卻在陰影中悄然四散興起。米赫瑪的動盪與飄搖，還遠未止息。",
+   "cover": "TEST-1205_Raw",
    "stages": 7,
    "lines": 870
   },
@@ -143,6 +158,7 @@
    "title": "Chapter-XV",
    "name": "失序奇點",
    "desc": "平衡的天平搖搖欲墜，米赫瑪終將回歸原本的模樣——秩序的終結與混亂的開始，只需要一個小小的契機。",
+   "cover": "TEST9_Raw",
    "stages": 7,
    "lines": 1182
   },
@@ -154,6 +170,7 @@
    "aka": [
     "蜂箱網路"
    ],
+   "cover": "TEST-1207_Raw",
    "stages": 9,
    "lines": 1426
   },
@@ -162,6 +179,7 @@
    "kind": "main",
    "title": "Chapter-XⅦ",
    "name": "往日無戰事",
+   "cover": "TEST-825_Raw",
    "stages": 9,
    "lines": 796
   },
@@ -170,6 +188,7 @@
    "kind": "main",
    "title": "Chapter-XⅧ",
    "name": "啟示錄",
+   "cover": "TEST-1201_Raw",
    "stages": 11,
    "lines": 1850
   },
@@ -178,6 +197,7 @@
    "kind": "main",
    "title": "間章-I",
    "name": "白夜囚徒",
+   "cover": "TEST-904_Raw",
    "stages": 9,
    "lines": 1917
   },
@@ -186,6 +206,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "獵者的自由",
+   "cover": "TEST-304_Raw",
    "stages": 19,
    "lines": 1526
   },
@@ -194,6 +215,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "未來餘響",
+   "cover": "TEST-1204_Raw",
    "stages": 15,
    "lines": 1144
   },
@@ -202,6 +224,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "異界魔境",
+   "cover": "TEST-631_Raw",
    "stages": 16,
    "lines": 1573
   },
@@ -210,6 +233,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "逆止之疑",
+   "cover": "TEST-306_Raw",
    "stages": 22,
    "lines": 2964
   },
@@ -218,6 +242,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "金沙遺夢",
+   "cover": "TEST-818_Raw",
    "stages": 5,
    "lines": 1372
   },
@@ -226,6 +251,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "迷星所向",
+   "cover": "TEST8_Raw",
    "stages": 13,
    "lines": 1809
   },
@@ -234,6 +260,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "虹端夢旅",
+   "cover": "TEST-1104_Raw",
    "stages": 9,
    "lines": 242
   },
@@ -242,6 +269,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "效應螺旋",
+   "cover": "TEST10_Raw",
    "stages": 10,
    "lines": 773
   },
@@ -250,6 +278,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "忤逆行於今",
+   "cover": "TEST-826_Raw",
    "stages": 23,
    "lines": 2556
   },
@@ -258,6 +287,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "瑞歲百角戲",
+   "cover": "TEST-605_Raw",
    "stages": 5,
    "lines": 834
   },
@@ -266,6 +296,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "啟示錄",
+   "cover": "TEST-1202_Raw",
    "stages": 1,
    "lines": 48
   },
@@ -274,6 +305,7 @@
    "kind": "event",
    "title": "活動劇情",
    "name": "嵐異常",
+   "cover": "TEST-305_Raw",
    "stages": 13,
    "lines": 1407
   },
@@ -284,6 +316,7 @@
    "name": "奈奧米",
    "desc": "協作才能發揮更大的力量，即使是王牌駭客也不例外。",
    "gameId": "10103106",
+   "cover": "TEST7_Raw",
    "stages": 5,
    "lines": 200
   },
@@ -294,6 +327,7 @@
    "name": "馬庫斯",
    "desc": "灰燼之中亦有火種，絕路之後才是新生。",
    "gameId": "10103124",
+   "cover": "TEST-626_Raw",
    "stages": 5,
    "lines": 238
   },
@@ -304,6 +338,7 @@
    "name": "威廉",
    "desc": "縱是煉獄的烈焰也不比他的復仇之火更盛。",
    "gameId": "10103115",
+   "cover": "TEST1_Raw",
    "stages": 5,
    "lines": 205
   },
@@ -314,6 +349,7 @@
    "name": "白月",
    "desc": "「信任」無法容身，我們並肩而立，只因這同樣的傷痕。",
    "gameId": "10103112",
+   "cover": "TEST-627_Raw",
    "stages": 5,
    "lines": 225
   },
@@ -324,6 +360,7 @@
    "name": "哈維",
    "desc": "沒人敢搶獵豹物流的貨，哈維是第一個！",
    "gameId": "10102101",
+   "cover": "TEST-505_Raw",
    "stages": 5,
    "lines": 181
   },
@@ -334,6 +371,7 @@
    "name": "芙烈達",
    "desc": "島上無難事，只怕三傭兵。",
    "gameId": "10103122",
+   "cover": "TEST-403_Raw",
    "stages": 5,
    "lines": 188
   },
@@ -344,6 +382,7 @@
    "name": "賽文",
    "desc": "波奇戰鬥記錄：1150907號",
    "gameId": "10103120",
+   "cover": "TEST6_Raw",
    "stages": 5,
    "lines": 219
   },
@@ -354,6 +393,7 @@
    "name": "虹",
    "desc": "縱使這座島嶼佈滿陷阱，也攔不住這快意恩仇的拳頭。",
    "gameId": "10103110",
+   "cover": "TEST-811_Raw",
    "stages": 5,
    "lines": 175
   },
@@ -364,6 +404,7 @@
    "name": "梅莉莎",
    "desc": "她在尋找一個脫身的方法……",
    "gameId": "10103111",
+   "cover": "TEST-201_Raw",
    "stages": 5,
    "lines": 375
   },
@@ -377,6 +418,7 @@
    "aka": [
     "零落之刻"
    ],
+   "cover": "TEST-612_Raw",
    "stages": 5,
    "lines": 265
   },
@@ -390,6 +432,7 @@
    "aka": [
     "尋鄉奇旅"
    ],
+   "cover": "TEST-1001_Raw",
    "stages": 9,
    "lines": 745
   }

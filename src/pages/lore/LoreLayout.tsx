@@ -117,10 +117,14 @@ export default function LoreLayout() {
   // 夾小的值會被記到**上一頁**的路徑上，按上一頁就回不到原位。展廳頁是 lazy chunk、導覽走 transition，
   // commit 晚於 pushState，最容易中（2026-10-17 實測：經分館連結進機甲廳 → 進展廳 → 上一頁，1500 回到 957）。
   useLayoutEffect(() => { pathRef.current = pathname }, [pathname])
+  // 只在**路徑**換了才捲頂，導覽類型用 ref 讀、不放進依賴：同一路徑只改查詢字串時（選章舞台的 ?focus= 用 replace，PLAN-042-K）
+  // navType 會從 PUSH 變成 REPLACE，放進依賴的話第一次換章就把整頁捲回頂端（2026-11-28 實測）
+  const navTypeRef = useRef(navType)
+  useLayoutEffect(() => { navTypeRef.current = navType }, [navType])
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    const saved = navType === 'POP' ? positions.current.get(pathname) : undefined
+    const saved = navTypeRef.current === 'POP' ? positions.current.get(pathname) : undefined
     if (!saved) {
       el.scrollTo({ top: 0 })
       return
@@ -134,7 +138,7 @@ export default function LoreLayout() {
     }
     attempt()
     return () => cancelAnimationFrame(raf)
-  }, [pathname, navType])
+  }, [pathname])
 
   // ④ 把 scrollport 的實測高度寫成 --lore-viewport-h（決策 (J)），供故事館頁面的舞台高度（.lore-page 的 --stage-h）取用。
   //    量實際的可視高度而不是減法，`SignedOutBanner` 出現／消失時立繪欄會自動跟上。

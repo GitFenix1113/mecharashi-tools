@@ -1,0 +1,3 @@
+{
+  "//": "劇情故事館代表圖覆寫表（PLAN-042-K）：書 ID → 場景 CG 官方檔名（public/images/game/story/<名稱>.webp）。沒列的書用匯入腳本自動挑的。改完跑 node scripts/import-story.mjs --write。候選圖可看 node \"_local-notes/2026-11/2026-11-28_劇情故事館選章舞台_準備/_產生候選頁.mjs\" 產生的頁面。以 // 開頭的鍵是註解。"
+}

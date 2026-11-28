@@ -12,6 +12,8 @@
 //   書檔只記「從第幾行起換成哪張」（StoryPart.shots），一段過場通常一兩筆；前台在那一行前插一張橫幅當定場鏡頭。
 //   主線的戰鬥段落另外用該章區域的世界地圖（WorldMapRegion.BlurBgRes，一章一區）當底。
 //   沒有解包圖片的電腦照樣能跑：站上已經有的圖照用，缺的列進報告 ⬜，書檔不會指到不存在的圖。
+//   說話者頭像：說話那一側的 CharImageId → ConfigDataCharacterPicture.Icon → 站上既有的 _head.webp（機師／外觀／NPC，不另外匯入）。
+//   書上列一次用到的頭像（StoryBook.faces），每段只存與 lines 等長的編號（StoryPart.face）。
 //
 // ── 為什麼是靜態檔、不進 Firestore ──
 // 劇情是「改版才會變」的固定內容，六萬多行對白進資料庫只會白白吃讀取額度。
@@ -165,6 +167,41 @@ function sceneOf(bgId) {
 /** 主線區域地圖（戰鬥段落的底）：官方檔名；站上存的是裁成橫幅的 <名稱>_strip.webp */
 const mapAvailable = (name) => !!name && (MAPS.has(name) || fs.existsSync(path.join(SCENE_DIR, `${name}_strip.webp`)))
 
+// ─── 說話者頭像（PLAN-042-J 第二段）─────────────────────────────────────────
+// 說話那一側的立繪 Left／RightCharImageId → ConfigDataCharacterPicture.Icon（例 Pilot_10103101A）→ 站上既有的 _head.webp。
+// 圖不另外匯入：用 PLAN-054 已經上站的機師（含外觀 skins/）與 NPC 圖庫。資料夾是遊戲 ID、不一定等於立繪鍵的號碼
+// （維娜 10103144 的檔名是 Pilot_13019A），所以掃實際檔案建索引，不自己拼路徑。
+
+const CHARPIC = table('ConfigDataCharacterPicture')
+const GAME_IMG = path.join(ROOT, 'public', 'images', 'game')
+/** 立繪鍵 → 站內路徑（相對 /images/game/、不含 _head.webp），例 pilots/10103101/Pilot_10103101A。同鍵先到先贏：機師本體 → 外觀 → NPC */
+const FACE_INDEX = new Map()
+for (const [base, sub] of [['pilots', ''], ['pilots', 'skins'], ['npc', '']]) {
+  const root = path.join(GAME_IMG, base)
+  if (!fs.existsSync(root)) continue
+  for (const id of fs.readdirSync(root)) {
+    const dir = path.join(root, id, sub)
+    if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) continue
+    for (const f of fs.readdirSync(dir)) {
+      const m = /^(.+)_head\.webp$/.exec(f)
+      if (m && !FACE_INDEX.has(m[1])) FACE_INDEX.set(m[1], [base, id, sub, m[1]].filter(Boolean).join('/'))
+    }
+  }
+}
+/** 站上沒有頭像的立繪鍵 → 說話者名字（報告用） */
+const faceMissing = new Map()
+
+/** 一行對白的說話者頭像；旁白、沒有立繪、站上沒有圖都是 null */
+function faceOf(d, speaker) {
+  if (!speaker) return null
+  const side = tx(d.LeftNameStrKey) ? d.LeftCharImageId : d.RightCharImageId
+  const icon = side ? CHARPIC.get(side)?.Icon : null
+  if (!icon) return null
+  const face = FACE_INDEX.get(icon)
+  if (!face) faceMissing.set(icon, speaker)
+  return face ?? null
+}
+
 // ─── 文字清理 ────────────────────────────────────────────────────────────────
 
 const stats = { unknownTags: new Map(), loops: 0, missingText: 0 }
@@ -200,10 +237,12 @@ function speakerOf(d) {
  * 從某一行沿 NextID 走到底。一行 = [說話者, 文字] 或 [說話者, 文字, 選項[]]。
  * 選項（DialogChooseItem）在台版資料裡全都沒有分支（DialogId 恆為 0，是戰場用的二選一／三選一），所以只列出選項文字。
  * bgs 與 lines 平行：每一行當下的場景 CG（sceneOf），交給 part() 收斂成場景條。
+ * faces 也與 lines 平行：說話者頭像的站內路徑（faceOf），輸出前由 packFaces() 換成書內編號。
  */
 function walk(headId) {
   const lines = []
   const bgs = []
+  const faces = []
   const seen = new Set()
   let id = headId
   while (id && DIALOG.has(id)) {
@@ -214,21 +253,23 @@ function walk(headId) {
     if (!text && d.WordsStrKey) stats.missingText++
     const choices = (d.ChooseItemList ?? []).map((c) => cleanText(tx(CHOOSE.get(c)?.WordsStrKey))).filter(Boolean)
     if (text || choices.length) {
-      lines.push(choices.length ? [speakerOf(d), text, choices] : [speakerOf(d), text])
+      const speaker = speakerOf(d)
+      lines.push(choices.length ? [speaker, text, choices] : [speaker, text])
       bgs.push(sceneOf(d.Background))
+      faces.push(faceOf(d, speaker))
     }
     id = d.NextID
   }
-  return { lines, bgs }
+  return { lines, bgs, faces }
 }
 
-const NO_LINES = { lines: [], bgs: [] }
+const NO_LINES = { lines: [], bgs: [], faces: [] }
 
 /**
  * 一段＋它的場景條：只記「從第幾行起換成哪張」（shots：[行索引, key]，行索引含戰中的 null 分隔）。
  * 同一張不重插；過場裡沒有圖的行（黑幕轉場、prefab 背景）沿用前一張，戰鬥中沒有圖＝回到戰場，下一張 CG 重新定場。
  */
-function part(at, { lines, bgs }, view) {
+function part(at, { lines, bgs, faces }, view) {
   const shots = []
   bgs.forEach((key, i) => {
     if (!key) {
@@ -238,7 +279,30 @@ function part(at, { lines, bgs }, view) {
     if (key !== view.shown) shots.push([i, key])
     view.shown = key
   })
-  return shots.length ? { at, lines, shots } : { at, lines }
+  // _faces 是暫存（站內路徑），輸出前 packFaces() 換成書內編號 face[]
+  return { at, lines, ...(shots.length ? { shots } : {}), _faces: faces }
+}
+
+/**
+ * 頭像壓縮：一本書用到的頭像列一次（book.faces，站內路徑），每段只存與 lines 等長的編號（part.face：0＝沒有、n＝faces[n-1]）。
+ * 逐行存路徑的話全館要多一兩 MB；編號只多幾十 KB。整段都沒有頭像就不給 face。
+ */
+function packFaces(book) {
+  const table = []
+  const no = new Map()
+  for (const s of book.stages) {
+    for (const p of s.parts) {
+      const raw = p._faces
+      delete p._faces
+      if (!raw.some(Boolean)) continue
+      p.face = raw.map((f) => {
+        if (!f) return 0
+        if (!no.has(f)) { table.push(f); no.set(f, table.length) }
+        return no.get(f)
+      })
+    }
+  }
+  if (table.length) book.faces = table
 }
 
 // ─── 戰中對白：戰場事件觸發 ──────────────────────────────────────────────────
@@ -266,16 +330,17 @@ function stageParts(startId, endId, sceneIds) {
   const view = { shown: null }
   const start = startId ? walk(startId) : NO_LINES
   if (start.lines.length) { parts.push(part('start', start, view)); used.add(startId); cutscene.push(startId) }
-  const battle = { lines: [], bgs: [] }
+  const battle = { lines: [], bgs: [], faces: [] }
   for (const sid of sceneIds) {
     for (const h of SCENE_DIALOGS.get(sid) ?? []) {
       if (used.has(h)) continue
       used.add(h)
       const seg = walk(h)
       if (!seg.lines.length) continue
-      if (battle.lines.length) { battle.lines.push(null); battle.bgs.push(null) }
+      if (battle.lines.length) { battle.lines.push(null); battle.bgs.push(null); battle.faces.push(null) }
       battle.lines.push(...seg.lines)
       battle.bgs.push(...seg.bgs)
+      battle.faces.push(...seg.faces)
     }
   }
   if (battle.lines.length) {
@@ -495,6 +560,47 @@ const KIND_ORDER = { main: 0, event: 1, memory: 2 }
 books.sort((x, y) => KIND_ORDER[x.kind] - KIND_ORDER[y.kind] || Number(x.id.split('-')[1]) - Number(y.id.split('-')[1]))
 // 去重用的 heads 只在腳本裡用，不進輸出
 for (const b of books) for (const s of b.stages) delete s.heads
+for (const b of books) packFaces(b)
+
+// ─── 代表圖（PLAN-042-K）─────────────────────────────────────────────────────
+// 館首頁選章舞台與卡片的主視覺。遊戲的章節設定表沒有圖片欄位，所以從這本用到的場景 CG 挑：
+//   ① 章節專屬 CG（P 開頭，例 Chapter-I 的夢境 P001_Raw）優先
+//   ② 其次「這張圖底下的對白行數」最多、而且排在前面的書還沒用過的（主線 → 活動 → 回憶依序挑，同一張不會被兩本搶走）
+// 站長覆寫表 scripts/lib/storyCovers.json（{ "main-2": "TEST-403_Raw" }）優先；指到不存在的書或圖就忽略並列 ⬜。
+
+const COVER_FILE = path.join(ROOT, 'scripts', 'lib', 'storyCovers.json')
+const coverOverrides = (() => {
+  try {
+    return Object.fromEntries(Object.entries(JSON.parse(fs.readFileSync(COVER_FILE, 'utf8'))).filter(([k]) => !k.startsWith('//')))
+  } catch {
+    return {}
+  }
+})()
+const coverBad = []
+const coverTaken = new Set()
+const covers = new Map()
+let coverForced = 0
+for (const b of books) {
+  const weight = new Map()
+  for (const s of b.stages) {
+    for (const p of s.parts) {
+      const sh = p.shots ?? []
+      sh.forEach(([i, key], j) => {
+        const end = j + 1 < sh.length ? sh[j + 1][0] : p.lines.length
+        weight.set(key, (weight.get(key) ?? 0) + p.lines.slice(i, end).filter(Boolean).length)
+      })
+    }
+  }
+  const ranked = [...weight].sort((x, y) => y[1] - x[1]).map(([k]) => k)
+  const pick = ranked.find((k) => /^P\d/.test(k) && !coverTaken.has(k)) ?? ranked.find((k) => !coverTaken.has(k)) ?? ranked[0]
+  const forced = coverOverrides[b.id]
+  const forcedOk = !!forced && fs.existsSync(path.join(SCENE_DIR, `${forced}.webp`))
+  if (forced && !forcedOk) coverBad.push(`${b.id} → ${forced}（站上沒有這張圖）`)
+  if (forcedOk) coverForced++
+  const cover = forcedOk ? forced : pick
+  if (cover) { coverTaken.add(cover); covers.set(b.id, cover) }
+}
+for (const id of Object.keys(coverOverrides)) if (!books.some((b) => b.id === id)) coverBad.push(`${id}（沒有這本書）`)
 
 // ─── 輸出 ────────────────────────────────────────────────────────────────────
 
@@ -509,10 +615,20 @@ const catalog = {
     ...(b.desc ? { desc: b.desc } : {}),
     ...(b.gameId ? { gameId: b.gameId } : {}),
     ...(b.aka ? { aka: b.aka } : {}),
+    ...(covers.has(b.id) ? { cover: covers.get(b.id) } : {}),
     stages: b.stages.length,
     lines: b.stages.reduce((n, s) => n + lineCount(s.parts), 0),
   })),
 }
+
+/**
+ * 關卡大綱（PLAN-042-K）：選章舞台的「直接跳關」用，舞台掛上時才 lazy 載入，免得為了列關卡去載整本書。
+ * 一本一串 [key, code, name, 支線 1／0, 分幕?]——與書檔的 stages 一一對應（storyData.test 核對）
+ */
+const outline = Object.fromEntries(books.map((b) => [
+  b.id,
+  b.stages.map((s) => (s.group ? [s.key, s.code, s.name, s.branch ? 1 : 0, s.group] : [s.key, s.code, s.name, s.branch ? 1 : 0])),
+]))
 
 const total = catalog.books.reduce((n, b) => n + b.lines, 0)
 const byKind = (k) => catalog.books.filter((b) => b.kind === k)
@@ -561,6 +677,29 @@ if (sceneSkips.prefab.size) console.log(`　　　　略過 prefab 型背景 ${s
 if (sceneSkips.odd.size) console.log(`　　　　略過尺寸不是 ${SCENE_W}×${SCENE_H} 的：${[...sceneSkips.odd].join('、')}`)
 if (sceneSkips.missing.size) console.log(`⚠ 對白指到、但找不到圖的背景 ${sceneSkips.missing.size} 張：${[...sceneSkips.missing].join('、')}`)
 
+// 頭像摘要：只算收錄的書（被去重掉的關不算）
+let spoken = 0
+let withFace = 0
+const faceKeys = new Set()
+for (const b of books) {
+  for (const f of b.faces ?? []) faceKeys.add(f)
+  for (const s of b.stages) {
+    for (const p of s.parts) {
+      p.lines.forEach((l, i) => {
+        if (!l?.[0]) return
+        spoken++
+        if (p.face?.[i]) withFace++
+      })
+    }
+  }
+}
+console.log(`頭像　　有名字的台詞 ${spoken.toLocaleString()} 行，${withFace.toLocaleString()} 行有頭像（${((withFace / spoken) * 100).toFixed(1)}%），用到 ${faceKeys.size} 張站上既有的頭像`)
+if (faceMissing.size) {
+  console.log(`　　　　站上沒有頭像的立繪鍵 ${faceMissing.size} 個（那幾行只列名字）：${[...faceMissing].map(([k, n]) => `${k}（${n}）`).join('、')}`)
+}
+console.log(`代表圖　${covers.size}／${books.length} 本（站長覆寫 ${coverForced} 本；覆寫表 scripts/lib/storyCovers.json）`)
+if (coverBad.length) console.log(`⚠ 覆寫表有 ${coverBad.length} 筆沒套用：${coverBad.join('、')}`)
+
 if (!WRITE) {
   console.log('\n（預覽模式，沒有寫檔。確認無誤後加 --write）')
   process.exit(0)
@@ -582,6 +721,9 @@ for (const b of books) {
 }
 const indexBody = JSON.stringify(catalog, null, 1)
 fs.writeFileSync(path.join(OUT_DIR, 'index.json'), indexBody + '\n')
+const outlineBody = JSON.stringify(outline)
+fs.writeFileSync(path.join(OUT_DIR, 'outline.json'), outlineBody + '\n')
+bytes += Buffer.byteLength(outlineBody)
 
 console.log(`\n✅ 已寫入 src/data/story/：index.json＋${books.length} 本（${(bytes / 1024 / 1024).toFixed(2)} MB）`)
 
@@ -615,6 +757,9 @@ if (newScenes.length + newMaps.length) {
 console.log('\n下一步：')
 if (sceneSkips.missing.size) console.log(`  ⬜ 有 ${sceneSkips.missing.size} 張背景找不到圖（見上方 ⚠），那幾行先不插圖；拿到新的解包後用 --res 指定再跑一次`)
 if (orphans.length) console.log(`  ⬜ public/images/game/story/ 有 ${orphans.length} 張沒人用的圖（改版拿掉的場景）：確認後手動刪除——${orphans.join('、')}`)
+if (faceMissing.size) {
+  console.log(`  ⬜ ${faceMissing.size} 個說話者站上還沒有頭像（見上方）：那幾行只列名字。想補的話用 import-game-assets.mjs 匯入那張立繪（NPC 走 --npc），再重跑本腳本 --write`)
+}
 console.log('  ⬜ npm test　　　（storyData.test.ts 會核對目錄與書檔一致、沒有殘留的遊戲標記、場景圖都在）')
 console.log('  ⬜ npm run dev → 打開 /lore/story 抽看一兩章')
 console.log('  ⬜ commit 時記得更新網站履歷（src/data/siteChangelog/）')

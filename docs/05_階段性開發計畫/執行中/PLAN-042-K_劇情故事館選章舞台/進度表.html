@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-K 劇情故事館選章舞台 — 進度表 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+/* ── Status Badges ── */
+.status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.status.done     { background: rgba(34,197,94,0.15);  color: var(--accent-green);  border: 1px solid rgba(34,197,94,0.3); }
+.status.doing    { background: rgba(34,211,238,0.15);  color: var(--accent-cyan);   border: 1px solid rgba(34,211,238,0.3); }
+.status.pending  { background: rgba(107,114,128,0.15);color: var(--text-dim);      border: 1px solid rgba(107,114,128,0.3); }
+.status.blocked  { background: rgba(239,68,68,0.15);  color: var(--accent-red);    border: 1px solid rgba(239,68,68,0.3); }
+
+/* ── Task List ── */
+.task-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.task-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.task-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+}
+.task-group-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: rgba(255,255,255,0.02); }
+
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.task-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.task-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-green);
+  margin-top: 5px;
+}
+.task-assignee {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  text-align: right;
+  padding-top: 2px;
+}
+
+/* ── Progress Bar ── */
+.progress-wrap { margin: 20px 0 32px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.progress-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+  transition: width 0.4s ease;
+}
+
+/* ── Summary Cards ── */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-num  { font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; }
+.summary-lbl  { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+/* ── Impact Badge ── */
+.impact-note {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 16px 0 28px;
+}
+.impact-note strong { color: var(--accent-green); }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-K 進度表</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-042-K</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    進度表<span style="-webkit-text-fill-color:var(--text-secondary);">劇情故事館選章舞台</span>
+  </h1>
+  <p class="hero-sub">各工作項目狀態追蹤 · 建立於 2026-11-28</p>
+</header>
+
+<main class="container">
+
+<section class="section">
+  <div class="section-label orange">Progress</div>
+  <div class="section-title">總進度</div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-green)">14</div>
+      <div class="summary-lbl">已完成</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--accent-cyan)">0</div>
+      <div class="summary-lbl">進行中</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-dim)">0</div>
+      <div class="summary-lbl">待處理</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num" style="color:var(--text-primary)">14</div>
+      <div class="summary-lbl">任務（含站長 1 項）</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>整體完成度</span>
+      <span style="color:var(--accent-orange);">14 / 14</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: 100%"></div>
+    </div>
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.25);">
+    <strong style="color:var(--accent-cyan);">2026-11-28 完成並上線：</strong>
+    站長回覆「直接開工」⇒ P-1 照計畫書的建議定案：D1 只有主線上舞台、D2 預設舞台、D3 用自動挑的代表圖（覆寫表先留空）、D4 舞台內滾輪換章、頭尾放行。
+    <code>npm test</code> 1850／1850（新增 8 條）、build 通過、改到的檔案 eslint 0 錯；Playwright 驗桌機 1366×768 與手機 375×812，主控台 0 錯誤。
+    <br><strong style="color:var(--accent-cyan);">實作時與原計畫不同的四處：</strong>
+    ① 元件檔名是 <code>StorySelectStage.tsx</code>，不是 <code>StoryStage.tsx</code>：Windows 不分大小寫，和純函式 <code>storyStage.ts</code> 會被當成同一個檔（tsc TS1261）。
+    ② 滾輪多一道關：<strong>半秒內頁面還在捲就放行</strong>。只靠「整塊可見＋頭尾放行」的話，一路往下捲頁面的人經過舞台會被攔下來、要連換十幾章才出得去——正是 PLAN-050 捨棄的前置關卡。
+    ③ 冷卻改成「換章後只要滾動還連續湧入（間隔 &lt; 160ms）就一直鎖住」：固定 260ms 冷卻擋不住觸控板一秒多的慣性（實測一次滑過 4 章 → 改後 1 章），滑鼠一格一格滾照樣一格換一章。
+    ④ 連帶修正 <code>LoreLayout</code>：換頁捲頂的 effect 依賴 <code>[pathname, navType]</code>，第一次用 replace 改 <code>?focus=</code> 時 navType 從 PUSH 變 REPLACE，整頁被捲回頂端；改成只看 pathname（navType 用 ref 讀）。
+    另外：桌機的簡介原本壓在代表圖上不好讀。先試了固定形狀的紙色柔光，視窗一寬（1920、1100 實測）簡介就延伸到柔光外，站長回報看不清楚 ⇒ 改成貼著資訊區本身的紙底（文字所在處一律實色、只在右緣外與上緣漸淡）＋文字紙色光暈；「直接跳關」原本用固定 58px 裁切、第二排被切一半（站長回報）⇒ 按鈕高度與裁切高度改用 rem（跟著站上字級走）剛好露兩排，「全部 N 關」改成實際放不下才出現（ResizeObserver），舞台改 min-height 讓展開時不被切；800／1366／1920 寬 × 14／16／18px 字級實測 0 顆被切；
+    <strong>追加（站長同日要求試看）：館首頁的主線／活動／機師回憶改成三個分頁</strong>（<code>?tab=</code>，replace、與 <code>?focus=</code> 並存、← → 鍵盤、上一頁回到原分頁；手機 360／375 寬三顆放得下）；章節列只顯示前後 3 章，避免最下面那章壓到操作提示。
+  </div>
+
+  <div class="impact-note" style="background:rgba(249,115,22,0.06);border-color:rgba(249,115,22,0.25);">
+    <strong style="color:var(--accent-orange);">2026-11-28 立案、準備資料已備：</strong>
+    代表圖候選頁 <code>_local-notes/2026-11/2026-11-28_劇情故事館選章舞台_準備/代表圖候選.html</code>（43／43 本都挑得到，附每本前 5 張候選；產生器同資料夾）。
+    評估工作量約 <strong>1.5～2 天</strong>。等站長回覆 P-1（D1–D4）就動工；沒回覆的項目照計畫書的「建議」做。
+  </div>
+
+  <div class="impact-note">
+    <strong>目標效果：</strong>
+    館首頁的主線像音遊選曲一樣一章一章換著看：每章都有自己的代表畫面，看中了直接從舞台上「繼續閱讀」或跳到某一關；不想玩的人一鍵切回清單。
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">Phase 0</div>
+  <div class="section-title">站長決定</div>
+  <div class="section-desc">動工前先定：D1 範圍、D2 預設顯示、D3 代表圖覆寫、D4 滾輪。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">P-1 &nbsp; 站長決定 D1–D4</div>
+      <div class="task-group-meta">計畫書「待站長決定」</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">看計畫書四項＋<code>代表圖候選.html</code>，回覆選擇與要覆寫的代表圖</div>
+        <div class="task-desc">候選頁（本機）：<code>_local-notes/2026-11/2026-11-28_劇情故事館選章舞台_準備/代表圖候選.html</code>。沒回覆的項目照「建議」做。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">站長</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">Phase A</div>
+  <div class="section-title">資料</div>
+  <div class="section-desc">代表圖與關卡大綱由匯入腳本產生，前台只讀結果。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-1 &nbsp; 代表圖：自動挑選＋覆寫表</div>
+      <div class="task-group-meta">scripts/import-story.mjs · scripts/lib/storyCovers.json</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name"><code>index.json</code> 每本加 <code>cover</code>；覆寫表優先</div>
+        <div class="task-desc">規則同候選頁（P 開頭優先 → 行數最多且未被前面的書用過）。報告列出自動結果與被覆寫的書。</div>
+        <div class="task-file">scripts/import-story.mjs · scripts/lib/storyCovers.json · src/data/story/index.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-2 &nbsp; 關卡大綱 <code>outline.json</code></div>
+      <div class="task-group-meta">scripts/import-story.mjs</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">每本的關卡 key／編號／名稱／支線，給舞台的「直接跳關」</div>
+        <div class="task-desc">舞台掛上時才 lazy 載入；估 25 KB 以內。</div>
+        <div class="task-file">src/data/story/outline.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">A-3 &nbsp; 測試</div>
+      <div class="task-group-meta">storyData.test.ts</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">cover 指到存在的圖、43 本都有；覆寫表的書 ID 與 CG 都存在；outline 與書檔一致</div>
+        <div class="task-desc">—</div>
+        <div class="task-file">src/components/lore/story/storyData.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">Phase B</div>
+  <div class="section-title">桌機舞台</div>
+  <div class="section-desc">選曲式舞台：焦點章節在中央，背景交叉淡入代表圖。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-1 &nbsp; <code>storyStage.ts</code> 純函式</div>
+      <div class="task-group-meta">src/components/lore/story/storyStage.ts</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">焦點 ↔ 網址 <code>?focus=</code>、滾輪累積門檻與冷卻、兩端放行的判斷</div>
+        <div class="task-desc">純函式才能 node:test；元件不持有焦點 state，由網址推導（042-I 與 PLAN-050 的同一條規則）。</div>
+        <div class="task-file">storyStage.ts · storyStage.test.ts</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-2 &nbsp; 舞台元件</div>
+      <div class="task-group-meta">StoryStage.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">代表圖交叉淡入、章節列（前後各數章）、中央資訊面板（章名、簡介、關數、已讀）</div>
+        <div class="task-desc">參考舊焦點輪播（<code>git show b42953be^:src/components/timeline/VersionTimeline.tsx</code>）的位移與縮放，不做 clip-path 展開。</div>
+        <div class="task-file">src/components/lore/story/StoryStage.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-3 &nbsp; 輸入</div>
+      <div class="task-group-meta">StoryStage.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">滾輪（依 D4）、舞台取得焦點時的 ↑↓、點旁邊換焦點／點中央進入</div>
+        <div class="task-desc">不全域監聽方向鍵；滾輪 passive:false 只掛在舞台元素上，到兩端放行。</div>
+        <div class="task-file">src/components/lore/story/StoryStage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">B-4 &nbsp; 一步進入</div>
+      <div class="task-group-meta">StoryStage.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">「繼續閱讀 3-5」「從頭讀」「直接跳關」</div>
+        <div class="task-desc">進度讀 <code>storyProgress</code>；跳關列沿用 042-I 的收納規則（<code>stageOutline</code>）。</div>
+        <div class="task-file">src/components/lore/story/StoryStage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">Phase C</div>
+  <div class="section-title">手機與退路</div>
+  <div class="section-desc">手機不攔截垂直捲動；任何人都能退回清單。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-1 &nbsp; 手機橫向滑條</div>
+      <div class="task-group-meta">StoryStage.tsx · index.css</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">scroll-snap 橫向滑條，主圖在上、資訊在下</div>
+        <div class="task-desc">水平捲動容器不違反 M-08（那條只管垂直）。</div>
+        <div class="task-file">src/components/lore/story/StoryStage.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-2 &nbsp; 舞台／清單切換</div>
+      <div class="task-group-meta">StoryHomePage.tsx</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">清單＝現在的卡片加代表圖縮圖；選擇記在本機（依 D2 決定預設）</div>
+        <div class="task-desc">偏好鍵 <code>mecharashi_story_home_view</code>，讀寫包 try/catch。</div>
+        <div class="task-file">src/pages/lore/StoryHomePage.tsx</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">C-3 &nbsp; 無障礙</div>
+      <div class="task-group-meta">—</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">tablist／aria-selected、焦點章節以 aria-live 報讀、reduced-motion 改直接切換</div>
+        <div class="task-desc">—</div>
+        <div class="task-file">src/components/lore/story/StoryStage.tsx · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-label orange">Phase D</div>
+  <div class="section-title">驗收與文件</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-1 &nbsp; 瀏覽器驗收</div>
+      <div class="task-group-meta">本機 5173＋Playwright</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">桌機 1366×768、手機 375×812；觸控板慣性不會一次滑過多章；兩端放行；上一頁回到同一章</div>
+        <div class="task-desc">隱藏面板驗不了動畫與 lazy 圖，照 042-J 用 Playwright headless 截圖。</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-2 &nbsp; <code>npm test</code>／<code>npm run build</code></div>
+      <div class="task-group-meta">—</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">全套測試與 build 通過、改到的檔案 eslint 0 錯</div>
+        <div class="task-desc">—</div>
+        <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">D-3 &nbsp; 文件與履歷</div>
+      <div class="task-group-meta">docs · siteChangelog</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">故事館頁面規劃、更新履歷、PLAN-042 總綱、執行中索引</div>
+        <div class="task-desc">—</div>
+        <div class="task-file">docs/03_頁面規劃/13_故事館/index.html · src/data/siteChangelog/</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-K — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

@@ -4,7 +4,9 @@ import { usePageTitle } from '../../contexts/PageTitleContext'
 import { usePilots } from '../../hooks/useFirestore'
 import { StoryLines } from '../../components/lore/story/StoryLines'
 import { StorySceneShot } from '../../components/lore/story/StorySceneShot'
-import { mapStripPath, readScenePref, writeScenePref } from '../../components/lore/story/storyScenes'
+import {
+  FACE_PREF_KEY, mapStripPath, readStoryPref, SCENE_PREF_KEY, writeStoryPref,
+} from '../../components/lore/story/storyScenes'
 import { StoryStageBar, StoryStageRail, type StepLink } from '../../components/lore/story/StoryStageNav'
 import {
   hasStoryBook, loadStoryBook, storyDisplayName, storyEntry, storyNeighbors, STORY_KIND_LABEL,
@@ -35,6 +37,16 @@ export default function StoryBookPage() {
   return <StoryBookView key={id} id={id} part={part} />
 }
 
+/** 本機的開關偏好（storyScenes.ts）：[目前值, 切換] */
+function useStoryPref(key: string) {
+  const [on, setOn] = useState(() => readStoryPref(key))
+  const toggle = () => {
+    writeStoryPref(key, !on)
+    setOn(!on)
+  }
+  return [on, toggle] as const
+}
+
 /** 水平滑動換關的門檻：照 LoreChapterPager（位移夠大、且明顯偏水平才算換關意圖） */
 const SWIPE_MIN_PX = 48
 const SWIPE_AXIS_RATIO = 1.5
@@ -49,12 +61,9 @@ function StoryBookView({ id, part }: { id: string; part: string | undefined }) {
   // 續讀點在進書當下拍一張：之後的記錄（visit）不該讓提示列自己改來改去
   const [resumeKey] = useState(() => (part ? null : storyProgress.progressOf(id).last))
   const progress = useStoryProgress(id)
-  // 「場景圖」開關（PLAN-042-J）：個人偏好、只存本機，換書時重讀一次就夠（只有這一頁會改它）
-  const [showScenes, setShowScenes] = useState(readScenePref)
-  const toggleScenes = () => {
-    writeScenePref(!showScenes)
-    setShowScenes(!showScenes)
-  }
+  // 「場景圖」「頭像」開關（PLAN-042-J）：個人偏好、只存本機，換書時重讀一次就夠（只有這一頁會改它）
+  const [showScenes, toggleScenes] = useStoryPref(SCENE_PREF_KEY)
+  const [showFaces, toggleFaces] = useStoryPref(FACE_PREF_KEY)
 
   useEffect(() => {
     let alive = true
@@ -213,7 +222,10 @@ function StoryBookView({ id, part }: { id: string; part: string | undefined }) {
           {book && stage && (
             <>
               <article className="lore-story-sheet" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-                <StageView stage={stage} book={book} showScenes={showScenes} onToggleScenes={toggleScenes} />
+                <StageView
+                  stage={stage} book={book}
+                  showScenes={showScenes} onToggleScenes={toggleScenes} showFaces={showFaces} onToggleFaces={toggleFaces}
+                />
                 <div ref={tailRef} className="lore-story-tail" aria-hidden="true" />
               </article>
               <EndNav prev={prev} next={next} crossesBook={crossesBook} />
@@ -239,16 +251,20 @@ const PART_LABEL: Record<StoryPart['at'], string> = { start: '開場', battle: '
 /**
  * 三段改成段落小標，不再收合（一關最長 393 行，計畫書決策六）。
  * 場景條（PLAN-042-J）：過場依 shots 插定場鏡頭；主線的戰鬥段落開頭放該章的區域地圖——
- * 戰鬥段第一行本身就是戰中過場（有 CG）時不疊。「場景圖」開關只在這一關真的有圖時才出現，免得按了沒反應。
+ * 戰鬥段第一行本身就是戰中過場（有 CG）時不疊。說話者頭像畫在名字旁（StoryLines）。
+ * 「場景圖」「頭像」開關只在這一關真的有那種圖時才出現，免得按了沒反應。
  */
-function StageView({ stage: s, book, showScenes, onToggleScenes }: {
+function StageView({ stage: s, book, showScenes, onToggleScenes, showFaces, onToggleFaces }: {
   stage: StoryStage
   book: StoryBook
   showScenes: boolean
   onToggleScenes: () => void
+  showFaces: boolean
+  onToggleFaces: () => void
 }) {
   const battleMap = (p: StoryPart) => p.at === 'battle' && !!book.map && p.shots?.[0]?.[0] !== 0
   const hasScenes = s.parts.some((p) => !!p.shots?.length || battleMap(p))
+  const hasFaces = !!book.faces && s.parts.some((p) => !!p.face)
   return (
     <>
       <header className="lore-story-stagehead">
@@ -258,13 +274,25 @@ function StageView({ stage: s, book, showScenes, onToggleScenes }: {
           <h2 className="lore-story-stage__name">{s.name}</h2>
           {s.place && <span className="text-xs text-text-dim">{s.place}</span>}
           {s.branch && <span className="lore-story-tag">支線</span>}
-          {hasScenes && (
-            <button
-              type="button" className="lore-story-scenetoggle" aria-pressed={showScenes} onClick={onToggleScenes}
-              title={showScenes ? '隱藏場景圖，只看文字' : '顯示遊戲裡的場景背景'}
-            >
-              場景圖
-            </button>
+          {(hasScenes || hasFaces) && (
+            <span className="lore-story-toggles">
+              {hasScenes && (
+                <button
+                  type="button" className="lore-story-toggle" aria-pressed={showScenes} onClick={onToggleScenes}
+                  title={showScenes ? '隱藏場景圖，只看文字' : '顯示遊戲裡的場景背景'}
+                >
+                  場景圖
+                </button>
+              )}
+              {hasFaces && (
+                <button
+                  type="button" className="lore-story-toggle" aria-pressed={showFaces} onClick={onToggleFaces}
+                  title={showFaces ? '隱藏說話者頭像' : '在名字旁顯示說話者頭像'}
+                >
+                  頭像
+                </button>
+              )}
+            </span>
           )}
         </div>
       </header>
@@ -281,7 +309,10 @@ function StageView({ stage: s, book, showScenes, onToggleScenes }: {
               caption={book.region ? `戰場 · ${book.region}` : '戰場'}
             />
           )}
-          <StoryLines lines={p.lines} shots={p.shots} showShots={showScenes} />
+          <StoryLines
+            lines={p.lines} shots={p.shots} showShots={showScenes}
+            face={p.face} faces={book.faces} showFaces={showFaces}
+          />
         </section>
       ))}
     </>

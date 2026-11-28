@@ -28,6 +28,8 @@ export interface StoryPart {
   lines: (StoryLine | null)[]
   /** 換場景的點；整段都沒有可用的背景圖時不給 */
   shots?: StoryShot[]
+  /** 說話者頭像：與 lines 等長，0＝沒有、n＝StoryBook.faces[n-1]。整段都沒有頭像時不給 */
+  face?: number[]
 }
 
 export interface StoryStage {
@@ -72,6 +74,11 @@ export interface StoryBook {
   map?: string
   /** 主線：區域名稱（帕黎爾沙漠），戰場地圖的圖說 */
   region?: string
+  /**
+   * 這本用到的說話者頭像（站上既有的機師／外觀／NPC 頭像，相對 /images/game/、不含 _head.webp，
+   * 例 pilots/10103101/Pilot_10103101A）。StoryPart.face 存的是這裡的編號
+   */
+  faces?: string[]
   stages: StoryStage[]
 }
 
@@ -83,9 +90,18 @@ export interface StoryCatalogEntry {
   desc?: string
   gameId?: string
   aka?: string[]
+  /** 代表圖（PLAN-042-K）：場景 CG 的官方檔名，匯入腳本自動挑、站長可覆寫（scripts/lib/storyCovers.json） */
+  cover?: string
   stages: number
   lines: number
 }
+
+/**
+ * 關卡大綱 src/data/story/outline.json（PLAN-042-K）：書 ID → 每關 [key, code, name, 支線 1／0, 分幕?]。
+ * 選章舞台的「直接跳關」用，舞台掛上時才 lazy 載入，不必為了列關卡去載整本書
+ */
+export type StoryOutlineRow = [key: string, code: string, name: string, branch: 0 | 1, group?: string]
+export type StoryOutline = Record<string, StoryOutlineRow[]>
 
 export interface StoryCatalog {
   /** 資料來源的客戶端版本（BuildNum／BuildTime） */

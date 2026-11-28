@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN-042-K 劇情故事館選章舞台 — 計畫書 — 米赫瑪超吉情豹站</title>
+<link rel="stylesheet" href="../../../_shared/style.css">
+<style>
+.plan-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.meta-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.meta-label {
+  font-size: 10px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.meta-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.meta-value.orange { color: var(--accent-orange); }
+.meta-value.green  { color: var(--accent-green); }
+.meta-value.yellow { color: var(--accent-yellow); }
+.meta-value.purple { color: var(--accent-purple); }
+.meta-value.cyan   { color: var(--accent-cyan); }
+.meta-value.red    { color: var(--accent-red); }
+
+.problem-block {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-left: 3px solid var(--accent-red);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.decision-block {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-left: 3px solid var(--accent-green);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.warning-block {
+  background: rgba(234,179,8,0.06);
+  border: 1px solid rgba(234,179,8,0.2);
+  border-left: 3px solid var(--accent-yellow);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-block {
+  background: rgba(34,211,238,0.06);
+  border: 1px solid rgba(34,211,238,0.2);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  overflow-x: auto;
+  color: #e6edf3;
+}
+.code-block .kw  { color: #ff7b72; }
+.code-block .ty  { color: #79c0ff; }
+.code-block .st  { color: #a5d6ff; }
+.code-block .cm  { color: #8b949e; }
+.code-block .nm  { color: #e3b341; }
+.code-block .fn  { color: #d2a8ff; }
+
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.impact-table th {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.impact-table td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.impact-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge-high   { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-med    { background: rgba(234,179,8,0.15);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-low    { background: rgba(107,114,128,0.15);color: #9ca3af; border: 1px solid rgba(107,114,128,0.3);border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+.badge-good   { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3);  border-radius: 4px; padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<nav class="breadcrumb">
+  <div class="container">
+    <a href="../../../index.html">📋 文件首頁</a>
+    <span>›</span>
+    <a href="../../index.html">階段性開發計畫</a>
+    <span>›</span>
+    <a href="../index.html">執行中</a>
+    <span>›</span>
+    <span class="current">PLAN-042-K 計畫書</span>
+  </div>
+</nav>
+
+<header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 60%), var(--bg-dark);">
+  <div class="hero-badge orange">◆ PLAN-042-K</div>
+  <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+    劇情故事館選章舞台<span style="-webkit-text-fill-color:var(--text-secondary);"> 音遊選曲式換章 · 章節代表圖 · 一步進入</span>
+  </h1>
+  <p class="hero-sub">館首頁的主線區改成音遊選曲式的舞台：滾輪或 ↑↓ 換章、背景交叉淡入章節代表圖，舞台上直接「繼續閱讀」「從頭讀」「跳關」。保留清單檢視當逃生口，避免重演版本時間線「先滾到目標才看得到內容」的前置關卡。</p>
+</header>
+
+<main class="container">
+
+<!-- 計畫概要 -->
+<section class="section">
+  <div class="section-label orange">Overview</div>
+  <div class="section-title">計畫概要</div>
+
+  <div class="plan-meta">
+    <div class="meta-item">
+      <div class="meta-label">計畫編號</div>
+      <div class="meta-value orange">PLAN-042-K</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">建立日期</div>
+      <div class="meta-value">2026-11-28</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">影響範圍</div>
+      <div class="meta-value purple">StoryHomePage（主線區）· 新增 StorySelectStage.tsx／storyStage.ts · LoreLayout（捲頂依賴修正） · scripts/import-story.mjs（代表圖、大綱）· src/data/story/index.json＋outline.json · scripts/lib/storyCovers.json（新）· index.css 劇情館段</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">優先級</div>
+      <div class="meta-value yellow">MID</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">狀態</div>
+      <div class="meta-value orange">14／14 完成（2026-11-28 已上線）· D1–D4 照建議定案</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">前置依賴</div>
+      <div class="meta-value cyan">PLAN-042-I（閱讀進度）· PLAN-042-J（場景 CG 已上站，代表圖直接沿用）</div>
+    </div>
+  </div>
+
+  <div class="info-block">
+    <strong>來源：</strong>評估報告 <code>_local-notes/2026-11/2026-11-28_劇情故事館閱覽體驗提案/</code> 的方案 B（<code>select.html</code> 是可操作的模擬頁），建議順序 A → C → B。
+    A（042-I）與 C（042-J）都已上線，站長 2026-11-28 指示「準備方案 B，工作量大就立 PLAN」。評估約 <strong>1.5～2 天</strong>，而且有四項要站長決定，所以立案。
+    <br><strong>已備好的準備資料：</strong><code>_local-notes/2026-11/2026-11-28_劇情故事館選章舞台_準備/代表圖候選.html</code>——43 本書全部自動挑好代表圖，附每本份量最多的 5 張候選，給站長過目（D3）。
+  </div>
+</section>
+
+<!-- 問題背景 -->
+<section class="section">
+  <div class="section-label red">Problem</div>
+  <div class="section-title">問題背景</div>
+
+  <div class="problem-block">
+    <strong>館首頁只有字</strong><br>
+    主線 20 章是一排純文字卡片，Chapter-0／I 沒有簡介、卡片只剩標題。閱讀器已經有場景圖與頭像（042-J），入口反而是全館最素的一頁。
+  </div>
+  <div class="problem-block">
+    <strong>章節沒有「主視覺」</strong><br>
+    遊戲的章節設定表 <code>ConfigDataWorldMapChapterInfo</code> 沒有任何圖片欄位。042-J 匯入的 130 張對白 CG 剛好補上這個缺口：每本書都挑得出一張份量最多、彼此不重複的代表圖（候選頁 43／43 本都有）。
+  </div>
+  <div class="problem-block">
+    <strong>版本時間線為什麼捨棄同類設計（2026-06，PLAN-050 C-2）</strong><br>
+    當時的焦點輪播（<code>git show b42953be^:src/components/timeline/VersionTimeline.tsx</code>）是<strong>前置關卡</strong>：要先在輪播裡滾到目標、點中央、等 clip-path 動畫才看得到甘特圖，抵達內容要四步，
+    而且一次只看得到前後三個版本，「比較兩個版本」變得不可能。劇情選章不一樣：選章本身就是瀏覽的目的，劇情是線性的、一次只讀一章、不需要比較。
+    但前置關卡的教訓要變成護欄（決策一）。
+  </div>
+</section>
+
+<!-- 設計決策 -->
+<section class="section">
+  <div class="section-label orange">Design</div>
+  <div class="section-title">設計決策（提案）</div>
+
+  <div class="decision-block">
+    <strong>決策一：三條護欄——一步進入、網址記住焦點、清單逃生口</strong><br>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li><strong>一步進入</strong>：舞台中央直接有「▶ 繼續閱讀 3-5」（讀 042-I 的本機進度）、「從頭讀」與一排「直接跳關」；不做展開動畫。點旁邊的章是換焦點，點中央的章就進入。</li>
+      <li><strong>網址記住焦點</strong>：<code>/lore/story?focus=main-4</code>（replace）。從閱讀器按上一頁會落在同一章，不必從第一章重滾；分享出去也落在同一章。</li>
+      <li><strong>清單逃生口</strong>：「舞台／清單」切換，清單就是現在的卡片（加上代表圖縮圖），一眼看完全部、點一下進入。選了哪種記在本機。</li>
+    </ul>
+  </div>
+  <div class="decision-block">
+    <strong>決策二：輸入只接明確意圖；手機不攔截垂直捲動</strong><br>
+    滾輪只在指標位於舞台上時攔截，累積到門檻才換一格（舊輪播用 36）再加冷卻，觸控板的慣性才不會一口氣滑過頭；<strong>到第一章／最後一章時放行</strong>，讓頁面照常往下捲到活動與回憶區。
+    方向鍵只在舞台取得焦點時作用（<code>VersionRail</code> 的教訓：全域監聽會吃掉別處的捲動）。手機改成橫向 scroll-snap 滑條，主圖在上、資訊在下，垂直捲動完全不碰。
+    館內唯一 scrollport 的規則（M-08）照守：舞台是固定高度的區塊，不是捲動容器。
+  </div>
+  <div class="decision-block">
+    <strong>決策三：代表圖由匯入腳本挑，站長可覆寫</strong><br>
+    規則（候選頁已實作）：章節專屬 CG（<code>P</code> 開頭，例 Chapter-I 的夢境 <code>P001_Raw</code>）優先；其次「這張圖底下的對白行數」最多、而且排在前面的書還沒用過的。
+    主線依章節順序先挑，活動、機師回憶接著挑，同一張圖不會被兩本搶走。結果寫進 <code>index.json</code> 每本的 <code>cover</code>。
+    站長覆寫表 <code>scripts/lib/storyCovers.json</code>（<code>{"main-2": "TEST-403_Raw"}</code>）優先於自動結果，重跑 <code>--write</code> 生效；測試擋「覆寫指到不存在的圖」。
+  </div>
+  <div class="decision-block">
+    <strong>決策四：跳關要的關卡大綱另出一個小檔</strong><br>
+    <code>index.json</code> 只有關數。舞台的「直接跳關」需要每本的關卡 key／編號／名稱：匯入腳本另產 <code>src/data/story/outline.json</code>（估 25 KB 以內），舞台掛上時才 lazy 載入，
+    不必為了列關卡去載整本書（50–300 KB）。遭遇戰照 042-I 的關卡列規則收在正關底下。
+  </div>
+  <div class="decision-block">
+    <strong>決策五：動態全部尊重 reduced-motion</strong><br>
+    背景交叉淡入、焦點縮放在 <code>prefers-reduced-motion</code> 下改成直接切換。代表圖用 042-J 已上站的 1920×592 CG，舞台主視覺不需要另外匯圖。
+  </div>
+</section>
+
+<!-- 待決定 -->
+<section class="section">
+  <div class="section-label red">Decisions</div>
+  <div class="section-title">待站長決定（2026-11-28 站長「直接開工」⇒ 全部照建議定案）</div>
+
+  <div class="warning-block">
+    <strong>D1 範圍：</strong>只有主線 20 章上舞台（<strong>建議</strong>；活動與機師回憶維持卡片、加代表圖縮圖），
+    還是主線／活動／機師回憶三個分頁都上舞台？042-J 之後三種都有圖了，技術上都做得到；差別在活動與回憶沒有「章節順序」的感覺，音遊式換章的價值比較低。
+  </div>
+  <div class="warning-block">
+    <strong>D2 預設顯示：</strong>館首頁預設是舞台（<strong>建議</strong>，切到清單後本機記住），還是預設清單、舞台當彩蛋？
+  </div>
+  <div class="warning-block">
+    <strong>D3 代表圖：</strong>請看 <code>代表圖候選.html</code>，列出想換的（<code>書 ID → CG 名稱</code>）。沒列的就用自動結果。
+    已知可能想換的：Chapter-I 的 <code>P001_Raw</code> 是模糊的夢境（章節專屬圖、但偏暗）。
+  </div>
+  <div class="warning-block">
+    <strong>D4 滾輪：</strong>舞台內攔截滾輪換章（音遊感，<strong>建議</strong>，兩端放行），還是完全不接滾輪、只用 ↑↓／點擊／拖曳？
+    前者手感最像選曲，但滑鼠停在舞台上時頁面捲不動是 042-I 刻意避開的行為；後者最保守。
+  </div>
+</section>
+
+<!-- 實作範圍 -->
+<section class="section">
+  <div class="section-label orange">Scope</div>
+  <div class="section-title">實作範圍與不在範圍內</div>
+
+  <div class="decision-block">
+    <strong>在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>匯入腳本：代表圖自動挑選＋覆寫表、<code>outline.json</code>；測試</li>
+      <li>純函式 <code>storyStage.ts</code>（焦點／網址／滾輪門檻與冷卻）＋ node:test</li>
+      <li>桌機舞台元件、手機橫向滑條、清單切換、無障礙（tablist／aria-live／reduced-motion）</li>
+      <li>文件：故事館頁面規劃、更新履歷、PLAN-042 總綱子計畫表</li>
+    </ul>
+  </div>
+  <div class="warning-block">
+    <strong>不在範圍內：</strong>
+    <ul style="margin:8px 0 0 16px;line-height:1.9;">
+      <li>閱讀器本身（042-I／042-J 已完成）。</li>
+      <li>活動專屬的 prefab 介面美術（<code>PlotActivityAVGUIPrefab_*</code>）：由好幾張介面圖組成，要另外盤點。</li>
+      <li>區域地圖當舞台底圖：20 章共用 11 組，辨識度不如 CG（評估報告已比較過）；只在閱讀器的戰鬥段落使用。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 關聯文件 -->
+<section class="section">
+  <div class="section-label orange">相關文件</div>
+  <div class="section-title">關聯資料</div>
+  <div class="doc-grid">
+    <a class="doc-item" href="進度表.html">
+      <div class="doc-tag">Progress</div>
+      <h4>◆ PLAN-042-K 進度表</h4>
+      <p>各工作項目狀態追蹤</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042_故事館_總綱/計畫書.html">
+      <div class="doc-tag">Parent</div>
+      <h4>◆ PLAN-042 故事館總綱</h4>
+      <p>共用架構決策與子計畫拆分</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-J_劇情故事館場景條/計畫書.html">
+      <div class="doc-tag">Precedent</div>
+      <h4>◆ PLAN-042-J 劇情故事館場景條</h4>
+      <p>代表圖沿用這裡匯入的 CG</p>
+    </a>
+    <a class="doc-item" href="../PLAN-042-I_劇情故事館分關閱讀/計畫書.html">
+      <div class="doc-tag">Precedent</div>
+      <h4>◆ PLAN-042-I 劇情故事館分關閱讀</h4>
+      <p>「繼續閱讀」讀這裡的本機進度</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  米赫瑪超吉情豹站 · 階段性開發計畫 · PLAN-042-K — <a href="../index.html" style="color:var(--accent-orange);text-decoration:none;">← 執行中</a>
+</footer>
+
+</body>
+</html>

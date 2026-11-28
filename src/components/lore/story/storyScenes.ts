@@ -15,23 +15,28 @@ export const MAP_STRIP_SIZE = { width: 1920, height: 420 } as const
 export const scenePath = (key: string) => `${STORY_SCENE_DIR}/${key}.webp`
 export const mapStripPath = (name: string) => `${STORY_SCENE_DIR}/${name}_strip.webp`
 
+/** 說話者頭像：book.faces 的一筆（例 pilots/10103101/Pilot_10103101A）→ 90² 的 _head.webp（PLAN-054 已上站的圖，不另外匯入） */
+export const FACE_SIZE = 90
+export const facePath = (face: string) => `/images/game/${face}_head.webp`
+
 /**
- * 「場景圖」開關：個人偏好，只存在這台裝置（localStorage）。預設開。
+ * 「場景圖」「頭像」兩個開關：個人偏好，只存在這台裝置（localStorage）。預設都開。
  * 讀不到（無痕視窗、儲存被擋）就當預設；寫不進去也不影響這次瀏覽。
  */
 export const SCENE_PREF_KEY = 'mecharashi_story_scenes'
+export const FACE_PREF_KEY = 'mecharashi_story_faces'
 
-export function readScenePref(): boolean {
+export function readStoryPref(key: string): boolean {
   try {
-    return globalThis.localStorage?.getItem(SCENE_PREF_KEY) !== 'off'
+    return globalThis.localStorage?.getItem(key) !== 'off'
   } catch {
     return true
   }
 }
 
-export function writeScenePref(on: boolean): void {
+export function writeStoryPref(key: string, on: boolean): void {
   try {
-    globalThis.localStorage?.setItem(SCENE_PREF_KEY, on ? 'on' : 'off')
+    globalThis.localStorage?.setItem(key, on ? 'on' : 'off')
   } catch {
     /* 存不了偏好也沒關係：這次瀏覽照樣切換 */
   }

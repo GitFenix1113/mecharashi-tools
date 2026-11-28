@@ -1505,6 +1505,176 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
 .lore-story-card__img { width: 72px; height: 72px; object-fit: contain; margin-bottom: 8px; }
 .lore-story-card--pilot .lore-story-card__m { padding-top: 4px; }
 
+/* 卡片的代表圖縮圖（PLAN-042-K）：貼齊卡片頂端，卡片內距不變 */
+.lore-story-card.has-cover { padding-top: 0; overflow: hidden; }
+.lore-story-card__cover {
+  display: block; width: calc(100% + 32px); max-width: none; height: auto; aspect-ratio: 1920 / 592; margin: 0 -16px 10px;
+  object-fit: cover; background: rgb(43 38 33 / 0.08); border-bottom: 1px solid var(--lore-line);
+}
+
+/* 館首頁三個分頁（2026-11-28 站長：主線／活動／機師回憶不要一直往下滾）：底線式，紅線標目前這頁。
+   分頁列可橫捲（手機三顆放不下時），所以底線畫在列內（bottom: 0）、列本身往下疊 1px 蓋住分隔線 */
+.lore-story-tabbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 12px; margin-bottom: 12px; border-bottom: 1px solid var(--lore-line); }
+.lore-story-tabs { display: flex; gap: 2px; min-width: 0; margin-bottom: -1px; overflow-x: auto; scrollbar-width: none; }
+.lore-story-tabs::-webkit-scrollbar { display: none; }
+.lore-story-tab {
+  position: relative; display: inline-flex; align-items: baseline; gap: 6px; padding: 10px 14px 10px;
+  border: 0; background: transparent; font-family: var(--lore-serif); font-weight: 700; font-size: 0.98rem; letter-spacing: 0.08em;
+  color: var(--lore-ink-3); white-space: nowrap; cursor: pointer; transition: color 0.15s;
+}
+.lore-story-tab__n { font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 0.68rem; letter-spacing: 0; color: var(--lore-ink-3); }
+.lore-story-tab:hover { color: var(--lore-ink-2); }
+.lore-story-tab[aria-selected='true'] { color: var(--lore-ink); }
+.lore-story-tab[aria-selected='true']::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px; border-radius: 2px 2px 0 0; background: var(--lore-red); }
+.lore-story-tab:focus-visible { outline: 2px solid var(--lore-red); outline-offset: -3px; border-radius: 6px; }
+.lore-story-tabbar .lore-story-view { margin-bottom: 8px; }
+@media (max-width: 639px) {
+  /* 375px 要三顆一起放得下（實測原本多 10px、機師回憶被切到邊外） */
+  .lore-story-tab { gap: 4px; padding: 9px 7px; font-size: 0.9rem; letter-spacing: 0.02em; }
+  .lore-story-tab[aria-selected='true']::after { left: 6px; right: 6px; }
+}
+
+/* 主線「舞台／清單」切換（PLAN-042-K C-2） */
+.lore-story-view { margin-left: auto; display: inline-flex; padding: 2px; border: 1px solid var(--lore-line); border-radius: 999px; background: rgb(255 252 245 / 0.7); }
+.lore-story-view button { padding: 2px 12px; border: 0; border-radius: 999px; background: transparent; font-size: 0.72rem; color: var(--lore-ink-3); cursor: pointer; }
+.lore-story-view button[aria-pressed='true'] { background: var(--lore-ink); color: #fbf7ef; }
+.lore-story-view button:focus-visible { outline: 2px solid var(--lore-red); outline-offset: 1px; }
+
+/* ── 選章舞台（PLAN-042-K）：左章節列＋右資訊，代表圖在舞台內交叉淡入。
+   固定高度的區塊、不是捲動容器（M-08）；滾輪規則在 storyStage.ts ── */
+.lore-stage {
+  position: relative; isolation: isolate; display: grid; grid-template-columns: 290px minmax(0, 1fr);
+  min-height: 520px; overflow: hidden; border: 1px solid var(--lore-line); border-radius: 8px; background: #efe7d8;
+  box-shadow: 0 24px 50px -34px rgba(43, 38, 33, 0.45);
+}
+.lore-stage__bgs { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.lore-stage__bg { position: absolute; inset: 0; opacity: 0; transition: opacity 0.7s ease; }
+.lore-stage__bg.is-on { opacity: 1; }
+.lore-stage__blur { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); max-width: none; object-fit: cover; filter: blur(28px) saturate(0.9); opacity: 0.3; }
+.lore-stage__hero {
+  position: absolute; right: 0; top: 0; width: 76%; height: auto; max-width: none; aspect-ratio: 1920 / 592; object-fit: cover;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%), linear-gradient(180deg, #000 62%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 30%), linear-gradient(180deg, #000 62%, transparent 100%);
+  mask-composite: intersect;
+  transform: scale(1.02); transition: transform 6s ease-out;
+}
+.lore-stage__bg.is-on .lore-stage__hero { transform: none; }
+/* 左側紙色漸層：章節列與資訊永遠在紙上，圖只在右上角 */
+.lore-stage::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(90deg, #efe7d8 0%, rgb(239 231 216 / 0.94) 30%, rgb(239 231 216 / 0) 56%);
+}
+
+.lore-stage__wheel { position: relative; z-index: 2; }
+.lore-stage__list { position: absolute; inset: 0; outline: none; }
+/* 中央焦點帶 */
+.lore-stage__list::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 62px; transform: translateY(-50%);
+  border-block: 1px solid rgb(177 0 0 / 0.18); background: rgb(177 0 0 / 0.03);
+}
+.lore-stage__list:focus-visible::before { border-color: var(--lore-red); }
+.lore-stage__item {
+  position: absolute; left: 14px; right: 14px; top: 50%; height: 56px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; column-gap: 8px;
+  padding: 0 14px; border: 1px solid transparent; border-radius: 10px; background: transparent; text-align: left; cursor: pointer;
+  transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.34s, background-color 0.2s, border-color 0.2s;
+}
+.lore-stage__item-k { grid-column: 1; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.16em; color: var(--lore-ink-3); }
+.lore-stage__item-n { grid-column: 1; font-family: var(--lore-serif); font-weight: 700; font-size: 0.98rem; letter-spacing: 0.04em; color: var(--lore-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lore-stage__item.is-focus { background: rgb(251 247 239 / 0.94); border-color: rgb(177 0 0 / 0.45); box-shadow: 0 6px 20px rgb(43 38 33 / 0.12), inset 3px 0 0 var(--lore-red); }
+.lore-stage__item.is-focus .lore-stage__item-k { color: var(--lore-red); }
+.lore-stage__item.is-focus .lore-stage__item-n { font-size: 1.08rem; }
+.lore-stage__item:not(.is-focus):hover { background: rgb(251 247 239 / 0.6); }
+.lore-stage__dot { grid-column: 2; grid-row: 1 / span 2; align-self: center; width: 7px; height: 7px; border: 1px solid var(--lore-red); border-radius: 50%; }
+.lore-stage__dot.is-done { background: var(--lore-red); }
+.lore-stage__arrow {
+  position: absolute; left: 50%; z-index: 3; transform: translateX(-50%); width: 36px; height: 26px;
+  border: 0; background: transparent; color: var(--lore-ink-3); font-size: 1rem; cursor: pointer;
+}
+.lore-stage__arrow:hover:not(:disabled) { color: var(--lore-red); }
+.lore-stage__arrow:disabled { opacity: 0.2; cursor: default; }
+.lore-stage__arrow.is-up { top: 8px; }
+.lore-stage__arrow.is-down { bottom: 24px; }
+.lore-stage__hint { position: absolute; left: 0; right: 0; bottom: 6px; margin: 0; text-align: center; font-size: 0.64rem; color: var(--lore-ink-3); }
+
+.lore-stage__info { position: relative; z-index: 2; align-self: end; max-width: 640px; padding: 0 32px 30px 12px; }
+/* 資訊區的紙底：貼著資訊區本身的範圍，文字所在處一律是實色紙面，只在右緣外與上緣漸淡。
+   不用固定形狀的柔光——視窗一寬，簡介就會延伸到柔光外、直接壓在圖上（2026-11-28 站長回報看不清楚）。
+   右側多伸 140px、實色停在離右緣 170px 處＝實色涵蓋到資訊區右邊 30px 內，文字（右內距 32px）全在實色上 */
+.lore-stage__info::before {
+  content: ''; position: absolute; z-index: -1; inset: -48px -140px -30px -48px; pointer-events: none;
+  background: linear-gradient(90deg, rgb(239 231 216 / 0.96) 0%, rgb(239 231 216 / 0.94) calc(100% - 170px), rgb(239 231 216 / 0) 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 48px); mask-image: linear-gradient(180deg, transparent 0, #000 48px);
+}
+.lore-stage__eyebrow { margin: 0; font-family: 'Orbitron', 'JetBrains Mono', sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.3em; color: var(--lore-red); }
+.lore-stage__eyebrow span { margin-left: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 400; letter-spacing: 0.1em; color: var(--lore-ink-3); }
+.lore-stage__title { margin: 6px 0 0; font-family: var(--lore-kai); font-weight: 400; font-size: clamp(2rem, 3.6vw, 3rem); letter-spacing: 0.12em; line-height: 1.2; color: var(--lore-ink); text-shadow: 0 1px 0 rgb(255 252 245 / 0.8); }
+.lore-stage__desc {
+  text-shadow: 0 0 2px #efe7d8, 0 0 10px rgb(239 231 216 / 0.9);
+  margin: 12px 0 0; font-family: var(--lore-serif); font-size: 0.9rem; line-height: 1.9; color: var(--lore-ink-2); white-space: pre-line;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.lore-stage__meta { margin: 10px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 0.74rem; color: var(--lore-ink-3); }
+.lore-stage__read { display: inline-flex; align-items: center; gap: 8px; color: var(--lore-red); }
+.lore-stage__bar { width: 110px; height: 3px; border-radius: 3px; background: var(--lore-line); overflow: hidden; }
+.lore-stage__bar i { display: block; height: 100%; background: var(--lore-red); }
+.lore-stage__acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.lore-story .lore-stage__btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border: 1px solid var(--lore-line); border-radius: 999px;
+  background: rgb(251 247 239 / 0.92); color: var(--lore-ink); font-size: 0.88rem; text-decoration: none; transition: border-color 0.15s, background-color 0.15s;
+}
+.lore-story .lore-stage__btn:hover { border-color: var(--lore-red); }
+.lore-story .lore-stage__btn.is-primary { background: var(--lore-ink); border-color: var(--lore-ink); color: #fbf7ef; }
+.lore-story .lore-stage__btn.is-primary:hover { background: var(--lore-red); border-color: var(--lore-red); }
+.lore-stage__btn small { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; opacity: 0.85; }
+.lore-stage__jump { margin-top: 16px; }
+.lore-stage__jump-h { margin: 0 0 6px; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.24em; color: var(--lore-ink-2); }
+/* 預設剛好露兩排：按鈕高度與裁切高度都用 rem（跟著站上「小／中大」字級走），不會切到半排（2026-11-28 站長回報第二排被切） */
+.lore-stage__chips { --chip-h: 1.75rem; display: flex; flex-wrap: wrap; gap: 6px; max-height: calc(var(--chip-h) * 2 + 6px); overflow: hidden; }
+.lore-stage__chips.is-all { max-height: none; }
+.lore-story .lore-stage__chip {
+  display: inline-flex; align-items: center; gap: 6px; height: var(--chip-h); padding: 0 0.65rem; border: 1px solid var(--lore-line); border-radius: 999px;
+  background: rgb(251 247 239 / 0.88); font-size: 0.74rem; line-height: 1; white-space: nowrap; color: var(--lore-ink-2); text-decoration: none;
+}
+.lore-story .lore-stage__chip:hover { border-color: var(--lore-red); color: var(--lore-ink); }
+.lore-stage__chip.is-read { opacity: 0.6; }
+.lore-stage__chip-c { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: var(--lore-red); }
+.lore-stage__more { margin-top: 6px; padding: 0; border: 0; background: none; font-size: 0.68rem; color: var(--lore-ink-3); cursor: pointer; }
+.lore-stage__more:hover { color: var(--lore-red); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lore-stage__bg, .lore-stage__hero, .lore-stage__item { transition: none; }
+  .lore-stage__hero { transform: none; }
+}
+
+/* 手機（< 768px）：主圖在上、章節改成橫向滑條、資訊在下；不攔截任何垂直捲動 */
+@media (max-width: 767px) {
+  .lore-stage { display: block; height: auto; overflow: visible; border: 0; background: transparent; box-shadow: none; }
+  .lore-stage::after { display: none; }
+  .lore-stage__bgs { position: relative; aspect-ratio: 1920 / 592; margin-bottom: 10px; overflow: hidden; border-radius: 6px; background: rgb(43 38 33 / 0.08); box-shadow: 0 6px 18px rgb(43 38 33 / 0.15); }
+  .lore-stage__blur { display: none; }
+  .lore-stage__hero { width: 100%; height: 100%; -webkit-mask-image: none; mask-image: none; }
+  .lore-stage__list {
+    position: static; display: flex; gap: 8px; margin: 0 -16px; padding: 2px 16px 10px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  }
+  .lore-stage__list::-webkit-scrollbar { display: none; }
+  .lore-stage__list::before, .lore-stage__arrow, .lore-stage__hint { display: none; }
+  .lore-stage__item {
+    position: static; flex: 0 0 auto; max-width: 70vw; height: auto; padding: 6px 12px; scroll-snap-align: center;
+    transform: none !important; opacity: 1 !important; visibility: visible !important;
+    border-color: var(--lore-line); background: rgb(251 247 239 / 0.8);
+  }
+  .lore-stage__item.is-focus .lore-stage__item-n { font-size: 0.98rem; }
+  .lore-stage__info { padding: 4px 0 0; max-width: none; }
+  .lore-stage__info::before { display: none; }
+  .lore-stage__title { font-size: 1.9rem; }
+}
+@media (min-width: 640px) and (max-width: 767px) {
+  .lore-stage__list { margin: 0 -24px; padding: 2px 24px 10px; }
+}
+
 /* 書頁：書頭 */
 .lore-story-eyebrow { font-family: 'Orbitron', 'JetBrains Mono', sans-serif; font-weight: 700; font-size: 0.66rem; letter-spacing: 0.32em; color: var(--lore-red); }
 .lore-story-h1 { margin: 8px 0 0; font-family: var(--lore-kai); font-weight: 400; font-size: 2.1rem; letter-spacing: 0.12em; line-height: 1.25; color: var(--lore-ink); }
@@ -1648,7 +1818,14 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
 /* 對白：桌機左欄說話者、右欄台詞；旁白不列名、跨兩欄、淡墨。手機改上下排 */
 .lore-story-lines { list-style: none; margin: 10px 0 0; padding: 0; font-family: var(--lore-serif); font-size: 1rem; line-height: 1.95; letter-spacing: 0.03em; }
 .lore-story-line { position: relative; display: grid; grid-template-columns: 6.5em minmax(0, 1fr); column-gap: 1em; padding: 2px 0; }
-.lore-story-line__who { font-weight: 700; color: var(--lore-ink); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lore-story-line__who { display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; min-width: 0; font-weight: 700; color: var(--lore-ink); white-space: nowrap; }
+.lore-story-line__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* 說話者頭像（PLAN-042-J）：站上既有的 90² 頭部特寫，裁成圓形放在名字左邊；開著頭像時名字欄加寬 */
+.lore-story-line__face {
+  flex: none; width: 30px; height: 30px; margin-top: 1px; border-radius: 50%; object-fit: cover;
+  background: rgb(43 38 33 / 0.08); box-shadow: 0 0 0 1px var(--lore-line);
+}
+.lore-story-lines.has-faces .lore-story-line { grid-template-columns: calc(6.5em + 38px) minmax(0, 1fr); }
 .lore-story-line__say { grid-column: 2; color: var(--lore-ink); white-space: pre-line; overflow-wrap: anywhere; }
 .lore-story-line.is-narr .lore-story-line__say { color: var(--lore-ink-2); }
 /* 同一人連續發言（C-2）：名字只在視覺上藏起來，螢幕閱讀器照樣念得到 */
@@ -1658,6 +1835,7 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
 .lore-story-em { font-style: normal; font-weight: 700; color: var(--lore-red); }
 /* 戰中兩個觸發之間：淡點線（原本的虛線一行一條，視覺上太碎） */
 .lore-story-sep { height: 0; margin: 10px 0 10px 7.5em; border-top: 1px dotted var(--lore-line); }
+.lore-story-lines.has-faces .lore-story-sep { margin-left: calc(7.5em + 38px); }
 .lore-story-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; white-space: normal; }
 .lore-story-choice { padding: 0 10px; border: 1px solid var(--lore-line); border-radius: 999px; font-size: 0.8rem; color: var(--lore-ink-2); background: rgb(255 252 245 / 0.7); }
 .lore-story-choice::before { content: '▸ '; color: var(--lore-red); }
@@ -1686,18 +1864,19 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
 @media (prefers-reduced-motion: reduce) {
   .lore-story-shot img { transform: none; transition: none; }
 }
-/* 「場景圖」開關：關卡標頭右側的小膠囊，亮紅點＝開 */
-.lore-story-scenetoggle {
-  margin-left: auto; align-self: center; display: inline-flex; align-items: center; gap: 6px;
+/* 「場景圖」「頭像」開關：關卡標頭右側的小膠囊，亮紅點＝開 */
+.lore-story-toggles { margin-left: auto; align-self: center; display: inline-flex; gap: 6px; }
+.lore-story-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
   padding: 2px 10px; border: 1px solid var(--lore-line); border-radius: 999px;
   background: rgb(255 252 245 / 0.7); color: var(--lore-ink-3); font-size: 0.7rem; letter-spacing: 0.08em; cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
-.lore-story-scenetoggle::before { content: ''; width: 7px; height: 7px; border: 1px solid currentColor; border-radius: 50%; }
-.lore-story-scenetoggle[aria-pressed='true'] { color: var(--lore-ink-2); border-color: rgb(177 0 0 / 0.35); }
-.lore-story-scenetoggle[aria-pressed='true']::before { background: var(--lore-red); border-color: var(--lore-red); }
-.lore-story-scenetoggle:hover { border-color: var(--lore-red); }
-.lore-story-scenetoggle:focus-visible { outline: 2px solid var(--lore-red); outline-offset: 2px; }
+.lore-story-toggle::before { content: ''; width: 7px; height: 7px; border: 1px solid currentColor; border-radius: 50%; }
+.lore-story-toggle[aria-pressed='true'] { color: var(--lore-ink-2); border-color: rgb(177 0 0 / 0.35); }
+.lore-story-toggle[aria-pressed='true']::before { background: var(--lore-red); border-color: var(--lore-red); }
+.lore-story-toggle:hover { border-color: var(--lore-red); }
+.lore-story-toggle:focus-visible { outline: 2px solid var(--lore-red); outline-offset: 2px; }
 @media (max-width: 639px) {
   .lore-story-h1 { font-size: 1.7rem; }
   /* 手機：場景圖貼齊紙面左右邊緣，橫幅才不會縮成一條細縫 */
@@ -1707,9 +1886,11 @@ a.lore-pilotcard:hover .lore-pilotcard__go { color: var(--lore-red); }
   .lore-story-lines { font-size: 0.97rem; }
   .lore-story-line { grid-template-columns: minmax(0, 1fr); padding: 4px 0; }
   .lore-story-line.is-cont { padding-top: 0; }
-  .lore-story-line__who { text-align: left; font-size: 0.8rem; line-height: 1.6; }
+  .lore-story-line__who { justify-content: flex-start; align-items: center; gap: 6px; font-size: 0.8rem; line-height: 1.6; }
+  .lore-story-line__face { width: 22px; height: 22px; margin-top: 0; }
+  .lore-story-lines.has-faces .lore-story-line { grid-template-columns: minmax(0, 1fr); }
   .lore-story-line__say { grid-column: 1; }
-  .lore-story-sep { margin-left: 0; }
+  .lore-story-sep, .lore-story-lines.has-faces .lore-story-sep { margin-left: 0; }
   .lore-story-end { grid-template-columns: minmax(0, 1fr); }
   .lore-story-end__card.is-ghost { display: none; }
 }

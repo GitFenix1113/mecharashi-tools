@@ -165,10 +165,22 @@
       圖放 <code>public/images/game/story/</code>（官方檔名＋.webp；地圖是裁成 1920×420 的 <code>_strip</code> 衍生檔），由 <code>import-story.mjs --write</code> 轉檔，130 張 CG＋11 張地圖約 19 MB，不列入後台選圖器。
       前台 <code>StorySceneShot</code>：lazy、寬高屬性先佔位、載入完淡入（reduced-motion 不動）、載入失敗整格收掉；圖後第一句重新列名。
       關卡標頭右側「場景圖」開關（這一關有圖才出現），偏好存本機 <code>mecharashi_story_scenes</code>。<code>storyData.test.ts</code> 擋索引錯位與缺圖<br>
+    · <strong>說話者頭像</strong>（PLAN-042-J 第二段，2026-11-28）：說話那一側的 <code>Left/RightCharImageId</code> → <code>ConfigDataCharacterPicture.Icon</code>（例 <code>Pilot_10103101A</code>）→ 站上既有的 <code>_head.webp</code>（機師本體 → 外觀 <code>skins/</code> → NPC 圖庫，<strong>不另外匯入</strong>）。
+      匯入腳本掃實際檔案建索引（資料夾是遊戲 ID、不一定等於立繪鍵的號碼）。書上列一次用到的頭像 <code>StoryBook.faces</code>（站內路徑），每段只存與 lines 等長的編號 <code>StoryPart.face</code>（0＝沒有），書檔只多約 0.13 MB。
+      收錄的有名字台詞 98.9% 有頭像；站上沒有的 2 位（劍部武一郎、火美子）只列名字，報告列 ⬜。頭像只畫在列名的那一行（連續發言不重複），開著時名字欄加寬；手機縮成 22px 放在名字前。
+      「頭像」開關與場景圖並排，偏好存 <code>mecharashi_story_faces</code><br>
+    · <strong>館首頁三個分頁</strong>（2026-11-28，站長要求「不要一直往下滾」）：主線劇情／活動劇情／機師回憶改成 WAI-ARIA tabs（← → Home End），一次只顯示一種。
+      分頁寫在網址 <code>?tab=event</code>／<code>memory</code>（主線不寫，replace），從劇情頁按上一頁回到同一個分頁；與舞台的 <code>?focus=</code> 並存（兩邊都用函式型 setSearchParams）。換分頁不捲動頁面。「舞台／清單」切換只在主線分頁出現<br>
+    · <strong>選章舞台</strong>（PLAN-042-K，2026-11-28）：館首頁的主線區改成音遊選曲式舞台（<code>StorySelectStage.tsx</code>；純函式 <code>storyStage.ts</code>，檔名避開 Windows 不分大小寫的撞名）。
+      左側章節列、右側代表圖交叉淡入（焦點與前後各一章才載圖）＋章名／簡介／已讀＋「繼續閱讀 3-4」「從頭讀」「直接跳關」。焦點寫在網址 <code>/lore/story?focus=main-4</code>（replace），沒給時停在「讀到哪」（最後一本有進度的書，讀完了就下一本）。
+      滾輪接管有三道關（<code>wheelCapture</code>）：舞台整塊在可視範圍內、半秒內頁面沒在捲（一路往下捲頁面經過舞台不會被攔）、頭尾往外放行；累積 36px 才換一章，換章後只要滾動還連續湧入（間隔 &lt; 160ms）就一直鎖住——觸控板一次滑動只換一章。
+      方向鍵只在章節列取得焦點時作用。手機（&lt; 768px）改成主圖在上、橫向 scroll-snap 滑條、資訊在下，不碰垂直捲動。
+      「舞台／清單」切換是逃生口（本機 <code>mecharashi_story_home_view</code>，預設舞台）；活動與機師回憶維持卡片，主線清單與活動卡片加代表圖縮圖。
+      代表圖由 <code>import-story.mjs</code> 挑（P 開頭的章節專屬 CG 優先，其次底下對白行數最多且前面的書沒用過的），寫進 <code>index.json</code> 的 <code>cover</code>；站長覆寫表 <code>scripts/lib/storyCovers.json</code>。
+      「直接跳關」讀另一個小檔 <code>src/data/story/outline.json</code>（16 KB，舞台掛上才 lazy 載入，獨立 chunk）。
+      <strong>連帶修正 <code>LoreLayout</code></strong>：換頁捲頂的 effect 原本依賴 <code>[pathname, navType]</code>，同一路徑只改查詢字串（replace）時 navType 從 PUSH 變 REPLACE 也會捲頂；改成只看 pathname、navType 用 ref 讀<br>
     · <strong>館內 header</strong>：第三館讓 375px 時「離館」被 BGM 鈕蓋住 ⇒ &lt;sm 收窄外距、間距與換館鈕內距、離館拿掉箭頭；360px 實測只剩 2px，<strong>再加館前先量</strong>。劇情館沒有對應圖鑑，離館回首頁<br>
-    · <strong>沒做</strong>：說話者頭像（場景背景已由 PLAN-042-J 做完；<strong>2026-11-28 更正</strong>：對話立繪編號可以對上——<code>Left/RightCharImageId</code> → <code>ConfigDataCharacterPicture.Icon</code>（10010 → <code>Pilot_10103101A</code>＝凱登）→ 站上 <code>pilots/</code>／<code>npc/</code> 的頭像，主線有名字的台詞 96.8% 對得到；
-      每行過場對白另有 <code>Background</code> → <code>ConfigDataBackgroundInfo.ResPath</code> 的場景 CG，97.2% 帶背景。頭像是 <code>_local-notes/2026-11/2026-11-28_劇情故事館閱覽體驗提案/</code> 方案 C 的另一半，另案）、
-      武裝討伐與肉鴿的對白（約 3 萬行）、CG 動畫字幕（<code>ConfigDataSubtitleInfo</code>）。
+    · <strong>沒做</strong>：武裝討伐與肉鴿的對白（約 3 萬行）、CG 動畫字幕（<code>ConfigDataSubtitleInfo</code>）。
       改版後：拿到新的台版解包 → 跑 <code>node scripts/import-story.mjs</code> 看摘要 → <code>--write</code>（連新場景圖一起轉檔）→ <code>npm test</code>（<code>storyData.test.ts</code> 核對目錄、書檔與場景圖）；步驟也寫在 <code>public/images/game/README.md</code>
   </div>
   <div class="info-block" style="margin-top:1rem;">

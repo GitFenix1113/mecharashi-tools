@@ -167,7 +167,7 @@
 
   <div class="summary-row">
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--accent-green)">13</div>
+      <div class="summary-num" style="color:var(--accent-green)">16</div>
       <div class="summary-lbl">已完成</div>
     </div>
     <div class="summary-card">
@@ -179,7 +179,7 @@
       <div class="summary-lbl">待處理</div>
     </div>
     <div class="summary-card">
-      <div class="summary-num" style="color:var(--text-primary)">13</div>
+      <div class="summary-num" style="color:var(--text-primary)">16</div>
       <div class="summary-lbl">開發者任務</div>
     </div>
   </div>
@@ -187,7 +187,7 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>整體完成度</span>
-      <span style="color:var(--accent-cyan);">13 / 13</span>
+      <span style="color:var(--accent-cyan);">16 / 16</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width: 100%"></div>
@@ -203,6 +203,12 @@
     <br><strong style="color:var(--accent-cyan);">實作時與原計畫不同的一處：</strong>
     C-1 原本要求「相鄰兩格不同張」，實際只在過場成立。戰鬥段落裡切回戰場（沒有背景的行）後再出現同一張 CG 是合理的重新定場，全館 5 處
     （3 處隔著戰中分隔、2 處隔了 37／145 行戰場對白），所以測試只對過場要求。另外「戰鬥段第一行本身有 CG 時不疊地圖」的判斷在現行主線裡沒有命中的關，留作防呆。
+  </div>
+
+  <div class="impact-note" style="background:rgba(34,211,238,0.06);border-color:rgba(34,211,238,0.25);">
+    <strong style="color:var(--accent-cyan);">2026-11-28 追加 Phase F 說話者頭像（完成並上線）：</strong>
+    場景條上線後站長指示「說話者頭像加入」。收錄的有名字台詞 27,468 行，98.9% 有頭像，用到 182 張站上既有的頭像；站上沒有的只有 2 位（劍部武一郎 <code>Pilot_11024B</code>、火美子 <code>Pilot_11023B</code>），那幾行只列名字。
+    書檔 3.41 → 3.54 MB，對白內容 0 差異。<code>npm test</code> 1842／1842、build 通過、改到的檔案 eslint 0 錯；Playwright 驗桌機／手機／戰中段落、開關與記憶，主控台 0 錯誤。
   </div>
 
   <div class="impact-note">
@@ -464,6 +470,64 @@
         <div class="task-name">Pages 發布完成後，正式站抽看幾張場景圖回 200、劇情頁照常顯示</div>
         <div class="task-desc">新圖要等 <code>pages-build-deployment</code> 跑完再請求（太早請求，Cloudflare 會把 404 快取住；萬一發生就到 CF 清快取）。之後歸檔。</div>
         <div class="task-file">—</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+</section>
+
+<!-- Phase F -->
+<section class="section">
+  <div class="section-label cyan">Phase F</div>
+  <div class="section-title">說話者頭像（2026-11-28 追加）</div>
+  <div class="section-desc">用 PLAN-054 已上站的頭像，不另外匯入圖片。</div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-1 &nbsp; 匯入腳本：頭像對照</div>
+      <div class="task-group-meta">scripts/import-story.mjs</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">說話側立繪 → 站上 <code>_head.webp</code>；書上 <code>faces</code>、每段 <code>face</code> 編號</div>
+        <div class="task-desc">掃 <code>pilots/</code>（本體、<code>skins/</code>）與 <code>npc/</code> 建「立繪鍵 → 站內路徑」索引；<code>packFaces()</code> 在輸出前把逐行路徑換成書內編號。報告多一行頭像摘要，站上沒有的立繪鍵列 ⬜ 與補圖指令。</div>
+        <div class="task-file">scripts/import-story.mjs · src/data/story/**/*.json</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-2 &nbsp; 前台：名字旁的頭像與開關</div>
+      <div class="task-group-meta">StoryLines.tsx · StoryBookPage.tsx · storyScenes.ts · index.css</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">只畫在列名的那一行；開著時名字欄加寬；「頭像」開關</div>
+        <div class="task-desc"><code>FaceImg</code>：lazy、寬高佔位、載入失敗只剩名字。開關改成通用的 <code>.lore-story-toggle</code>、兩顆並排；偏好讀寫改成 <code>readStoryPref</code>／<code>writeStoryPref</code>。</div>
+        <div class="task-file">src/components/lore/story/StoryLines.tsx · src/pages/lore/StoryBookPage.tsx · src/components/lore/story/storyScenes.ts · src/index.css</div>
+      </div>
+      <div class="task-assignee">開發者</div>
+      <span class="status done">完成</span>
+    </div>
+  </div>
+
+  <div class="task-group">
+    <div class="task-group-header">
+      <div class="task-group-title">F-3 &nbsp; 測試與驗收</div>
+      <div class="task-group-meta">storyData.test.ts</div>
+      <span class="status done">完成</span>
+    </div>
+    <div class="task-row">
+      <div>
+        <div class="task-name">face 與 lines 等長、編號在範圍內、分隔線與旁白為 0、faces 每張都有人用、檔案都在</div>
+        <div class="task-desc">Playwright：桌機 main-2 37 個頭像全載入、關掉即全收並記住；手機 22px；event-20 戰中分隔前後正常。</div>
+        <div class="task-file">src/components/lore/story/storyData.test.ts</div>
       </div>
       <div class="task-assignee">開發者</div>
       <span class="status done">完成</span>
