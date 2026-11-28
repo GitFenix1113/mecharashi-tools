@@ -15,10 +15,19 @@ export type StoryKind = 'main' | 'event' | 'memory'
  */
 export type StoryLine = [speaker: string, text: string] | [speaker: string, text: string, choices: string[]]
 
+/**
+ * 場景條的一格（PLAN-042-J）：[行索引, 場景 key]——在 lines[行索引] 前插一張遊戲本身的對白背景。
+ * key 是官方檔名（例 P001_Raw），圖在 /images/game/story/<key>.webp（storyScenes.ts）。
+ * 行索引含戰中的 null 分隔，但一定指到真的對白行；同一段裡嚴格遞增、相鄰兩格不會是同一張（匯入時就收斂好了）。
+ */
+export type StoryShot = [line: number, key: string]
+
 /** 一關裡的一段：開場過場／戰鬥中／結尾過場。戰中的 null 是兩個觸發之間的分隔 */
 export interface StoryPart {
   at: 'start' | 'battle' | 'end'
   lines: (StoryLine | null)[]
+  /** 換場景的點；整段都沒有可用的背景圖時不給 */
+  shots?: StoryShot[]
 }
 
 export interface StoryStage {
@@ -59,6 +68,10 @@ export interface StoryBook {
   seeAlso?: StoryCrossRef[]
   /** 反向：活動版多出來的關在這些書裡 */
   extra?: StoryCrossRef[]
+  /** 主線：該章區域的世界地圖（官方檔名，例 Bg_map_LocstaDesert_03_Raw），戰鬥段落拿來當底（PLAN-042-J） */
+  map?: string
+  /** 主線：區域名稱（帕黎爾沙漠），戰場地圖的圖說 */
+  region?: string
   stages: StoryStage[]
 }
 

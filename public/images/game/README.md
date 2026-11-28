@@ -21,6 +21,9 @@ mechs/<wap>/          wap ＝ 機甲四碼編號（DB: mechs.gameId）
   skins/Img_Skin_wap<wap>_<代碼>_thumb.webp  96²        塗裝列的縮圖（衍生檔：裁掉透明邊取中段）；匯入時自動產
   skins/Img_Skin_wap<兵裝號>.webp            1600×1500  兵裝組件（換整套模型的商城外觀，例：遊騎兵 3032 的龍膽＝wap3132）：保留官方檔名、放在本體資料夾
   card/mechcard_illustration_<卡池鍵>.webp   2600×1080  招募插畫（F-2，衍生檔：兩片 1024² 切片拼回卡池比例）；索引 GAME_MECH_CARDS
+story/                劇情故事館的場景條（PLAN-042-J）：由 import-story.mjs 產生，DB 不存，書檔 src/data/story/ 記官方檔名
+  <官方檔名>.webp                1920×592   對白背景 CG（台版圖集 uidialogpic_*），例 P001_Raw.webp
+  <官方檔名>_strip.webp          1920×420   主線區域世界地圖（uimappic_*）裁成的橫幅（衍生檔），例 Bg_map_LocstaDesert_03_Raw_strip.webp
 makers/               廠商舞台（PLAN-042-B F-2）
   Skynet_Wap_BG_<key>_Raw.webp      2048×1024   遊戲內機甲圖鑑的背景；<key>＝mechMakers 的文件 ID；索引 GAME_MAKER_STAGES
 icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一份、官方檔名就是 key
@@ -117,6 +120,18 @@ icons/                圖示圖庫（PLAN-055／056）：扁平、一張圖一�
 
 **什麼時候才需要找人改程式**：報告出現「觸發器型別沒對到」「屬性標籤沒收」「回歸基準不符」——那是遊戲改了規則；
 前台不會因此出錯，只會把那幾筆顯示成「特定條件觸發」。首領面板整組空白＝本機少了 `scripts/lib/raid_estimate.py`（報告第二條有複製指令）。
+
+## 劇情故事館（讀台版解包；PLAN-042-J 起連場景圖一起）
+
+台版改版、重新解包到 `E:/Mecharashi_data_TW*/` 之後，一樣照抄、不需要 AI：
+
+1. `node scripts/import-story.mjs`（預覽，不寫檔）：看新增了哪些章節／活動，以及最後一段「場景條」摘要（站上還沒有的 CG 幾張）。
+2. `node scripts/import-story.mjs --write`：重寫 `src/data/story/`，並把用到、站上還沒有的場景 CG／戰場地圖轉成 WebP 放進 `story/`。
+3. 照報告的「下一步」做（✅／⬜）：`npm test`（會擋「書檔指到不存在的圖」）、`npm run dev` 抽看一兩章。
+4. commit 時記得寫網站更新履歷（新劇情是使用者看得到的變動）；push 後等 `pages-build-deployment` 跑完再去正式站看新場景。
+
+已經在站上的圖不會重轉。改版若換掉了**同名**的 CG，先刪掉 `story/` 裡那張再跑 `--write`。報告列出「沒人用的圖」時，確認後手動刪。
+找不到解包圖片的電腦照樣能跑：站上已有的圖照用，缺的那幾行先不插圖（報告列 ⬜）。
 
 ## 匯入指令一覽
 

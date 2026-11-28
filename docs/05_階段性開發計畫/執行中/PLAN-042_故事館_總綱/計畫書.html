@@ -564,6 +564,11 @@ export interface LoreChapter {
               依據 <code>_local-notes/2026-11/2026-11-28_劇情故事館閱覽體驗提案/</code> 的方案 A；方案 C（場景條＋頭像）與方案 B（選章舞台）另案。</td>
           <td><span class="badge badge-green">只動前台 · 資料不動</span></td>
           <td><span class="badge badge-green">開發完成 12／14（2026-11-28 已上線）· 剩 iPhone 實機＋D-1 待決定</span></td></tr>
+      <tr><td><a href="../PLAN-042-J_劇情故事館場景條/計畫書.html" style="color:var(--accent-cyan);"><strong>PLAN-042-J</strong><br>劇情故事館場景條</a></td>
+          <td>方案 C 的場景條：換場景的那一行前插一張遊戲本身的對白背景 CG 當定場鏡頭，主線戰鬥段落用該章的區域地圖，可關掉。
+              <code>import-story.mjs</code> 把每行背景收斂成 <code>shots</code>，圖片 141 張（19 MB）放 <code>public/images/game/story/</code>；說話者頭像與方案 B 另案。</td>
+          <td><span class="badge badge-green">重跑匯入 · 新增圖片 · 不進 DB</span></td>
+          <td><span class="badge badge-med">開發完成 12／13（2026-11-28 已推送）· 剩上線後複驗</span></td></tr>
     </table>
   </div>
 
@@ -653,7 +658,8 @@ export interface LoreChapter {
     <a href="../PLAN-042-F_故事館大廳全景與陣營徽章管理/進度表.html" style="color:var(--accent-orange);">042-F 進度表</a> ·
     <a href="../PLAN-042-G_故事館回圖鑑路線與出館過場/進度表.html" style="color:var(--accent-green);">042-G 進度表</a> ·
     <a href="../PLAN-042-H_故事館協作編輯/進度表.html" style="color:var(--accent-cyan);">042-H 進度表</a> ·
-    <a href="../PLAN-042-I_劇情故事館分關閱讀/進度表.html" style="color:var(--accent-yellow);">042-I 進度表</a>
+    <a href="../PLAN-042-I_劇情故事館分關閱讀/進度表.html" style="color:var(--accent-yellow);">042-I 進度表</a> ·
+    <a href="../PLAN-042-J_劇情故事館場景條/進度表.html" style="color:var(--accent-cyan);">042-J 進度表</a>
   </div>
   <div class="info-block">
     <strong>相關評估紀錄：</strong>拆分依據來自 <code>_local-notes/2026-08/2026-08-23_機師故事館_版面方案初評.html</code>（v3，本機不進版控）——

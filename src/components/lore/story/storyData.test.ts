@@ -7,6 +7,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import type { StoryBook, StoryCatalog } from './storyTypes.ts'
+import { mapStripPath, scenePath } from './storyScenes.ts'
 
 const DIR = new URL('../../../data/story/', import.meta.url)
 const catalog = JSON.parse(fs.readFileSync(new URL('index.json', DIR), 'utf8')) as StoryCatalog
@@ -58,4 +59,53 @@ test('互相參照指到存在的書', () => {
     const b = readBook(file)
     for (const r of [...(b.seeAlso ?? []), ...(b.extra ?? [])]) assert.ok(ids.has(r.id), `${b.id} 參照不存在的 ${r.id}`)
   }
+})
+
+// ─── 場景條（PLAN-042-J）────────────────────────────────────────────────────
+// 前台照 shots 插圖、不再判斷，所以壞資料一定要在這裡擋：指錯行會把圖插在分隔線上，
+// 指到不存在的圖則是上線後破圖——而且 Cloudflare 會把那個 404 快取住。
+
+const PUBLIC = new URL('../../../../public/', import.meta.url)
+const publicFile = (p: string) => new URL(p.replace(/^\//, ''), PUBLIC)
+
+// 「相鄰兩格不同張」只要求過場：戰鬥中切回戰場（沒有背景的行）之後再出現同一張 CG，是合理的重新定場
+// （2026-11-28 全館 5 處：3 處隔著戰中分隔、2 處隔了 37／145 行戰場對白）
+test('場景條：索引在範圍內、指到真的對白行、同一段嚴格遞增、過場裡相鄰兩格不同張', () => {
+  let shots = 0
+  for (const file of bookFiles) {
+    const b = readBook(file)
+    for (const s of b.stages) {
+      for (const p of s.parts) {
+        if (p.shots === undefined) continue
+        assert.ok(p.shots.length > 0, `${b.id} ${s.key} ${p.at}：沒有圖就不該帶 shots`)
+        let last = -1
+        let lastKey = ''
+        for (const [i, key] of p.shots) {
+          assert.ok(Number.isInteger(i) && i > last && i < p.lines.length, `${b.id} ${s.key} ${p.at}：行索引 ${i}`)
+          assert.ok(p.lines[i] !== null, `${b.id} ${s.key} ${p.at}：第 ${i} 行是分隔線`)
+          assert.match(key, /^[\w-]+$/, `${b.id} ${s.key}：key ${key}`)
+          if (p.at !== 'battle') assert.notEqual(key, lastKey, `${b.id} ${s.key} ${p.at}：相鄰兩格都是 ${key}`)
+          last = i
+          lastKey = key
+          shots++
+        }
+      }
+    }
+  }
+  assert.ok(shots > 0, '一張場景圖都沒有：匯入腳本的場景條壞了？')
+})
+
+test('場景條：書檔用到的 CG 與戰場地圖都在 public/images/game/story/', () => {
+  const missing = new Set<string>()
+  for (const file of bookFiles) {
+    const b = readBook(file)
+    if (b.map && !fs.existsSync(publicFile(mapStripPath(b.map)))) missing.add(mapStripPath(b.map))
+    if (b.map) assert.equal(b.kind, 'main', `${b.id}：只有主線有區域地圖`)
+    for (const s of b.stages) {
+      for (const p of s.parts) {
+        for (const [, key] of p.shots ?? []) if (!fs.existsSync(publicFile(scenePath(key)))) missing.add(scenePath(key))
+      }
+    }
+  }
+  assert.deepEqual([...missing], [], '缺圖：重跑 node scripts/import-story.mjs --write')
 })

@@ -3,7 +3,15 @@
 //
 //   node scripts/import-story.mjs            預覽：只印摘要，不寫任何檔案
 //   node scripts/import-story.mjs --write    寫入 src/data/story/（會先清掉舊的書檔，再整批重寫）
+//                                            ＋把用到、站上還沒有的場景 CG／戰場地圖轉成 WebP 放進 public/images/game/story/
 //   --db <路徑>                               指定 遊戲資料.sqlite（預設：E:\ 底下最新的 Mecharashi_data_TW*）
+//   --res <路徑>                              指定圖片解包資料夾（含 圖片索引.csv；預設：同一包裡的 完整資源_*）
+//
+// ── 場景條（PLAN-042-J）──
+//   每行對白的 Background → ConfigDataBackgroundInfo.ResPath（例 13_ABS/P001_Raw）→ 圖集 uidialogpic_13 的 P001_Raw（1920×592）。
+//   書檔只記「從第幾行起換成哪張」（StoryPart.shots），一段過場通常一兩筆；前台在那一行前插一張橫幅當定場鏡頭。
+//   主線的戰鬥段落另外用該章區域的世界地圖（WorldMapRegion.BlurBgRes，一章一區）當底。
+//   沒有解包圖片的電腦照樣能跑：站上已經有的圖照用，缺的列進報告 ⬜，書檔不會指到不存在的圖。
 //
 // ── 為什麼是靜態檔、不進 Firestore ──
 // 劇情是「改版才會變」的固定內容，六萬多行對白進資料庫只會白白吃讀取額度。
@@ -32,9 +40,13 @@ const OUT_DIR = path.join(ROOT, 'src', 'data', 'story')
 /** 書的種類 → 輸出子資料夾（也是書 ID 的前綴：main-3 ⇔ main/3.json） */
 const KIND_DIRS = { main: 'main', event: 'event', memory: 'memory' }
 
+/** 場景 CG 與戰場地圖（PLAN-042-J）：官方檔名逐字＋.webp，扁平放一層；地圖是裁成橫幅的衍生檔（_strip） */
+const SCENE_DIR = path.join(ROOT, 'public', 'images', 'game', 'story')
+
 const args = process.argv.slice(2)
 const WRITE = args.includes('--write')
 const dbArg = args.includes('--db') ? args[args.indexOf('--db') + 1] : null
+const resArg = args.includes('--res') ? args[args.indexOf('--res') + 1] : null
 
 // ─── 找資料包 ────────────────────────────────────────────────────────────────
 
@@ -82,6 +94,77 @@ function table(name) {
 const DIALOG = table('ConfigDataDialogueInfo')
 const CHOOSE = table('ConfigDataDialogChooseItem')
 
+// ─── 場景 CG（PLAN-042-J）────────────────────────────────────────────────────
+
+const BGINFO = table('ConfigDataBackgroundInfo')
+/** 場景條只收這個尺寸：圖集裡另有 64² 黑底（P000）、340² 道具圖、1024² 插圖各一兩張，混進來會破壞橫幅比例 */
+const SCENE_W = 1920
+const SCENE_H = 592
+
+/** 圖片解包資料夾：--res 指定，否則找同一包裡含 圖片索引.csv 的 完整資源_* */
+function findResDir() {
+  if (resArg) return fs.existsSync(path.join(resArg, '圖片索引.csv')) ? resArg : null
+  const pkg = path.dirname(path.dirname(dbPath))
+  for (const d of fs.readdirSync(pkg)) {
+    if (/^完整資源/.test(d) && fs.existsSync(path.join(pkg, d, '圖片索引.csv'))) return path.join(pkg, d)
+  }
+  return null
+}
+const resDir = findResDir()
+
+/** 解包圖片索引：對白 CG（官方檔名 → PNG＋尺寸）與世界地圖（官方檔名 → PNG） */
+const CG = new Map()
+const MAPS = new Map()
+if (resDir) {
+  const csv = fs.readFileSync(path.join(resDir, '圖片索引.csv'), 'utf8').split(/\r?\n/)
+  for (const line of csv.slice(1)) {
+    const c = line.split(',')
+    if (c[2] !== 'Texture2D') continue
+    if (/^ui_uiimages_uidialogpic_\d+_abs\.b$/.test(c[1])) {
+      // 站上以官方檔名當 key、扁平放一層：哪天兩個圖集出現同名的圖，要先想好怎麼分再匯
+      if (CG.has(c[3])) { console.error(`✗ 對白 CG 重名：${c[3]}（${c[1]}）`); process.exit(1) }
+      CG.set(c[3], { png: path.join(resDir, c[6]), w: Number(c[4]), h: Number(c[5]) })
+    } else if (/^ui_uiimages_uimappic_abs_\d+\.b$/.test(c[1])) {
+      MAPS.set(c[3], path.join(resDir, c[6]))
+    }
+  }
+}
+
+/** 略過的背景（報告用，記不同的圖、不記行數） */
+const sceneSkips = { prefab: new Set(), odd: new Set(), missing: new Set() }
+const SCENE_CACHE = new Map()
+
+/** 背景 ID → { key } 或 { reason }。key ＝ 官方檔名（例 P001_Raw），前台讀 /images/game/story/<key>.webp */
+function resolveScene(bgId) {
+  const res = BGINFO.get(Number(bgId))?.ResPath ?? ''
+  const m = /^\d+_ABS\/(.+)$/.exec(res)
+  // 活動專用的 UI prefab 型背景（PlotActivityAVGUIPrefab_*）：由好幾張圖組成，不是一張 CG
+  if (!m) return { reason: 'prefab', name: res }
+  const name = m[1]
+  // 64² 黑底＝黑幕轉場：當成「沒換場景」
+  if (name === 'P000_Raw') return { reason: 'black' }
+  const cg = CG.get(name)
+  if (cg) return cg.w === SCENE_W && cg.h === SCENE_H ? { key: name } : { reason: 'odd', name: `${name}（${cg.w}×${cg.h}）` }
+  // 這台電腦沒有解包圖片：站上已經有的照用，沒有的就不插（書檔不會指到不存在的圖）
+  if (fs.existsSync(path.join(SCENE_DIR, `${name}.webp`))) return { key: name }
+  return { reason: 'missing', name }
+}
+
+/** 對白一行的場景；沒有可用的圖＝null */
+function sceneOf(bgId) {
+  if (!bgId) return null
+  let r = SCENE_CACHE.get(bgId)
+  if (!r) {
+    r = resolveScene(bgId)
+    SCENE_CACHE.set(bgId, r)
+    if (r.reason && r.reason !== 'black') sceneSkips[r.reason].add(r.name)
+  }
+  return r.key ?? null
+}
+
+/** 主線區域地圖（戰鬥段落的底）：官方檔名；站上存的是裁成橫幅的 <名稱>_strip.webp */
+const mapAvailable = (name) => !!name && (MAPS.has(name) || fs.existsSync(path.join(SCENE_DIR, `${name}_strip.webp`)))
+
 // ─── 文字清理 ────────────────────────────────────────────────────────────────
 
 const stats = { unknownTags: new Map(), loops: 0, missingText: 0 }
@@ -116,9 +199,11 @@ function speakerOf(d) {
 /**
  * 從某一行沿 NextID 走到底。一行 = [說話者, 文字] 或 [說話者, 文字, 選項[]]。
  * 選項（DialogChooseItem）在台版資料裡全都沒有分支（DialogId 恆為 0，是戰場用的二選一／三選一），所以只列出選項文字。
+ * bgs 與 lines 平行：每一行當下的場景 CG（sceneOf），交給 part() 收斂成場景條。
  */
 function walk(headId) {
   const lines = []
+  const bgs = []
   const seen = new Set()
   let id = headId
   while (id && DIALOG.has(id)) {
@@ -128,10 +213,32 @@ function walk(headId) {
     const text = cleanText(tx(d.WordsStrKey))
     if (!text && d.WordsStrKey) stats.missingText++
     const choices = (d.ChooseItemList ?? []).map((c) => cleanText(tx(CHOOSE.get(c)?.WordsStrKey))).filter(Boolean)
-    if (text || choices.length) lines.push(choices.length ? [speakerOf(d), text, choices] : [speakerOf(d), text])
+    if (text || choices.length) {
+      lines.push(choices.length ? [speakerOf(d), text, choices] : [speakerOf(d), text])
+      bgs.push(sceneOf(d.Background))
+    }
     id = d.NextID
   }
-  return lines
+  return { lines, bgs }
+}
+
+const NO_LINES = { lines: [], bgs: [] }
+
+/**
+ * 一段＋它的場景條：只記「從第幾行起換成哪張」（shots：[行索引, key]，行索引含戰中的 null 分隔）。
+ * 同一張不重插；過場裡沒有圖的行（黑幕轉場、prefab 背景）沿用前一張，戰鬥中沒有圖＝回到戰場，下一張 CG 重新定場。
+ */
+function part(at, { lines, bgs }, view) {
+  const shots = []
+  bgs.forEach((key, i) => {
+    if (!key) {
+      if (at === 'battle') view.shown = null
+      return
+    }
+    if (key !== view.shown) shots.push([i, key])
+    view.shown = key
+  })
+  return shots.length ? { at, lines, shots } : { at, lines }
 }
 
 // ─── 戰中對白：戰場事件觸發 ──────────────────────────────────────────────────
@@ -155,22 +262,29 @@ function stageParts(startId, endId, sceneIds) {
   const used = new Set()
   /** 過場（開場／結尾）的開頭 ID；去重以它為準，沒有過場的關才看戰中 */
   const cutscene = []
-  const start = startId ? walk(startId) : []
-  if (start.length) { parts.push({ at: 'start', lines: start }); used.add(startId); cutscene.push(startId) }
-  const battle = []
+  /** 目前畫面上的場景。戰鬥段落前後都歸零（回到戰場），結尾過場因此會重新定場 */
+  const view = { shown: null }
+  const start = startId ? walk(startId) : NO_LINES
+  if (start.lines.length) { parts.push(part('start', start, view)); used.add(startId); cutscene.push(startId) }
+  const battle = { lines: [], bgs: [] }
   for (const sid of sceneIds) {
     for (const h of SCENE_DIALOGS.get(sid) ?? []) {
       if (used.has(h)) continue
       used.add(h)
       const seg = walk(h)
-      if (!seg.length) continue
-      if (battle.length) battle.push(null)
-      battle.push(...seg)
+      if (!seg.lines.length) continue
+      if (battle.lines.length) { battle.lines.push(null); battle.bgs.push(null) }
+      battle.lines.push(...seg.lines)
+      battle.bgs.push(...seg.bgs)
     }
   }
-  if (battle.length) parts.push({ at: 'battle', lines: battle })
-  const end = endId && !used.has(endId) ? walk(endId) : []
-  if (end.length) { parts.push({ at: 'end', lines: end }); cutscene.push(endId) }
+  if (battle.lines.length) {
+    view.shown = null
+    parts.push(part('battle', battle, view))
+    view.shown = null
+  }
+  const end = endId && !used.has(endId) ? walk(endId) : NO_LINES
+  if (end.lines.length) { parts.push(part('end', end, view)); cutscene.push(endId) }
   const battleHeads = [...used].filter((h) => !cutscene.includes(h))
   return { parts, heads: cutscene.length ? cutscene : battleHeads }
 }
@@ -194,6 +308,7 @@ const MIN_EVENT_LINES = 20
 
 const CHAPTERS = table('ConfigDataWorldMapChapterInfo')
 const WAYPOINTS = table('ConfigDataWorldMapWayPointInfo')
+const REGIONS = table('ConfigDataWorldMapRegionInfo')
 /** WayPointType：1 主線關、2 支線、3 遭遇戰／突襲戰、5 緊急行動 */
 const books = []
 
@@ -221,12 +336,17 @@ for (const ch of [...CHAPTERS.values()].sort((a, b) => a.ID - b.ID)) {
   }
   if (!stages.length) continue
   claim(`main-${ch.ID}`, stages)
+  // 一章一個區域（2026-11-28 核對：20 章的節點全落在同一區）：戰鬥段落拿該區的世界地圖當底
+  const region = REGIONS.get(WAYPOINTS.get(ch.MainWayPointIds[0])?.RegionID)
+  const map = mapAvailable(region?.BlurBgRes) ? region.BlurBgRes : undefined
   books.push({
     id: `main-${ch.ID}`,
     kind: 'main',
     title: cleanText(tx(ch.NameStrKey)),
     name: cleanText(tx(ch.DescStrKey)),
     desc: cleanText(tx(ch.DetailDescStrKey)) || undefined,
+    map,
+    region: map ? cleanText(tx(region.NameStrKey)) || undefined : undefined,
     stages,
   })
 }
@@ -413,6 +533,34 @@ if (stats.unknownTags.size) console.log(`\n已拿掉的未知標記：${[...stat
 if (stats.loops) console.log(`⚠ 對白串出現迴圈 ${stats.loops} 次（已截斷）`)
 if (stats.missingText) console.log(`⚠ 查不到文字的行 ${stats.missingText}（texts 表缺字）`)
 
+// ─── 場景條摘要 ──────────────────────────────────────────────────────────────
+
+const usedScenes = new Set()
+const usedMaps = new Set()
+let shotCount = 0
+let cutsceneParts = 0
+let cutsceneWithShots = 0
+for (const b of books) {
+  if (b.map) usedMaps.add(b.map)
+  for (const s of b.stages) {
+    for (const p of s.parts) {
+      if (p.at !== 'battle') { cutsceneParts++; if (p.shots) cutsceneWithShots++ }
+      for (const [, key] of p.shots ?? []) { usedScenes.add(key); shotCount++ }
+    }
+  }
+}
+const sceneFile = (key) => path.join(SCENE_DIR, `${key}.webp`)
+const mapFile = (name) => path.join(SCENE_DIR, `${name}_strip.webp`)
+const newScenes = [...usedScenes].filter((k) => !fs.existsSync(sceneFile(k)))
+const newMaps = [...usedMaps].filter((n) => !fs.existsSync(mapFile(n)))
+console.log('')
+console.log(`場景條　圖片解包　${resDir ?? '（找不到：只用站上已經有的圖）'}`)
+console.log(`　　　　插圖 ${shotCount.toLocaleString()} 處、${usedScenes.size} 張 CG；過場 ${cutsceneWithShots}／${cutsceneParts} 段有場景；主線戰場地圖 ${usedMaps.size} 張`)
+console.log(`　　　　站上還沒有：CG ${newScenes.length} 張、地圖 ${newMaps.length} 張${newScenes.length + newMaps.length ? '（--write 會轉檔放進 public/images/game/story/）' : ''}`)
+if (sceneSkips.prefab.size) console.log(`　　　　略過 prefab 型背景 ${sceneSkips.prefab.size} 種（活動介面組成的背景，不是單張圖）`)
+if (sceneSkips.odd.size) console.log(`　　　　略過尺寸不是 ${SCENE_W}×${SCENE_H} 的：${[...sceneSkips.odd].join('、')}`)
+if (sceneSkips.missing.size) console.log(`⚠ 對白指到、但找不到圖的背景 ${sceneSkips.missing.size} 張：${[...sceneSkips.missing].join('、')}`)
+
 if (!WRITE) {
   console.log('\n（預覽模式，沒有寫檔。確認無誤後加 --write）')
   process.exit(0)
@@ -436,7 +584,40 @@ const indexBody = JSON.stringify(catalog, null, 1)
 fs.writeFileSync(path.join(OUT_DIR, 'index.json'), indexBody + '\n')
 
 console.log(`\n✅ 已寫入 src/data/story/：index.json＋${books.length} 本（${(bytes / 1024 / 1024).toFixed(2)} MB）`)
+
+// 場景 CG：官方原尺寸轉 WebP（q82，同 public/images/game 的慣例）。已經有的不重轉——改版若換了同名的圖，先刪掉站上那張再跑
+const { default: sharp } = await import('sharp')
+fs.mkdirSync(SCENE_DIR, { recursive: true })
+let imgBytes = 0
+for (const key of newScenes) {
+  await sharp(CG.get(key).png).webp({ quality: 82 }).toFile(sceneFile(key))
+  imgBytes += fs.statSync(sceneFile(key)).size
+}
+// 區域地圖是 2048² 的整張世界地圖，前台只露一條橫幅 ⇒ 匯入時就裁好（取中段偏上，1920×420），不必整張上站
+for (const name of newMaps) {
+  const src = sharp(MAPS.get(name))
+  const { width, height } = await src.metadata()
+  const h = Math.round((width * 420) / 1920)
+  await src.extract({ left: 0, top: Math.round((height - h) * 0.4), width, height: h })
+    .resize({ width: 1920 }).webp({ quality: 82 }).toFile(mapFile(name))
+  imgBytes += fs.statSync(mapFile(name)).size
+}
+const orphans = fs.readdirSync(SCENE_DIR).filter((f) => f.endsWith('.webp')).filter((f) => {
+  const k = f.slice(0, -5)
+  return !usedScenes.has(k) && !usedMaps.has(k.replace(/_strip$/, ''))
+})
+if (newScenes.length + newMaps.length) {
+  console.log(`✅ 場景圖新增 CG ${newScenes.length} 張、地圖 ${newMaps.length} 張（${(imgBytes / 1024 / 1024).toFixed(2)} MB）→ public/images/game/story/`)
+} else {
+  console.log('✅ 場景圖：用到的都已經在站上，沒有新增')
+}
+
 console.log('\n下一步：')
-console.log('  ⬜ npm test　　　（storyData.test.ts 會核對目錄與書檔一致、沒有殘留的遊戲標記）')
+if (sceneSkips.missing.size) console.log(`  ⬜ 有 ${sceneSkips.missing.size} 張背景找不到圖（見上方 ⚠），那幾行先不插圖；拿到新的解包後用 --res 指定再跑一次`)
+if (orphans.length) console.log(`  ⬜ public/images/game/story/ 有 ${orphans.length} 張沒人用的圖（改版拿掉的場景）：確認後手動刪除——${orphans.join('、')}`)
+console.log('  ⬜ npm test　　　（storyData.test.ts 會核對目錄與書檔一致、沒有殘留的遊戲標記、場景圖都在）')
 console.log('  ⬜ npm run dev → 打開 /lore/story 抽看一兩章')
 console.log('  ⬜ commit 時記得更新網站履歷（src/data/siteChangelog/）')
+if (newScenes.length + newMaps.length) {
+  console.log('  ⬜ 推送後等 GitHub Pages 發布完成（pages-build-deployment）再去正式站看新場景——太早請求，Cloudflare 會把 404 快取住')
+}

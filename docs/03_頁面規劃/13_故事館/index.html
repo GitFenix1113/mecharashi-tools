@@ -159,11 +159,17 @@
       正文放在實心紙面上（館內底圖的浮水印不再壓在字底下）；同一人連續發言只在第一行列名（名字仍留給螢幕閱讀器）。手機改說話者在上、台詞在下<br>
     · <strong>閱讀進度</strong>（PLAN-042-I）：只存本機 <code>localStorage</code>（<code>mecharashi_story_progress</code>，<code>storyProgress.ts</code>；讀不到就當沒讀過），記「上次讀到哪一關」與「讀完哪幾關」（關末出現在畫面上＝讀完）。
       書根有進度時頂端出現「上次讀到 … 繼續 ›」提示列（<strong>不自動跳轉</strong>；只開書根看一眼也不會覆寫進度）；關卡列打 ✓、列頭有已讀進度條；館首頁卡片顯示「已讀 N／M」。不跨裝置同步<br>
+    · <strong>場景條</strong>（PLAN-042-J，2026-11-28）：換場景的那一行前插一張遊戲本身的對白背景 CG（1920×592 橫幅）當定場鏡頭；主線的戰鬥段落開頭放該章區域的世界地圖（「戰場 · 帕黎爾沙漠」）。
+      <strong>不做滿版背景</strong>（圖壓在字底下正是上面才解掉的問題）。資料：<code>Background</code> → <code>ConfigDataBackgroundInfo.ResPath</code> → 台版圖集 <code>uidialogpic_*</code>；
+      書檔只記換場景的點 <code>StoryPart.shots: [行索引, 官方檔名][]</code>（同一張不重插、黑幕沿用、戰鬥中無圖＝回到戰場，規則全在匯入腳本），主線書另有 <code>map</code>／<code>region</code>。
+      圖放 <code>public/images/game/story/</code>（官方檔名＋.webp；地圖是裁成 1920×420 的 <code>_strip</code> 衍生檔），由 <code>import-story.mjs --write</code> 轉檔，130 張 CG＋11 張地圖約 19 MB，不列入後台選圖器。
+      前台 <code>StorySceneShot</code>：lazy、寬高屬性先佔位、載入完淡入（reduced-motion 不動）、載入失敗整格收掉；圖後第一句重新列名。
+      關卡標頭右側「場景圖」開關（這一關有圖才出現），偏好存本機 <code>mecharashi_story_scenes</code>。<code>storyData.test.ts</code> 擋索引錯位與缺圖<br>
     · <strong>館內 header</strong>：第三館讓 375px 時「離館」被 BGM 鈕蓋住 ⇒ &lt;sm 收窄外距、間距與換館鈕內距、離館拿掉箭頭；360px 實測只剩 2px，<strong>再加館前先量</strong>。劇情館沒有對應圖鑑，離館回首頁<br>
-    · <strong>沒做</strong>：說話者頭像與場景背景（<strong>2026-11-28 更正</strong>：對話立繪編號可以對上——<code>Left/RightCharImageId</code> → <code>ConfigDataCharacterPicture.Icon</code>（10010 → <code>Pilot_10103101A</code>＝凱登）→ 站上 <code>pilots/</code>／<code>npc/</code> 的頭像，主線有名字的台詞 96.8% 對得到；
-      每行過場對白另有 <code>Background</code> → <code>ConfigDataBackgroundInfo.ResPath</code> 的場景 CG，97.2% 帶背景。兩者是 <code>_local-notes/2026-11/2026-11-28_劇情故事館閱覽體驗提案/</code> 的方案 C，另案）、
+    · <strong>沒做</strong>：說話者頭像（場景背景已由 PLAN-042-J 做完；<strong>2026-11-28 更正</strong>：對話立繪編號可以對上——<code>Left/RightCharImageId</code> → <code>ConfigDataCharacterPicture.Icon</code>（10010 → <code>Pilot_10103101A</code>＝凱登）→ 站上 <code>pilots/</code>／<code>npc/</code> 的頭像，主線有名字的台詞 96.8% 對得到；
+      每行過場對白另有 <code>Background</code> → <code>ConfigDataBackgroundInfo.ResPath</code> 的場景 CG，97.2% 帶背景。頭像是 <code>_local-notes/2026-11/2026-11-28_劇情故事館閱覽體驗提案/</code> 方案 C 的另一半，另案）、
       武裝討伐與肉鴿的對白（約 3 萬行）、CG 動畫字幕（<code>ConfigDataSubtitleInfo</code>）。
-      改版後：拿到新的台版解包 → 跑 <code>node scripts/import-story.mjs</code> 看摘要 → <code>--write</code> → <code>npm test</code>（<code>storyData.test.ts</code> 核對目錄與書檔）
+      改版後：拿到新的台版解包 → 跑 <code>node scripts/import-story.mjs</code> 看摘要 → <code>--write</code>（連新場景圖一起轉檔）→ <code>npm test</code>（<code>storyData.test.ts</code> 核對目錄、書檔與場景圖）；步驟也寫在 <code>public/images/game/README.md</code>
   </div>
   <div class="info-block" style="margin-top:1rem;">
     <strong>✅ 資料分家與故事館編輯台（PLAN-042-E，2026-10-13）</strong><br>

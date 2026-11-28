@@ -38,8 +38,9 @@ const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.a
  * game/icons 是 PLAN-055 的圖示圖庫（1,300 多張），由 GameIconPicker 讀自己的 game/icons/index.json；
  * 放進這裡只會讓舊選圖器又多列一千多張。
  * game/npc 是 NPC 圖庫（2026-10-12，一百多個純數字資料夾），機師的「選取官方立繪」有自己的 NPC 分組，同理不列。
+ * game/story 是劇情故事館的場景 CG（PLAN-042-J，一百多張 1920×592），只有劇情館讀、後台選圖用不到。
  */
-const EXCLUDED_DIRS = new Set(['og/entities', 'game/icons', 'game/npc'])
+const EXCLUDED_DIRS = new Set(['og/entities', 'game/icons', 'game/npc', 'game/story'])
 
 /** 遞迴收集 dir 底下所有圖檔，folders[相對資料夾] = [檔名...] */
 function collect(dir, relDir, folders) {

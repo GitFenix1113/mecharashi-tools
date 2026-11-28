@@ -3,6 +3,8 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 import { usePageTitle } from '../../contexts/PageTitleContext'
 import { usePilots } from '../../hooks/useFirestore'
 import { StoryLines } from '../../components/lore/story/StoryLines'
+import { StorySceneShot } from '../../components/lore/story/StorySceneShot'
+import { mapStripPath, readScenePref, writeScenePref } from '../../components/lore/story/storyScenes'
 import { StoryStageBar, StoryStageRail, type StepLink } from '../../components/lore/story/StoryStageNav'
 import {
   hasStoryBook, loadStoryBook, storyDisplayName, storyEntry, storyNeighbors, STORY_KIND_LABEL,
@@ -47,6 +49,12 @@ function StoryBookView({ id, part }: { id: string; part: string | undefined }) {
   // 續讀點在進書當下拍一張：之後的記錄（visit）不該讓提示列自己改來改去
   const [resumeKey] = useState(() => (part ? null : storyProgress.progressOf(id).last))
   const progress = useStoryProgress(id)
+  // 「場景圖」開關（PLAN-042-J）：個人偏好、只存本機，換書時重讀一次就夠（只有這一頁會改它）
+  const [showScenes, setShowScenes] = useState(readScenePref)
+  const toggleScenes = () => {
+    writeScenePref(!showScenes)
+    setShowScenes(!showScenes)
+  }
 
   useEffect(() => {
     let alive = true
@@ -202,10 +210,10 @@ function StoryBookView({ id, part }: { id: string; part: string | undefined }) {
           )}
           {!book && !error && <BookSkeleton />}
 
-          {stage && (
+          {book && stage && (
             <>
               <article className="lore-story-sheet" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-                <StageView stage={stage} />
+                <StageView stage={stage} book={book} showScenes={showScenes} onToggleScenes={toggleScenes} />
                 <div ref={tailRef} className="lore-story-tail" aria-hidden="true" />
               </article>
               <EndNav prev={prev} next={next} crossesBook={crossesBook} />
@@ -228,8 +236,19 @@ function StoryBookView({ id, part }: { id: string; part: string | undefined }) {
 
 const PART_LABEL: Record<StoryPart['at'], string> = { start: '開場', battle: '戰鬥中', end: '結尾' }
 
-/** 三段改成段落小標，不再收合（一關最長 393 行，計畫書決策六） */
-function StageView({ stage: s }: { stage: StoryStage }) {
+/**
+ * 三段改成段落小標，不再收合（一關最長 393 行，計畫書決策六）。
+ * 場景條（PLAN-042-J）：過場依 shots 插定場鏡頭；主線的戰鬥段落開頭放該章的區域地圖——
+ * 戰鬥段第一行本身就是戰中過場（有 CG）時不疊。「場景圖」開關只在這一關真的有圖時才出現，免得按了沒反應。
+ */
+function StageView({ stage: s, book, showScenes, onToggleScenes }: {
+  stage: StoryStage
+  book: StoryBook
+  showScenes: boolean
+  onToggleScenes: () => void
+}) {
+  const battleMap = (p: StoryPart) => p.at === 'battle' && !!book.map && p.shots?.[0]?.[0] !== 0
+  const hasScenes = s.parts.some((p) => !!p.shots?.length || battleMap(p))
   return (
     <>
       <header className="lore-story-stagehead">
@@ -239,6 +258,14 @@ function StageView({ stage: s }: { stage: StoryStage }) {
           <h2 className="lore-story-stage__name">{s.name}</h2>
           {s.place && <span className="text-xs text-text-dim">{s.place}</span>}
           {s.branch && <span className="lore-story-tag">支線</span>}
+          {hasScenes && (
+            <button
+              type="button" className="lore-story-scenetoggle" aria-pressed={showScenes} onClick={onToggleScenes}
+              title={showScenes ? '隱藏場景圖，只看文字' : '顯示遊戲裡的場景背景'}
+            >
+              場景圖
+            </button>
+          )}
         </div>
       </header>
       {s.desc && <p className="lore-story-brief">{s.desc}</p>}
@@ -248,7 +275,13 @@ function StageView({ stage: s }: { stage: StoryStage }) {
             <span className="lore-story-part__label">{PART_LABEL[p.at]}</span>
             <span className="lore-story-part__n">{p.lines.filter(Boolean).length} 行</span>
           </h3>
-          <StoryLines lines={p.lines} />
+          {showScenes && book.map && battleMap(p) && (
+            <StorySceneShot
+              key={book.map} map path={mapStripPath(book.map)}
+              caption={book.region ? `戰場 · ${book.region}` : '戰場'}
+            />
+          )}
+          <StoryLines lines={p.lines} shots={p.shots} showShots={showScenes} />
         </section>
       ))}
     </>
