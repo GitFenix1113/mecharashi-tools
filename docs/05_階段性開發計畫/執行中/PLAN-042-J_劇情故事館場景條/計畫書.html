@@ -147,9 +147,9 @@
 <header class="hero" style="background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34,211,238,0.12) 0%, transparent 60%), var(--bg-dark);">
   <div class="hero-badge cyan">◆ PLAN-042-J</div>
   <h1 style="background:linear-gradient(135deg,#fff 0%,var(--accent-cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-    劇情故事館場景條<span style="-webkit-text-fill-color:var(--text-secondary);"> 定場 CG · 戰場地圖 · 場景圖開關</span>
+    劇情故事館場景條<span style="-webkit-text-fill-color:var(--text-secondary);"> 定場 CG · 戰場地圖 · 說話者頭像 · 開關</span>
   </h1>
-  <p class="hero-sub">閱讀時讓場景跟著劇情換：換場景的那一行前插一張遊戲本身的對白背景 CG 當定場鏡頭，主線的戰鬥段落用該章的區域地圖。資料由匯入腳本產生，圖片 141 張、19 MB。</p>
+  <p class="hero-sub">閱讀時讓場景跟著劇情換：換場景的那一行前插一張遊戲本身的對白背景 CG 當定場鏡頭，主線的戰鬥段落用該章的區域地圖。資料由匯入腳本產生，圖片 141 張、19 MB。同日追加說話者頭像（站上既有的頭像，不另外匯入）。</p>
 </header>
 
 <main class="container">
@@ -178,7 +178,7 @@
     </div>
     <div class="meta-item">
       <div class="meta-label">狀態</div>
-      <div class="meta-value cyan">13／13 完成（2026-11-28 已上線）</div>
+      <div class="meta-value cyan">16／16 完成（場景條＋頭像，2026-11-28 已上線）</div>
     </div>
     <div class="meta-item">
       <div class="meta-label">前置依賴</div>
@@ -189,7 +189,7 @@
   <div class="info-block">
     <strong>來源：</strong>評估報告 <code>_local-notes/2026-11/2026-11-28_劇情故事館閱覽體驗提案/</code> 的方案 C（場景條＋頭像），建議順序 A → C → B。
     站長 2026-11-28 在 PLAN-042-I 上線後指示「根據建議進行方案 C 的場景條」。模擬頁 <code>reader.html</code> 的「場景條」開關就是本案的視覺參考。
-    方案 C 的另一半<strong>說話者頭像</strong>不在本案，見「不在範圍內」。
+    方案 C 的另一半<strong>說話者頭像</strong>原本列為另案；場景條上線後站長同日指示「說話者頭像加入」，併入本案成為 Phase F（決策七）。
   </div>
 </section>
 
@@ -260,6 +260,14 @@
     讀寫包 try/catch，讀不到就當預設「開」。
   </div>
   <div class="decision-block">
+    <strong>決策七（同日追加）：說話者頭像用站上既有的圖，書上列一次、每行只存編號</strong><br>
+    說話那一側的 <code>Left/RightCharImageId</code> → <code>ConfigDataCharacterPicture.Icon</code>（例 <code>Pilot_10103101A</code>）→ PLAN-054 已上站的 <code>_head.webp</code>（90²）。
+    順序是機師本體 → 外觀 <code>skins/</code> → NPC 圖庫；資料夾是遊戲 ID、不一定等於立繪鍵的號碼（維娜 <code>10103144</code> 的檔名是 <code>Pilot_13019A</code>），所以匯入腳本掃實際檔案建索引，不自己拼路徑。
+    書上列一次用到的頭像 <code>StoryBook.faces</code>（站內路徑），每段只存與 lines 等長的編號 <code>StoryPart.face</code>（0＝沒有）：逐行存路徑全館要多一兩 MB，編號只多 0.13 MB。
+    說話者與頭像不是一對一（「？？？」是不同人、同一人會換外觀），所以逐行記、不做「名字 → 頭像」對照。
+    頭像只畫在列名的那一行，開著時名字欄加寬；手機縮小放在名字前。「頭像」開關與場景圖並排，偏好存 <code>mecharashi_story_faces</code>。
+  </div>
+  <div class="decision-block">
     <strong>決策六：沒有解包圖片的電腦也能跑匯入</strong><br>
     匯入腳本找不到 <code>完整資源_*</code> 時，站上已經有的圖照用、缺的就不插，書檔不會指到不存在的圖；報告列 ⬜ 照抄清單。
     <code>storyData.test.ts</code> 另外擋「shots 指到不存在的圖」，萬一手動改壞了 build 前就會知道。
@@ -279,14 +287,13 @@
       <li>前台：型別、<code>storyScenes.ts</code>（圖片網址與偏好）、<code>StoryLines</code> 插定場鏡頭、戰場地圖、場景圖開關、CSS</li>
       <li>測試：shots 合法（索引在範圍內、指到真的對白行、遞增、相鄰不重複）、圖都在</li>
       <li>文件：故事館頁面規劃、更新履歷、PLAN-042 總綱子計畫表</li>
+      <li><strong>Phase F（同日追加）</strong>：說話者頭像——匯入腳本對照頭像、前台名字旁顯示與「頭像」開關、測試</li>
     </ul>
   </div>
 
   <div class="warning-block">
     <strong>不在範圍內：</strong>
     <ul style="margin:8px 0 0 16px;line-height:1.9;">
-      <li><strong>說話者頭像</strong>（方案 C 的另一半）：資料鏈已驗證（<code>Left/RightCharImageId</code> → <code>ConfigDataCharacterPicture.Icon</code> → 站上既有頭像，有名字的台詞 96.8% 對得到），
-        但要逐行存頭像鍵（書檔會再大一截）、還要處理缺圖的 5 個角色。站長要做時另開子計畫。</li>
       <li><strong>方案 B 選章舞台</strong>：章節代表圖可以直接從本案匯入的 CG 挑，評估報告已有自動挑選規則。</li>
       <li>活動專屬的 prefab 型背景（<code>PlotActivityAVGUIPrefab_*</code>）：由好幾張介面圖組成，要另外盤點活動美術。</li>
     </ul>
